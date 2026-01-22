@@ -1,0 +1,1897 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlattArgus - Analisar Processo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg-primary:#0a0e14;--bg-secondary:#111820;--bg-tertiary:#1a222d;--bg-card:#141c26;--accent:#e63946;--accent-hover:#ff4d5a;--accent-glow:rgba(230,57,70,0.4);--text-primary:#f1f5f9;--text-secondary:#94a3b8;--text-muted:#64748b;--success:#10b981;--warning:#f59e0b;--error:#ef4444;--info:#3b82f6;--border-color:rgba(255,255,255,0.08);--border-accent:rgba(230,57,70,0.3);--font-display:'Plus Jakarta Sans',sans-serif}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:var(--font-display);background:var(--bg-primary);color:var(--text-primary);min-height:100vh;line-height:1.6}
+        body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(230,57,70,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(230,57,70,0.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:-1}
+        .header{background:var(--bg-secondary);border-bottom:1px solid var(--border-color);padding:12px 24px;position:sticky;top:0;z-index:100}
+        .header-content{max-width:1800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+        .logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--accent) 0%,#b91c1c 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;box-shadow:0 0 20px var(--accent-glow)}
+        .logo-text{font-weight:700;font-size:1.1rem;color:var(--text-primary)}
+        .logo-text span{color:var(--accent)}
+        .logo-subtitle{color:var(--text-muted);font-size:0.75rem;margin-left:10px;padding-left:10px;border-left:1px solid var(--border-color)}
+        .user-area{display:flex;align-items:center;gap:16px}
+        .user-badge{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--bg-tertiary);border-radius:10px;border:1px solid var(--border-color)}
+        .user-avatar{width:36px;height:36px;background:linear-gradient(135deg,var(--accent) 0%,#b91c1c 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:600}
+        .user-info{display:flex;flex-direction:column}
+        .user-name{font-weight:600;font-size:0.9rem;color:var(--accent)}
+        .user-cargo{font-size:0.7rem;color:var(--text-muted)}
+        .user-sei{font-size:0.75rem;color:var(--text-muted);display:flex;align-items:center;gap:4px}
+        .status-sei{display:flex;align-items:center;gap:6px;font-size:0.75rem;padding:6px 12px;border-radius:20px;background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3)}
+        .status-sei::before{content:'';width:6px;height:6px;background:var(--success);border-radius:50%;animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+        .btn-header{background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-primary);cursor:pointer;font-size:0.85rem;padding:8px 14px;border-radius:8px;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+        .btn-header:hover{border-color:var(--accent);color:var(--accent)}
+        .btn-sair{background:var(--accent);color:white;border:none;padding:8px 16px;border-radius:8px;font-weight:600;font-size:0.85rem;cursor:pointer}
+        .btn-sair:hover{background:var(--accent-hover)}
+        .container{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:20px;max-width:1800px;margin:0 auto}
+        @media(max-width:1200px){.container{grid-template-columns:1fr}}
+        .panel{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px}
+        .panel h2{color:var(--accent);margin-bottom:15px;font-size:1.1rem;display:flex;align-items:center;gap:8px}
+        .input-row{display:flex;gap:10px;margin-bottom:15px}
+        .form-input{flex:1;padding:12px 14px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:0.95rem;font-family:var(--font-display)}
+        .form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+        .form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+        .btn{padding:12px 20px;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.9rem;transition:all 0.2s;font-family:var(--font-display);display:inline-flex;align-items:center;gap:8px}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),#b91c1c);color:#fff;box-shadow:0 4px 15px var(--accent-glow)}
+        .btn-primary:hover{transform:translateY(-1px)}
+        .btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+        .btn-secondary{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color)}
+        .btn-success{background:var(--success);color:#fff}
+        .btn-warning{background:var(--warning);color:#fff}
+        .btn-info{background:var(--info);color:#fff}
+        .btn-sm{padding:8px 14px;font-size:0.85rem}
+        .btn-xs{padding:5px 10px;font-size:0.75rem}
+        .btn-outline{background:transparent;border:1px solid var(--border-color);color:var(--text-muted)}
+        .btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+        .btn-group{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
+        .status{padding:12px 15px;border-radius:8px;margin:15px 0;font-size:0.9rem}
+        .status-success{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:var(--success)}
+        .status-error{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:var(--error)}
+        .status-loading{background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:var(--info);display:flex;align-items:center;gap:10px}
+        .spinner{width:16px;height:16px;border:2px solid var(--border-color);border-top-color:currentColor;border-radius:50%;animation:spin 0.8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .hidden{display:none!important}
+        .resumo-box{background:var(--bg-tertiary);border-left:4px solid var(--accent);padding:15px;border-radius:0 8px 8px 0;margin:15px 0}
+        .resumo-box h3{color:var(--accent);margin-bottom:10px;font-size:1rem}
+        .resumo-box p{line-height:1.6;color:var(--text-secondary)}
+        .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:15px 0}
+        @media(max-width:600px){.info-grid{grid-template-columns:1fr}}
+        .info-card{background:var(--bg-primary);border-radius:8px;padding:12px}
+        .info-card h4{color:var(--accent);font-size:0.85rem;margin-bottom:8px}
+        .info-card p{font-size:0.9rem;color:var(--text-secondary);line-height:1.5}
+        .tag{display:inline-block;padding:4px 10px;border-radius:15px;font-size:0.75rem;margin:2px}
+        .tag-alta{background:var(--accent);color:#fff}
+        .tag-info{background:var(--info);color:#fff}
+        .docs-lista{max-height:200px;overflow-y:auto;background:var(--bg-primary);border-radius:8px;padding:10px;margin:10px 0}
+        .doc-item{padding:8px 10px;margin:5px 0;background:var(--bg-tertiary);border-radius:5px;cursor:pointer;font-size:0.85rem;transition:all 0.2s}
+        .doc-item:hover{background:var(--bg-secondary);border-left:3px solid var(--accent)}
+        .config-box{background:var(--bg-tertiary);border-radius:8px;padding:15px;margin:15px 0}
+        .config-box h3{color:var(--text-primary);font-size:0.95rem;margin-bottom:15px}
+        .config-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+        @media(max-width:700px){.config-row{grid-template-columns:1fr}}
+        .config-row label{display:block;color:var(--text-muted);font-size:0.8rem;margin-bottom:5px}
+        .editor-box{background:var(--bg-tertiary);border-radius:8px;padding:15px;margin:15px 0}
+        .editor-box h3{color:var(--success);font-size:0.95rem;margin-bottom:10px}
+        .editor-warning{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:5px;padding:8px 12px;margin-bottom:10px;font-size:0.8rem;color:var(--warning)}
+        .toolbar{display:flex;gap:5px;flex-wrap:wrap;padding:10px;background:var(--bg-primary);border-radius:8px 8px 0 0;border:1px solid var(--border-color);border-bottom:none}
+        .toolbar-btn{padding:8px 12px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-primary);cursor:pointer;border-radius:4px;font-size:0.85rem;transition:all 0.2s;font-weight:600}
+        .toolbar-btn:hover{background:var(--bg-secondary);border-color:var(--accent)}
+        .toolbar-separator{width:1px;background:var(--border-color);margin:0 5px}
+        .preview-container{background:#fff;color:#000;border-radius:0 0 8px 8px;padding:30px;min-height:300px;max-height:400px;overflow-y:auto;font-family:'Times New Roman',serif;font-size:12pt;line-height:1.6;border:1px solid var(--border-color)}
+        .preview-container:focus{outline:2px solid var(--success)}
+        .preview-container p{margin:8px 0}
+        .validacao-item{padding:8px 12px;margin:5px 0;border-radius:5px;font-size:0.85rem}
+        .validacao-ok{background:rgba(16,185,129,0.15);border-left:3px solid var(--success);color:var(--success)}
+        .validacao-warning{background:rgba(245,158,11,0.15);border-left:3px solid var(--warning);color:var(--warning)}
+        .modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000}
+        .modal-content{background:var(--bg-secondary);border-radius:12px;padding:25px;max-width:900px;width:90%;max-height:80vh;overflow-y:auto;border:1px solid var(--border-color)}
+        .modal-content h3{color:var(--accent);margin-bottom:15px}
+        .modal-close{float:right;background:none;border:none;color:var(--accent);font-size:1.5rem;cursor:pointer}
+        .autoridades-table{width:100%;border-collapse:collapse;margin-top:15px}
+        .autoridades-table th,.autoridades-table td{padding:10px;text-align:left;border-bottom:1px solid var(--border-color);font-size:0.85rem}
+        .autoridades-table th{background:var(--bg-tertiary);color:var(--accent)}
+        .autoridades-table tr:hover{background:var(--bg-tertiary)}
+        .search-box input{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary)}
+        .chat-section{margin-top:15px}
+        .chat-toggle-btn{width:100%;padding:12px;background:var(--bg-primary);border:1px dashed var(--border-color);border-radius:8px;color:var(--text-muted);cursor:pointer;font-size:0.85rem;transition:all 0.3s}
+        .chat-toggle-btn:hover{border-color:var(--info);color:var(--info)}
+        .chat-toggle-btn.active{border-color:var(--success);color:var(--success);border-style:solid}
+        .chat-container{background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;margin-top:10px;overflow:hidden}
+        .chat-header{background:var(--bg-tertiary);padding:10px 15px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color)}
+        .chat-header h4{color:var(--info);font-size:0.9rem}
+        .modelo-badge{font-size:0.7rem;padding:3px 8px;border-radius:10px;background:var(--info);color:#fff}
+        .chat-config{padding:10px 15px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+        .chat-config label{color:var(--text-muted);font-size:0.75rem}
+        .chat-config select{padding:5px 8px;border-radius:4px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-primary);font-size:0.8rem}
+        .toggle{position:relative;width:32px;height:16px}
+        .toggle input{opacity:0;width:0;height:0}
+        .toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--bg-tertiary);border-radius:16px;transition:0.3s}
+        .toggle-slider:before{position:absolute;content:"";height:10px;width:10px;left:3px;bottom:3px;background:var(--text-muted);border-radius:50%;transition:0.3s}
+        .toggle input:checked+.toggle-slider{background:var(--accent)}
+        .toggle input:checked+.toggle-slider:before{transform:translateX(16px);background:#fff}
+        .chat-messages{max-height:250px;overflow-y:auto;padding:15px}
+        .chat-msg{margin-bottom:12px;padding:10px 12px;border-radius:8px;font-size:0.85rem;line-height:1.5}
+        .chat-msg-user{background:var(--bg-tertiary);border-left:3px solid var(--accent)}
+        .chat-msg-assistant{background:rgba(16,185,129,0.1);border-left:3px solid var(--success)}
+        .chat-msg-header{font-size:0.7rem;color:var(--text-muted);margin-bottom:5px;display:flex;justify-content:space-between}
+        .chat-msg-content{color:var(--text-secondary)}
+        .chat-msg-actions{margin-top:8px;padding-top:8px;border-top:1px solid var(--border-color);display:flex;gap:5px}
+        .chat-system-msg{text-align:center;color:var(--text-muted);font-size:0.8rem;padding:10px;border:1px dashed var(--border-color);border-radius:5px;margin-bottom:10px}
+        .chat-input-area{padding:12px 15px;background:var(--bg-tertiary);border-top:1px solid var(--border-color)}
+        .chat-input-row{display:flex;gap:8px}
+        .chat-input{flex:1;padding:10px 12px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:0.85rem;resize:none;font-family:var(--font-display)}
+        .chat-input:focus{outline:none;border-color:var(--info)}
+        .chat-quick-actions{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+        .chat-upload-preview{background:var(--bg-tertiary);padding:8px 12px;margin:0 15px 10px;border-radius:5px;display:flex;justify-content:space-between;align-items:center;font-size:0.8rem}
+        .chat-upload-preview span{color:var(--success)}
+        .edit-hint{color:var(--text-muted);font-size:0.8rem;margin-bottom:5px}
+        .autocomplete-wrapper{position:relative}
+        .autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;max-height:280px;overflow-y:auto;z-index:100;margin-top:4px;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
+        .autocomplete-item{padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border-color);transition:all 0.15s}
+        .autocomplete-item:last-child{border-bottom:none}
+        .autocomplete-item:hover,.autocomplete-item.selected{background:var(--bg-tertiary);border-left:3px solid var(--accent)}
+        .autocomplete-item .sigla{font-weight:bold;color:var(--accent);margin-right:8px}
+        .autocomplete-item .nome{color:var(--text-primary)}
+        .autocomplete-item .cargo{display:block;font-size:0.8rem;color:var(--text-muted);margin-top:2px}
+        .autocomplete-group{padding:8px 12px;background:var(--bg-secondary);color:var(--accent);font-weight:bold;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;position:sticky;top:0;border-bottom:1px solid var(--border-color)}
+        .autocomplete-empty{padding:15px;text-align:center;color:var(--text-muted);font-size:0.9rem}
+        .tags-container{display:flex;flex-wrap:wrap;gap:5px;padding:8px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;min-height:42px;cursor:text}
+        .tags-container:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+        .tags-container .tag-item{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:var(--accent);color:#fff;border-radius:4px;font-size:0.8rem;font-weight:500}
+        .tags-container .tag-item .tag-remove{background:none;border:none;color:#fff;cursor:pointer;font-size:1rem;line-height:1;padding:0 2px;opacity:0.8}
+        .tags-container .tag-item .tag-remove:hover{opacity:1}
+        .tags-container .tag-input{flex:1;min-width:120px;border:none;background:transparent;color:var(--text-primary);font-size:0.9rem;outline:none;padding:4px}
+        .tags-container .tag-input::placeholder{color:var(--text-muted)}
+/* ===== BLOCOS DE ASSINATURA ===== */
+.blocos-badge{background:var(--info);color:#fff;font-size:0.65rem;padding:2px 6px;border-radius:10px;margin-left:5px}
+.modal-lg{max-width:1100px}
+.bloco-input-row{display:flex;gap:10px;margin-bottom:15px}
+.docs-bloco-lista{max-height:350px;overflow-y:auto;margin-top:15px}
+.doc-bloco-item{display:grid;grid-template-columns:40px 1fr 150px 100px 80px;gap:10px;align-items:center;padding:12px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;margin-bottom:8px;transition:all 0.2s}
+.doc-bloco-item:hover{border-color:var(--accent)}
+.doc-bloco-item .checkbox-col{text-align:center}
+.doc-bloco-item .doc-info{display:flex;flex-direction:column;gap:2px}
+.doc-bloco-item .doc-numero{font-weight:600;color:var(--text-primary)}
+.doc-bloco-item .doc-tipo{font-size:0.8rem;color:var(--text-muted)}
+.doc-bloco-item .doc-processo{font-size:0.85rem;color:var(--text-secondary)}
+.doc-bloco-item .doc-status{font-size:0.85rem;font-weight:500}
+.doc-bloco-item .doc-status.pendente{color:var(--warning)}
+.doc-bloco-item .doc-status.assinado{color:var(--success)}
+.doc-bloco-item .doc-acoes{display:flex;gap:5px}
+.btn-assinar-lote{margin-top:15px;display:flex;gap:10px;justify-content:space-between;padding-top:15px;border-top:1px solid var(--border-color)}
+.bloco-stats{display:flex;gap:20px;padding:10px 15px;background:var(--bg-primary);border-radius:8px;margin-bottom:15px}
+.bloco-stat{display:flex;flex-direction:column;align-items:center}
+.bloco-stat-num{font-size:1.5rem;font-weight:700;color:var(--accent)}
+.bloco-stat-label{font-size:0.75rem;color:var(--text-muted)}
+.visualizador-doc{background:var(--bg-primary);border-radius:8px;padding:15px;margin:15px 0}
+.visualizador-doc .doc-header{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;padding-bottom:15px;border-bottom:1px solid var(--border-color)}
+.visualizador-doc .doc-header-item{display:flex;flex-direction:column;gap:2px}
+.visualizador-doc .doc-header-item label{font-size:0.75rem;color:var(--text-muted)}
+.visualizador-doc .doc-header-item span{font-size:0.9rem;color:var(--text-primary)}
+.visualizador-doc .doc-conteudo{background:var(--bg-tertiary);border-radius:8px;padding:15px;max-height:300px;overflow-y:auto;font-size:0.9rem;line-height:1.6;white-space:pre-wrap}
+.confirmacao-assinatura{background:var(--bg-tertiary);border-radius:8px;padding:20px;text-align:center}
+.confirmacao-assinatura h4{color:var(--warning);margin-bottom:15px}
+.confirmacao-assinatura .doc-info-confirm{background:var(--bg-primary);padding:15px;border-radius:8px;margin:15px 0;text-align:left}
+.comprovante-box{background:rgba(16,185,129,0.1);border:2px solid var(--success);border-radius:12px;padding:20px;text-align:center}
+.comprovante-box h3{color:var(--success);margin-bottom:15px}
+.comprovante-box img{max-width:100%;max-height:400px;border-radius:8px;margin:10px 0;border:1px solid var(--border-color)}
+.loading-overlay{position:absolute;inset:0;background:rgba(10,14,20,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;border-radius:12px}
+.loading-overlay .spinner{width:40px;height:40px;border-width:3px}
+.loading-overlay p{margin-top:15px;color:var(--text-secondary)}
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+                    <div class="logo-icon">🔥</div>
+                    <div class="logo-text">Platt<span>Argus</span></div>
+                </a>
+                <span class="logo-subtitle">ASSISTENTE-SEI v3.0</span>
+            </div>
+            <div class="user-area">
+                <div class="user-badge">
+                    <div class="user-avatar" id="userAvatar">--</div>
+                    <div class="user-info">
+                        <span class="user-name" id="userName">Carregando...</span>
+                        <span class="user-cargo" id="userCargo">-</span>
+                    </div>
+                </div>
+                <span class="user-sei" id="userSeiSpan"></span>
+                <div class="status-sei">SEI Vinculado</div>
+                <a href="/" class="btn-header">🏠 Início</a>
+                <button class="btn-header" onclick="abrirModalAutoridades()">👥 Efetivo</button>
+                <button class="btn-header" onclick="abrirModalBlocos()">📦 Blocos</button>
+                <button class="btn-sair" onclick="fazerLogout()">🚪 Sair</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="panel">
+            <h2>📂 Análise do Processo</h2>
+            <div class="input-row">
+                <input type="text" id="nupInput" class="form-input" placeholder="Digite o NUP: 0609.000000.00000/2025-00">
+                <button class="btn btn-primary" id="btnLer" onclick="lerProcesso()">🔍 Analisar</button>
+            </div>
+            <div id="statusLeitura" class="status hidden"></div>
+            <div id="resumoBox" class="resumo-box hidden">
+                <h3>📋 <span id="tipoDemanda">-</span></h3>
+                <p id="resumoExecutivo">-</p>
+            </div>
+            <div id="infoGrid" class="info-grid hidden">
+                <div class="info-card"><h4>👤 Interessado</h4><p id="interessadoInfo">-</p></div>
+                <div class="info-card"><h4>📝 Pedido</h4><p id="pedidoInfo">-</p></div>
+                <div class="info-card"><h4>🏢 Unidades</h4><p id="unidadesInfo">-</p></div>
+                <div class="info-card"><h4>⚖️ Legislação</h4><div id="legislacaoInfo">-</div></div>
+            </div>
+            <div id="alertasBox" class="hidden" style="margin:10px 0"><span id="alertasInfo"></span></div>
+            <div id="docsProcessoBox" class="hidden">
+                <h4 style="color:var(--text-muted);font-size:0.85rem;margin:10px 0">📎 Documentos no Processo <small>(clique para ver)</small></h4>
+                <div id="docsLista" class="docs-lista"></div>
+            </div>
+            <div id="sugestaoBox" class="config-box hidden">
+                <h3>💡 Sugestão do Sistema</h3>
+                <p style="color:var(--text-secondary);font-size:0.9rem" id="sugestaoTexto">-</p>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>📄 Gerar Documento</h2>
+            <div id="configBox" class="config-box hidden">
+                <h3>⚙️ Configuração</h3>
+                <div class="config-row">
+                    <div class="autocomplete-wrapper">
+                        <label>Tipo de Documento</label>
+                        <input type="text" id="tipoDocumentoInput" class="form-input" placeholder="Digite: DES, MEM, OFI..." autocomplete="off">
+                        <input type="hidden" id="tipoDocumento" value="Despacho">
+                        <div id="tipoDocumentoList" class="autocomplete-list hidden"></div>
+                    </div>
+                    <div class="autocomplete-wrapper">
+                        <label>Destinatário(s)</label>
+                        <div class="tags-container" id="tagsContainer" onclick="document.getElementById('destinatarioInput').focus()">
+                            <input type="text" id="destinatarioInput" class="tag-input" placeholder="Digite sigla: DRH, CMDGER..." autocomplete="off">
+                        </div>
+                        <input type="hidden" id="destinatario" value="">
+                        <div id="destinatarioList" class="autocomplete-list hidden"></div>
+                    </div>
+                    <button class="btn btn-primary" onclick="gerarDocumento()" style="margin-top:22px">✨ Gerar</button>
+                </div>
+            </div>
+
+            <div id="statusDocumento" class="status hidden"></div>
+            <div id="editorContainer" class="editor-box hidden">
+                <h3>✅ Prévia do Documento</h3>
+                <div class="editor-warning">⚠️ Texto sugerido - revise antes de inserir no SEI</div>
+                <p class="edit-hint">💡 Selecione o texto e use os botões para formatar</p>
+                <div class="toolbar">
+                    <button class="toolbar-btn" onclick="formatDoc('bold')"><b>N</b></button>
+                    <button class="toolbar-btn" onclick="formatDoc('italic')"><i>I</i></button>
+                    <button class="toolbar-btn" onclick="formatDoc('underline')"><u>S</u></button>
+                    <div class="toolbar-separator"></div>
+                    <button class="toolbar-btn" onclick="formatDoc('justifyLeft')">←</button>
+                    <button class="toolbar-btn" onclick="formatDoc('justifyCenter')">■</button>
+                    <button class="toolbar-btn" onclick="formatDoc('justifyRight')">→</button>
+                    <button class="toolbar-btn" onclick="formatDoc('justifyFull')">≡</button>
+                    <div class="toolbar-separator"></div>
+                    <button class="toolbar-btn" onclick="abrirModalAutoridades()">👥 Buscar Autoridade</button>
+                </div>
+                <div id="previewDocumento" class="preview-container" contenteditable="true"></div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="validarDocumento()">✔️ Validar</button>
+                    <button class="btn btn-warning" onclick="melhorarTexto()">✨ Melhorar</button>
+                    <button class="btn btn-success" onclick="inserirSEI()">📤 Inserir no SEI</button>
+                </div>
+            </div>
+            <div id="validacoesBox" class="hidden"></div>
+            <div id="statusInserir" class="status hidden"></div>
+            
+            <div id="chatSection" class="chat-section hidden">
+                <button class="chat-toggle-btn" id="chatToggleBtn" onclick="toggleChat()">💬 Abrir Chat Analítico</button>
+                <div id="chatContainer" class="chat-container hidden">
+                    <div class="chat-header">
+                        <h4>💬 Chat Analítico</h4>
+                        <span class="modelo-badge" id="modeloBadge">GPT-4.1 mini</span>
+                    </div>
+                    <div class="chat-config">
+                        <label>Modelo:</label>
+                        <select id="modeloSelect" onchange="atualizarModelo()">
+                            <option value="gpt-4.1-mini">GPT-4.1 mini</option>
+                            <option value="gpt-5-mini">GPT-5 mini (Premium)</option>
+                        </select>
+                        <div style="display:flex;align-items:center;gap:6px">
+                            <label class="toggle"><input type="checkbox" id="temaSensivel" onchange="verificarTemaSensivel()"><span class="toggle-slider"></span></label>
+                            <span style="font-size:0.7rem;color:var(--text-muted)">Tema sensivel</span>
+                        </div>
+                        <button class="btn btn-xs btn-info" onclick="document.getElementById('chatFileInput').click()">📎 Anexar</button>
+                        <input type="file" id="chatFileInput" accept=".pdf,.docx,.txt" style="display:none" onchange="handleChatFile(event)">
+                    </div>
+                    <div id="chatUploadPreview" class="chat-upload-preview hidden">
+                        <span id="chatFileName">arquivo.pdf</span>
+                        <button class="btn btn-xs btn-secondary" onclick="removerChatArquivo()">X</button>
+                    </div>
+                    <div id="chatMessages" class="chat-messages">
+                        <div class="chat-system-msg">Chat analitico efemero. Nao persiste historico.<br>Pergunte para aprofundar, revisar ou comparar.</div>
+                    </div>
+                    <div class="chat-input-area">
+                        <div class="chat-input-row">
+                            <textarea id="chatInput" class="chat-input" rows="2" placeholder="Pergunte algo sobre o processo..."></textarea>
+                            <button class="btn btn-info" onclick="enviarChat()">🚀</button>
+                        </div>
+                        <div class="chat-quick-actions">
+                            <button class="btn btn-xs btn-outline" onclick="comandoRapido('aprofundar')">Aprofundar</button>
+                            <button class="btn btn-xs btn-outline" onclick="comandoRapido('discorrer')">Discorrer</button>
+                            <button class="btn btn-xs btn-outline" onclick="comandoRapido('comparar')">Comparar</button>
+                            <button class="btn btn-xs btn-outline" onclick="comandoRapido('reescrever')">Reescrever</button>
+                            <button class="btn btn-xs btn-outline" onclick="comandoRapido('sugerir')">Sugerir redacao</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalDoc" class="modal hidden">
+        <div class="modal-content">
+            <button class="modal-close" onclick="fecharModalDoc()">X</button>
+            <h3 id="modalDocTitulo">-</h3>
+            <div id="modalDocConteudo" style="color:var(--text-secondary);line-height:1.6;margin-top:15px"></div>
+        </div>
+    </div>
+    <div id="modalAutoridades" class="modal hidden">
+        <div class="modal-content">
+            <button class="modal-close" onclick="fecharModalAutoridades()">X</button>
+            <h3>👥 Pesquisar Efetivo / Autoridades</h3>
+            <div class="search-box" style="margin:15px 0">
+                <input type="text" id="searchAutoridade" placeholder="Digite para filtrar..." oninput="filtrarAutoridades()">
+            </div>
+            <table class="autoridades-table">
+                <thead><tr><th>Sigla</th><th>Unidade</th><th>Posto/Grad</th><th>Nome</th><th>Cargo</th></tr></thead>
+                <tbody id="tabelaAutoridades"></tbody>
+            </table>
+        </div>
+    </div>
+<!-- Modal: Blocos de Assinatura -->
+<div id="modalBlocos" class="modal hidden">
+    <div class="modal-content modal-lg" style="position:relative">
+        <button class="modal-close" onclick="fecharModalBlocos()">X</button>
+        <h3>📦 Bloco de Assinatura</h3>
+        
+        <div class="bloco-input-row">
+            <input type="text" id="inputBlocoNumero" class="form-input" placeholder="Digite o número do bloco..." style="flex:1">
+            <button class="btn btn-primary" onclick="carregarBloco()">🔍 Buscar</button>
+        </div>
+        
+        <div style="margin-top:20px;padding-top:15px;border-top:1px solid var(--border)">
+            <h4 style="color:var(--primary);margin-bottom:10px">📄 Documento Avulso</h4>
+            <div class="bloco-input-row">
+                <input type="text" id="inputDocumentoAvulso" class="form-input" placeholder="Nº do documento (ex: 0018912592)..." style="flex:1">
+                <button class="btn btn-info" onclick="verDocumentoAvulso()">👁️ Ver Documento</button>
+            </div>
+        </div>
+        
+        <div id="blocoLoading" class="hidden" style="position:relative;min-height:200px">
+            <div class="loading-overlay">
+                <div class="spinner"></div>
+                <p id="blocoLoadingMsg">Carregando documentos do bloco...</p>
+            </div>
+        </div>
+        
+        <div id="blocoResultado" class="hidden">
+            <div class="bloco-stats">
+                <div class="bloco-stat">
+                    <span class="bloco-stat-num" id="statTotal">0</span>
+                    <span class="bloco-stat-label">Total</span>
+                </div>
+                <div class="bloco-stat">
+                    <span class="bloco-stat-num" id="statPendentes" style="color:var(--warning)">0</span>
+                    <span class="bloco-stat-label">Pendentes</span>
+                </div>
+                <div class="bloco-stat">
+                    <span class="bloco-stat-num" id="statAssinados" style="color:var(--success)">0</span>
+                    <span class="bloco-stat-label">Assinados</span>
+                </div>
+            </div>
+            
+            <div id="docsLista" class="docs-bloco-lista"></div>
+            
+            <div class="btn-assinar-lote">
+                <div>
+                    <input type="checkbox" id="selectAllDocs" onchange="toggleSelectAll()">
+                    <label for="selectAllDocs" style="color:var(--text-muted);font-size:0.85rem;margin-left:5px">Selecionar pendentes</label>
+                </div>
+                <div style="display:flex;gap:10px">
+                    <button class="btn btn-warning" id="btnAssinarSelecionados" onclick="assinarSelecionados()" disabled>
+                        ✍️ Assinar Selecionados (<span id="countSelecionados">0</span>)
+                    </button>
+                    <button class="btn btn-success" id="btnAssinarBloco" onclick="assinarBlocoCompleto()">
+                        ✍️ Assinar Bloco Completo
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="blocoErro" class="status status-error hidden"></div>
+    </div>
+</div>
+
+<!-- Modal: Visualizar Documento -->
+<div id="modalVisualizarDoc" class="modal hidden">
+    <div class="modal-content modal-lg" style="position:relative">
+        <button class="modal-close" onclick="fecharModalVisualizarDoc()">X</button>
+        <h3>👁️ Visualizar Documento</h3>
+        
+        <div id="visualizarLoading" class="hidden" style="position:relative;min-height:300px">
+            <div class="loading-overlay">
+                <div class="spinner"></div>
+                <p>Carregando documento...</p>
+            </div>
+        </div>
+        
+        <div id="visualizadorContainer" class="visualizador-doc hidden">
+            <div class="doc-header">
+                <div class="doc-header-item">
+                    <label>Tipo / Número</label>
+                    <span id="vizTipoNumero">-</span>
+                </div>
+                <div class="doc-header-item">
+                    <label>SEI nº</label>
+                    <span id="vizSeiNumero">-</span>
+                </div>
+                <div class="doc-header-item">
+                    <label>Processo (NUP)</label>
+                    <span id="vizNup">-</span>
+                </div>
+                <div class="doc-header-item">
+                    <label>Destinatário</label>
+                    <span id="vizDestinatario">-</span>
+                </div>
+            </div>
+            <h4 style="color:var(--text-muted);font-size:0.85rem;margin-bottom:10px">📝 Conteúdo:</h4>
+            <div id="vizConteudo" class="doc-conteudo"></div>
+        </div>
+        
+        <div class="btn-group" style="justify-content:center;margin-top:15px">
+            <button class="btn btn-secondary" onclick="fecharModalVisualizarDoc()">Fechar</button>
+            <button class="btn btn-success" id="btnAssinarDoVisualizador" onclick="assinarDoVisualizador()">✍️ Assinar este Documento</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Confirmar Assinatura -->
+<div id="modalConfirmarAssinatura" class="modal hidden">
+    <div class="modal-content" style="max-width:500px;position:relative">
+        <button class="modal-close" onclick="fecharModalConfirmarAssinatura()">X</button>
+        <div class="confirmacao-assinatura">
+            <h4>⚠️ Confirmar Assinatura</h4>
+            <p style="color:var(--text-secondary)">Você está prestes a assinar:</p>
+            <div class="doc-info-confirm">
+                <p><strong>Documento:</strong> <span id="confirmDocNome">-</span></p>
+                <p><strong>SEI nº:</strong> <span id="confirmDocSei">-</span></p>
+                <p><strong>Processo:</strong> <span id="confirmDocNup">-</span></p>
+            </div>
+            <div id="confirmLoading" class="hidden" style="padding:20px">
+                <div class="spinner" style="margin:0 auto"></div>
+                <p style="color:var(--text-muted);margin-top:10px">Assinando documento...</p>
+            </div>
+            <div id="confirmBotoes" class="btn-group" style="justify-content:center;margin-top:20px">
+                <button class="btn btn-secondary" onclick="fecharModalConfirmarAssinatura()">Cancelar</button>
+                <button class="btn btn-success" id="btnConfirmarAssinar" onclick="confirmarAssinatura()">✍️ Confirmar Assinatura</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Comprovante de Assinatura -->
+<div id="modalComprovante" class="modal hidden">
+    <div class="modal-content modal-lg">
+        <button class="modal-close" onclick="fecharModalComprovante()">X</button>
+        <div class="comprovante-box">
+            <h3>✅ Assinatura Realizada!</h3>
+            <p id="comprovanteMensagem" style="color:var(--text-secondary)">Documento assinado com sucesso.</p>
+            <div id="comprovanteScreenshot"></div>
+            <div class="btn-group" style="justify-content:center;margin-top:20px">
+                <button class="btn btn-secondary" onclick="fecharModalComprovante()">Fechar</button>
+                <button class="btn btn-info" onclick="baixarComprovante()">📥 Baixar Comprovante</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script>
+        var API = window.location.origin;
+        var analiseAtual = null;
+        var nupAtual = '';
+        var docsProcesso = [];
+        var todasAutoridades = [];
+        var textoCanonicoAtual = '';
+        var arquivoChatAnexado = null;
+        var ultimaRespostaSugestao = '';
+        var usuarioAtual = null;
+
+        window.addEventListener('load', verificarSessao);
+
+        function verificarSessao() {
+            var token = localStorage.getItem('plattargus_token');
+            var usuarioStr = localStorage.getItem('plattargus_usuario');
+            if (!token || !usuarioStr) {
+                window.location.href = '/';
+                return;
+            }
+            try {
+                usuarioAtual = JSON.parse(usuarioStr);
+                configurarUsuarioLogado(usuarioAtual);
+                carregarAutoridades();
+            } catch (e) {
+                window.location.href = '/';
+            }
+        }
+
+        function configurarUsuarioLogado(u) {
+            var iniciais = u.nome_completo ? u.nome_completo.split(' ').map(function(n) { return n[0]; }).slice(0, 2).join('') : u.usuario_sei.substring(0, 2).toUpperCase();
+            document.getElementById('userAvatar').textContent = iniciais;
+            document.getElementById('userName').textContent = u.posto_grad ? u.posto_grad + ' ' + u.nome_completo : (u.nome_completo || u.usuario_sei);
+            document.getElementById('userCargo').textContent = u.cargo || 'Servidor';
+            document.getElementById('userSeiSpan').innerHTML = '🔒 ' + u.usuario_sei;
+        }
+
+        function fazerLogout() {
+            localStorage.clear();
+            window.location.href = '/';
+        }
+
+        // tipo_sei = nome exato no SEI | codigo = template para IA
+        var tiposDocumento = [
+            { codigo: 'DESPACHO_SIMPLES', tipo_sei: 'Despacho', tipo: 'Despacho', nome: 'Despacho Simples', descricao: 'Texto livre para qualquer finalidade' },
+            { codigo: 'DESPACHO_ENCAMINHAMENTO', tipo_sei: 'Despacho', tipo: 'Despacho', nome: 'Despacho de Encaminhamento', descricao: 'Encaminhar processo a outra unidade' },
+            { codigo: 'DESPACHO_DEFERIMENTO', tipo_sei: 'Despacho', tipo: 'Despacho', nome: 'Despacho de Deferimento', descricao: 'Deferir solicitação' },
+            { codigo: 'DESPACHO_INDEFERIMENTO', tipo_sei: 'Despacho', tipo: 'Despacho', nome: 'Despacho de Indeferimento', descricao: 'Indeferir solicitação' },
+            { codigo: 'DESPACHO_ORDINATORIO', tipo_sei: 'Despacho Ordinatório', tipo: 'Despacho Ordinatório', nome: 'Despacho Ordinatório', descricao: 'Despacho de mero expediente' },
+            { codigo: 'MEMO_GENERICO', tipo_sei: 'Memorando', tipo: 'Memorando', nome: 'Memorando Genérico', descricao: 'Comunicação interna geral' },
+            { codigo: 'MEMO_ENCAMINHAMENTO', tipo_sei: 'Memorando', tipo: 'Memorando', nome: 'Memorando de Encaminhamento', descricao: 'Encaminhar documentos' },
+            { codigo: 'REQ_GENERICO', tipo_sei: 'Requerimento', tipo: 'Requerimento', nome: 'Requerimento Genérico', descricao: 'Solicitação formal' },
+            { codigo: 'REQ_FERIAS', tipo_sei: 'Requerimento', tipo: 'Requerimento', nome: 'Requerimento de Férias', descricao: 'Solicitar férias' },
+            { codigo: 'OFICIO_EXTERNO', tipo_sei: 'Ofício', tipo: 'Ofício', nome: 'Ofício Externo', descricao: 'Comunicação com órgãos externos' },
+            { codigo: 'NOTA_BG_VIAGEM', tipo_sei: 'Nota para Boletim Geral - BG - CBMAC', tipo: 'Nota BG', nome: 'Nota BG - Viagem', descricao: 'Nota para Boletim Geral' },
+            { codigo: 'TERMO_ENCERRAMENTO', tipo_sei: 'Termo de Encerramento de Processo Eletrônico', tipo: 'Termo', nome: 'Termo de Encerramento', descricao: 'Encerrar processo eletrônico' }
+        ];
+  var destinatariosSelecionados = [];
+
+        function carregarAutoridades() {
+            fetch(API + '/api/autoridades', { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('plattargus_token'), 'Accept': 'application/json' } })
+                .then(function(resp) { return resp.json(); })
+                .then(function(data) {
+                    todasAutoridades = data.autoridades || data.usuarios || [];
+                    configurarAutocomplete();
+                })
+                .catch(function(e) { console.error('Erro ao carregar autoridades:', e); });
+        }
+
+        // ========== AUTOCOMPLETE ==========
+        function configurarAutocomplete() {
+            var tipoInput = document.getElementById('tipoDocumentoInput');
+            var destInput = document.getElementById('destinatarioInput');
+
+            tipoInput.addEventListener('input', filtrarTipos);
+            tipoInput.addEventListener('focus', filtrarTipos);
+            tipoInput.addEventListener('keydown', function(e) { navegarAutocomplete(e, 'tipoDocumentoList'); });
+
+            destInput.addEventListener('input', filtrarDestinatarios);
+            destInput.addEventListener('focus', filtrarDestinatarios);
+            destInput.addEventListener('keydown', function(e) { navegarAutocomplete(e, 'destinatarioList'); });
+
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.autocomplete-wrapper')) {
+                    document.getElementById('tipoDocumentoList').classList.add('hidden');
+                    document.getElementById('destinatarioList').classList.add('hidden');
+                }
+            });
+        }
+
+        function filtrarTipos() {
+            var input = document.getElementById('tipoDocumentoInput');
+            var list = document.getElementById('tipoDocumentoList');
+            var termo = input.value.toLowerCase().trim();
+
+            var filtrados = tiposDocumento;
+            if (termo) {
+                filtrados = tiposDocumento.filter(function(t) {
+                    return t.codigo.toLowerCase().indexOf(termo) >= 0 ||
+                           t.tipo.toLowerCase().indexOf(termo) >= 0 ||
+                           t.nome.toLowerCase().indexOf(termo) >= 0;
+                });
+            }
+
+            if (filtrados.length === 0) {
+                list.innerHTML = '<div class="autocomplete-empty">Nenhum tipo encontrado</div>';
+            } else {
+                var html = '';
+                var tipoAtual = '';
+                filtrados.forEach(function(t) {
+                    if (t.tipo !== tipoAtual) {
+                        tipoAtual = t.tipo;
+                        html += '<div class="autocomplete-group">' + t.tipo + '</div>';
+                    }
+                    html += '<div class="autocomplete-item" data-codigo="' + t.codigo + '" data-nome="' + t.nome + '" data-tipo-sei="' + t.tipo_sei + '" onclick="selecionarTipo(this)">';
+                    html += '<span class="sigla">' + t.codigo.split('_')[0] + '</span>';
+                    html += '<span class="nome">' + t.nome + '</span>';
+                    html += '<span class="cargo">' + t.descricao + '</span>';
+                    html += '</div>';
+                });
+                list.innerHTML = html;
+            }
+            list.classList.remove('hidden');
+        }
+
+        function selecionarTipo(el) {
+            var codigo = el.getAttribute('data-codigo');
+            var nome = el.getAttribute('data-nome');
+            var tipoSei = el.getAttribute('data-tipo-sei');
+            document.getElementById('tipoDocumentoInput').value = nome;
+            document.getElementById('tipoDocumento').value = tipoSei; // Envia o nome exato do SEI
+            document.getElementById('tipoDocumentoList').classList.add('hidden');
+            // Guarda o template para a IA usar
+            window.templateSelecionado = codigo;
+        }
+
+        function categorizarAutoridade(a) {
+            var sigla = (a.sigla || '').toUpperCase();
+            if (sigla === 'CMDGER' || sigla === 'SUBCMD') return '1-Comando Geral';
+            if (sigla.match(/^(DRH|DEI|DATOP|DLPF|DPLAN|DSAU)$/)) return '2-Diretorias';
+            if (sigla.indexOf('DRH') >= 0 || sigla === 'SUBDRH') return '3-DRH e Divisões';
+            if (sigla.match(/^(COI|COC|COA|CORGER)$/)) return '4-Comandos e Corregedoria';
+            if (sigla.match(/ASS|AJGER/)) return '5-Assessorias';
+            if (sigla.indexOf('BEPCIF') >= 0 || sigla.indexOf('GOA') >= 0 || sigla.indexOf('CIACIAER') >= 0) return '6-Batalhões e Unidades';
+            if (sigla.indexOf('CMDPII') >= 0) return '7-Colégios Militares';
+            return '8-Outros';
+        }
+
+        function filtrarDestinatarios() {
+            var input = document.getElementById('destinatarioInput');
+            var list = document.getElementById('destinatarioList');
+            var termo = input.value.toLowerCase().trim();
+            
+            var filtrados = todasAutoridades;
+            
+            // Remove os já selecionados
+            var siglasJaSelecionadas = destinatariosSelecionados.map(function(d) { return d.sigla; });
+            filtrados = filtrados.filter(function(a) {
+                return siglasJaSelecionadas.indexOf(a.sigla) === -1;
+            });
+            
+            // Filtra por termo (CORREÇÃO: usa 'filtrados' e não 'todasAutoridades')
+            if (termo) {
+                filtrados = filtrados.filter(function(a) {
+                    return (a.sigla || '').toLowerCase().indexOf(termo) >= 0 ||
+                           (a.nome || '').toLowerCase().indexOf(termo) >= 0 ||
+                           (a.cargo || '').toLowerCase().indexOf(termo) >= 0 ||
+                           (a.unidade || '').toLowerCase().indexOf(termo) >= 0;
+                });
+            }
+            
+            if (filtrados.length === 0) {
+                list.innerHTML = '<div class="autocomplete-empty">Nenhuma autoridade encontrada</div>';
+            } else {
+                var grupos = {};
+                filtrados.forEach(function(a) {
+                    var cat = categorizarAutoridade(a);
+                    if (!grupos[cat]) grupos[cat] = [];
+                    grupos[cat].push(a);
+                });
+                var cats = Object.keys(grupos).sort();
+                var html = '';
+                cats.forEach(function(cat) {
+                    var nomeCategoria = cat.substring(2);
+                    html += '<div class="autocomplete-group">' + nomeCategoria + '</div>';
+                    grupos[cat].forEach(function(a) {
+                        var nomeEscapado = (a.nome || '').replace(/'/g, "\\'");
+                        html += '<div class="autocomplete-item" data-sigla="' + a.sigla + '" data-nome="' + nomeEscapado + '" onclick="selecionarDestinatario(this)">';
+                        html += '<span class="sigla">[' + a.sigla + ']</span>';
+                        html += '<span class="nome">' + (a.posto_grad || '') + ' ' + (a.nome || '') + '</span>';
+                        html += '<span class="cargo">' + (a.cargo || a.unidade || '') + '</span>';
+                        html += '</div>';
+                    });
+                });
+                list.innerHTML = html;
+            }
+            list.classList.remove('hidden');
+        }
+
+        function selecionarDestinatario(el) {
+            var sigla = el.getAttribute('data-sigla');
+            var nome = el.getAttribute('data-nome');
+            
+            // Verifica se já foi adicionado
+            if (destinatariosSelecionados.some(function(d) { return d.sigla === sigla; })) {
+                document.getElementById('destinatarioList').classList.add('hidden');
+                document.getElementById('destinatarioInput').value = '';
+                return;
+            }
+            
+            // Adiciona à lista
+            destinatariosSelecionados.push({ sigla: sigla, nome: nome });
+            
+            // Renderiza as tags
+            renderizarTags();
+            
+            // Limpa o input e fecha o autocomplete
+            document.getElementById('destinatarioInput').value = '';
+            document.getElementById('destinatarioList').classList.add('hidden');
+            
+            // Atualiza o campo hidden com as siglas separadas por vírgula
+            atualizarCampoDestinatario();
+        }
+
+        function renderizarTags() {
+            var container = document.getElementById('tagsContainer');
+            var input = document.getElementById('destinatarioInput');
+            
+            // Remove tags existentes (mantém só o input)
+            var tags = container.querySelectorAll('.tag-item');
+            tags.forEach(function(tag) { tag.remove(); });
+            
+            // Adiciona as tags antes do input
+            destinatariosSelecionados.forEach(function(d, idx) {
+                var tag = document.createElement('span');
+                tag.className = 'tag-item';
+                tag.innerHTML = '[' + d.sigla + '] ' + d.nome + ' <button class="tag-remove" onclick="removerDestinatario(' + idx + ', event)">×</button>';
+                container.insertBefore(tag, input);
+            });
+        }
+
+        function removerDestinatario(idx, event) {
+            event.stopPropagation();
+            destinatariosSelecionados.splice(idx, 1);
+            renderizarTags();
+            atualizarCampoDestinatario();
+        }
+
+        function atualizarCampoDestinatario() {
+            var siglas = destinatariosSelecionados.map(function(d) { return d.sigla; });
+            document.getElementById('destinatario').value = siglas.join(',');
+        }
+
+        function navegarAutocomplete(e, listId) {
+            var list = document.getElementById(listId);
+            var items = list.querySelectorAll('.autocomplete-item');
+            var selected = list.querySelector('.autocomplete-item.selected');
+            var idx = -1;
+
+            if (selected) {
+                items.forEach(function(item, i) { if (item === selected) idx = i; });
+            }
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (selected) selected.classList.remove('selected');
+                idx = (idx + 1) % items.length;
+                if (items[idx]) { items[idx].classList.add('selected'); items[idx].scrollIntoView({ block: 'nearest' }); }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (selected) selected.classList.remove('selected');
+                idx = idx <= 0 ? items.length - 1 : idx - 1;
+                if (items[idx]) { items[idx].classList.add('selected'); items[idx].scrollIntoView({ block: 'nearest' }); }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selected) selected.click();
+            } else if (e.key === 'Escape') {
+                list.classList.add('hidden');
+            }
+        }
+
+        function abrirModalAutoridades() {
+            renderizarAutoridades(todasAutoridades);
+            document.getElementById('searchAutoridade').value = '';
+            document.getElementById('modalAutoridades').classList.remove('hidden');
+        }
+
+        function fecharModalAutoridades() {
+            document.getElementById('modalAutoridades').classList.add('hidden');
+        }
+
+        function renderizarAutoridades(lista) {
+            var html = '';
+            lista.forEach(function(a) {
+                html += '<tr><td><strong>' + (a.chave_busca || '-') + '</strong></td><td>' + (a.unidade_destino || a.unidade || '-') + '</td><td>' + (a.posto_grad || '-') + '</td><td>' + (a.nome_atual || a.nome_completo || '-') + '</td><td>' + (a.observacoes || a.cargo || '-') + '</td></tr>';
+            });
+            document.getElementById('tabelaAutoridades').innerHTML = html;
+        }
+
+        function filtrarAutoridades() {
+            var termo = document.getElementById('searchAutoridade').value.toLowerCase();
+            if (!termo) {
+                renderizarAutoridades(todasAutoridades);
+                return;
+            }
+            var filtradas = todasAutoridades.filter(function(a) {
+                return (a.chave_busca || '').toLowerCase().indexOf(termo) >= 0 ||
+                       (a.nome_atual || a.nome_completo || '').toLowerCase().indexOf(termo) >= 0 ||
+                       (a.observacoes || a.cargo || '').toLowerCase().indexOf(termo) >= 0;
+            });
+            renderizarAutoridades(filtradas);
+        }
+
+        function formatDoc(cmd) {
+            document.getElementById('previewDocumento').focus();
+            document.execCommand(cmd, false, null);
+        }
+
+        function getHTMLFromPreview() {
+            return document.getElementById('previewDocumento').innerHTML;
+        }
+
+        function getAuthHeaders() {
+            var token = localStorage.getItem('plattargus_token');
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            };
+        }
+
+        function lerProcesso() {
+            var nup = document.getElementById('nupInput').value.trim();
+            if (!nup) {
+                alert('Digite o NUP');
+                return;
+            }
+            nupAtual = nup;
+            var status = document.getElementById('statusLeitura');
+            var btn = document.getElementById('btnLer');
+            
+            ['resumoBox', 'infoGrid', 'alertasBox', 'docsProcessoBox', 'sugestaoBox', 'configBox', 'editorContainer', 'validacoesBox', 'chatSection'].forEach(function(id) {
+                document.getElementById(id).classList.add('hidden');
+            });
+            
+            // Feedback inicial - Processo localizado
+            status.className = 'status status-loading';
+            status.innerHTML = '<span class="spinner"></span> 📂 Localizando processo no SEI...';
+            status.classList.remove('hidden');
+            btn.disabled = true;
+            
+            fetch(API + '/api/processos/analisar', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ nup: nup, usuario_sei: usuarioAtual.usuario_sei })
+            })
+            .then(function(resp) { 
+                // Atualiza status enquanto processa
+                status.innerHTML = '<span class="spinner"></span> 📂 Processo localizado! ⏳ Extraindo documentos...';
+                return resp.json(); 
+            })
+            .then(function(data) {
+                if (data.sucesso) {
+                    // A análise pode vir em data.analise ou diretamente em data
+                    analiseAtual = data.analise || data;
+                    
+                    // Mescla dados extras no analiseAtual
+                    analiseAtual.modo = data.modo || analiseAtual.modo;
+                    analiseAtual.pastas_total = data.pastas_total || analiseAtual.pastas_total || 0;
+                    analiseAtual.documentos_total = data.documentos_total || analiseAtual.documentos_total || 0;
+                    analiseAtual.docs_extraidos = data.docs_extraidos || analiseAtual.docs_extraidos || 0;
+                    analiseAtual.docs_escaneados = data.docs_escaneados || analiseAtual.docs_escaneados || 0;
+                    analiseAtual.duracao_segundos = data.duracao_segundos || analiseAtual.duracao_segundos || 0;
+                    analiseAtual.ressalvas = data.ressalvas || analiseAtual.ressalvas || [];
+                    
+                    // Documentos podem vir em diferentes campos
+                    docsProcesso = data.documentos || data.documentos_processo || analiseAtual.documentos || [];
+                    
+                    // Monta texto canônico com o resumo do processo
+                    var resumoTexto = analiseAtual.resumo_processo || analiseAtual.resumo_executivo || analiseAtual.resumo || '';
+                    textoCanonicoAtual = 'PROCESSO: ' + nup + '\n\n' + resumoTexto;
+                    
+                    exibirAnalise(analiseAtual, data);
+                    exibirDocumentosProcesso(docsProcesso);
+                    
+                    document.getElementById('configBox').classList.remove('hidden');
+                    document.getElementById('chatSection').classList.remove('hidden');
+                    
+                    if (analiseAtual.tipo_documento_sugerido) {
+                        document.getElementById('tipoDocumento').value = analiseAtual.tipo_documento_sugerido;
+                    }
+                    if (analiseAtual.destinatario_sugerido) {
+                        document.getElementById('destinatario').value = analiseAtual.destinatario_sugerido;
+                    }
+                    
+                    // Mensagem de sucesso com detalhes
+                    var modo = data.modo || analiseAtual.modo || '';
+                    var docsTotal = data.documentos_total || docsProcesso.length || 0;
+                    var duracao = data.duracao_segundos || 0;
+                    var msgSucesso = '✅ Análise concluída! ';
+                    if (modo) msgSucesso += modo === 'pastas' ? '📁 ' + (data.pastas_total || 0) + ' pastas | ' : '📁 Raiz | ';
+                    msgSucesso += '📄 ' + docsTotal + ' documentos';
+                    if (duracao) msgSucesso += ' | ⏱️ ' + duracao + 's';
+                    
+                    status.className = 'status status-success';
+                    status.textContent = msgSucesso;
+                } else {
+                    throw new Error(data.erro || data.mensagem || 'Erro ao analisar');
+                }
+            })
+            .catch(function(e) {
+                status.className = 'status status-error';
+                status.textContent = '❌ Erro: ' + e.message;
+            })
+            .finally(function() {
+                btn.disabled = false;
+            });
+        }
+
+        function montarTextoCanonica(nup, analise) {
+            var int = analise.interessado || {};
+            var ped = analise.pedido || analise.pedido_original || {};
+            return 'PROCESSO: ' + nup + '\nOBJETO: ' + (analise.tipo_demanda || '-') + '\nINTERESSADO: ' + (int.nome || '-') + '\nPEDIDO: ' + (ped.descricao || '-') + '\nSITUACAO: ' + (analise.resumo_executivo || '-');
+        }
+
+        function exibirAnalise(a, dataCompleto) {
+            // Mapeia diferentes estruturas de resposta
+            var tipoDemanda = a.tipo_demanda || a.conclusao || 'Processo';
+            var resumo = a.resumo_executivo || a.resumo || a.resumo_processo || '-';
+            
+            document.getElementById('tipoDemanda').textContent = tipoDemanda;
+            document.getElementById('resumoExecutivo').textContent = resumo;
+            document.getElementById('resumoBox').classList.remove('hidden');
+            
+            // Interessado - pode vir como objeto ou campos diretos
+            var int = a.interessado || {};
+            if (typeof int === 'string') {
+                document.getElementById('interessadoInfo').innerHTML = '<strong>' + int + '</strong>';
+            } else {
+                var intHtml = '<strong>' + (int.nome || '-') + '</strong>';
+                if (int.matricula && int.matricula !== '-') intHtml += '<br>Mat: ' + int.matricula;
+                if (int.cargo) intHtml += '<br>' + int.cargo;
+                if (int.unidade) intHtml += '<br><small style="color:var(--text-muted)">' + int.unidade + '</small>';
+                document.getElementById('interessadoInfo').innerHTML = intHtml;
+            }
+            
+            // Pedido
+            var ped = a.pedido_original || a.pedido || {};
+            if (typeof ped === 'string') {
+                document.getElementById('pedidoInfo').innerHTML = ped;
+            } else if (ped.descricao) {
+                var pedHtml = ped.descricao;
+                if (ped.periodo) pedHtml += '<br><small style="color:var(--text-muted)">Período: ' + ped.periodo + '</small>';
+                if (ped.motivo) pedHtml += '<br><small style="color:var(--text-muted)">Motivo: ' + ped.motivo + '</small>';
+                document.getElementById('pedidoInfo').innerHTML = pedHtml;
+            } else {
+                document.getElementById('pedidoInfo').innerHTML = '<span style="color:var(--text-muted);font-style:italic">Pedido não identificado</span>';
+            }
+            
+            // Unidades - extrair dos documentos (título e conteúdo) + info processamento
+            var uni = a.unidades || {};
+            var modoProcesso = dataCompleto ? dataCompleto.modo : (a.modo || '');
+            var unidadesHtml = '';
+            
+            // Tenta extrair unidades dos títulos E conteúdo dos documentos
+            var unidadesExtraidas = [];
+            var unidadesSet = new Set();
+            var docsParaAnalise = dataCompleto ? dataCompleto.documentos : (a.documentos || docsProcesso || []);
+            
+            if (docsParaAnalise && docsParaAnalise.length > 0) {
+                docsParaAnalise.forEach(function(d) {
+                    var titulo = d.titulo || '';
+                    var conteudo = d.conteudo || d.texto || '';
+                    
+                    // Padrões para extrair sigla da unidade:
+                    // 1. "CBMAC - SIGLA" ou "CBMAC-SIGLA" no título
+                    // 2. "nº XXX/2025/CBMAC - SIGLA" no conteúdo
+                    // 3. "CBMAC - SIGLA" em qualquer lugar
+                    
+                    var patterns = [
+                        /CBMAC\s*[-–]\s*([A-Z0-9]+)/gi,
+                        /\/CBMAC\s*[-–]\s*([A-Z0-9]+)/gi,
+                        /CBMAC\s*[-–]\s*([A-Z0-9]+)\s*[-–]\s*([A-Z0-9]+)/gi
+                    ];
+                    
+                    var textoCompleto = titulo + ' ' + conteudo.substring(0, 2000);
+                    
+                    patterns.forEach(function(pattern) {
+                        var match;
+                        while ((match = pattern.exec(textoCompleto)) !== null) {
+                            var sigla = match[1].toUpperCase();
+                            // Ignora siglas muito curtas ou que são só números
+                            if (sigla.length >= 2 && !/^\d+$/.test(sigla)) {
+                                if (!unidadesSet.has(sigla)) {
+                                    unidadesSet.add(sigla);
+                                    unidadesExtraidas.push(sigla);
+                                }
+                            }
+                            // Se tiver segunda parte (ex: DEPE (DPLAN))
+                            if (match[2]) {
+                                var sigla2 = match[2].toUpperCase();
+                                if (sigla2.length >= 2 && !/^\d+$/.test(sigla2) && !unidadesSet.has(sigla2)) {
+                                    unidadesSet.add(sigla2);
+                                    unidadesExtraidas.push(sigla2);
+                                }
+                            }
+                        }
+                    });
+                });
+            }
+            
+            // Monta HTML das unidades
+            if (unidadesExtraidas.length > 0) {
+                // Primeira unidade é provavelmente a origem
+                unidadesHtml += '<strong>Origem:</strong> ' + unidadesExtraidas[0];
+                
+                // Se tiver mais unidades, mostra tramitação
+                if (unidadesExtraidas.length > 1) {
+                    unidadesHtml += '<br><strong>Tramitação:</strong> ';
+                    unidadesHtml += unidadesExtraidas.map(function(u) {
+                        return '<span class="tag" style="background:var(--bg-primary);color:var(--text-secondary);font-size:0.75rem;padding:2px 8px;">' + u + '</span>';
+                    }).join(' → ');
+                }
+            } else if (typeof uni === 'object' && (uni.demandante || uni.resposta || uni.origem)) {
+                // Fallback para dados da IA
+                if (uni.origem) unidadesHtml += '<strong>Origem:</strong> ' + uni.origem + '<br>';
+                if (uni.demandante) unidadesHtml += '<strong>Demandante:</strong> ' + uni.demandante + '<br>';
+                if (uni.atual) unidadesHtml += '<strong>Atual:</strong> ' + uni.atual + '<br>';
+                if (uni.resposta) unidadesHtml += '<strong>Resposta:</strong> ' + uni.resposta;
+            } else if (a.diretoria) {
+                unidadesHtml = '<strong>Diretoria:</strong> ' + a.diretoria;
+            } else {
+                unidadesHtml = '<span style="color:var(--text-muted)">Não identificado</span>';
+            }
+            
+            // Info do modo de processamento
+            var pastasTotal = dataCompleto ? dataCompleto.pastas_total : (a.pastas_total || 0);
+            var docsTotal = dataCompleto ? dataCompleto.documentos_total : (a.documentos_total || 0);
+            var docsExtraidos = dataCompleto ? dataCompleto.docs_extraidos : (a.docs_extraidos || 0);
+            var docsEscaneados = dataCompleto ? dataCompleto.docs_escaneados : (a.docs_escaneados || 0);
+            
+            unidadesHtml += '<br><div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border-color);font-size:0.8rem;color:var(--text-muted);">';
+            if (modoProcesso) {
+                unidadesHtml += modoProcesso === 'pastas' ? '📁 ' + pastasTotal + ' pastas' : '📁 Raiz';
+                unidadesHtml += ' | ';
+            }
+            unidadesHtml += '📄 ' + docsExtraidos + ' extraídos';
+            if (docsEscaneados > 0) {
+                unidadesHtml += ' | 📷 ' + docsEscaneados + ' escaneados';
+            }
+            unidadesHtml += '</div>';
+            
+            document.getElementById('unidadesInfo').innerHTML = unidadesHtml;
+            
+            // Legislacao
+            var leg = a.legislacao_aplicavel || a.legislacao || [];
+            if (typeof leg === 'string') {
+                document.getElementById('legislacaoInfo').innerHTML = '<span class="tag tag-info">' + leg + '</span>';
+            } else if (Array.isArray(leg) && leg.length > 0) {
+                var legHtml = '';
+                leg.forEach(function(l) { 
+                    if (typeof l === 'string') {
+                        legHtml += '<span class="tag tag-info">' + l + '</span> '; 
+                    }
+                });
+                document.getElementById('legislacaoInfo').innerHTML = legHtml || '-';
+            } else {
+                document.getElementById('legislacaoInfo').innerHTML = '-';
+            }
+            document.getElementById('infoGrid').classList.remove('hidden');
+            
+            // Alertas e Ressalvas
+            var alertas = a.alertas || [];
+            var ressalvas = dataCompleto ? (dataCompleto.ressalvas || []) : (a.ressalvas || []);
+            var todosAlertas = alertas.concat(ressalvas);
+            
+            if (todosAlertas.length > 0) {
+                var alertHtml = '';
+                todosAlertas.forEach(function(al) { 
+                    if (typeof al === 'string') {
+                        alertHtml += '<span class="tag tag-alta">⚠️ ' + al + '</span> '; 
+                    }
+                });
+                document.getElementById('alertasInfo').innerHTML = alertHtml;
+                document.getElementById('alertasBox').classList.remove('hidden');
+            }
+            
+            // Sugestão do Sistema - formato melhorado
+            var tipoSugerido = a.tipo_documento_sugerido || 'Despacho';
+            var destSugerido = a.destinatario_sugerido || '(escolher)';
+            var sugestao = a.sugestao || {};
+            
+            var sugestaoHtml = '<strong>' + tipoSugerido + '</strong> para <strong>' + destSugerido + '</strong>';
+            
+            // Se tiver sugestão detalhada
+            if (sugestao.acao) {
+                sugestaoHtml += '<br><small style="color:var(--text-muted)">Ação: ' + sugestao.acao + '</small>';
+            }
+            if (sugestao.fundamentacao) {
+                sugestaoHtml += '<br><small style="color:var(--text-muted)">Base: ' + sugestao.fundamentacao + '</small>';
+            }
+            
+            // Info de processamento
+            var docsExtraidos = dataCompleto ? dataCompleto.docs_extraidos : (a.docs_extraidos || 0);
+            var docsEscaneados = dataCompleto ? dataCompleto.docs_escaneados : (a.docs_escaneados || 0);
+            var duracao = dataCompleto ? dataCompleto.duracao_segundos : (a.duracao_segundos || 0);
+            
+            if (docsExtraidos || docsEscaneados || duracao) {
+                sugestaoHtml += '<br><small style="color:var(--text-muted)">';
+                if (docsExtraidos) sugestaoHtml += '📄 ' + docsExtraidos + ' extraídos';
+                if (docsEscaneados) sugestaoHtml += ' | 📷 ' + docsEscaneados + ' escaneados';
+                if (duracao) sugestaoHtml += ' | ⏱️ ' + duracao + 's';
+                sugestaoHtml += '</small>';
+            }
+            
+            document.getElementById('sugestaoTexto').innerHTML = sugestaoHtml;
+            document.getElementById('sugestaoBox').classList.remove('hidden');
+        }
+
+        function exibirDocumentosProcesso(docs) {
+            if (!docs || docs.length === 0) return;
+            var html = '';
+            docs.forEach(function(d, i) {
+                var titulo = d.titulo || d.nome || 'Documento ' + (i + 1);
+                var idDoc = d.id_documento || '';
+                var tipo = d.tipo || d.tipo_detectado || '';
+                var extraido = d.extraido || d.extraido_com_sucesso;
+                var icone = '📄';
+                if (tipo === 'pdf') icone = '📕';
+                else if (tipo === 'image') icone = '🖼️';
+                else if (d.is_scanned) icone = '📷';
+                
+                var infoExtra = '';
+                if (d.paginas) infoExtra += d.paginas + ' pág. ';
+                if (d.tamanho_texto) infoExtra += '~' + Math.round(d.tamanho_texto/1000) + 'KB';
+                if (d.is_scanned) infoExtra += ' [escaneado]';
+                
+                html += '<div class="doc-item" onclick="verDocumento(' + i + ')">' + icone + ' ' + titulo;
+                if (infoExtra) html += ' <small style="color:var(--text-muted)">(' + infoExtra.trim() + ')</small>';
+                html += '</div>';
+            });
+            document.getElementById('docsLista').innerHTML = html;
+            document.getElementById('docsProcessoBox').classList.remove('hidden');
+        }
+
+        function verDocumento(idx) {
+            var doc = docsProcesso[idx];
+            if (!doc) return;
+            
+            var titulo = doc.titulo || doc.nome || 'Documento';
+            var conteudo = doc.conteudo || doc.texto || '';
+            var idDoc = doc.id_documento || '';
+            var tipo = doc.tipo || doc.tipo_detectado || '';
+            var paginas = doc.paginas || '';
+            var tamanho = doc.tamanho_texto || 0;
+            
+            // Monta título com metadados
+            var tituloCompleto = titulo;
+            if (idDoc) tituloCompleto += ' (' + idDoc + ')';
+            document.getElementById('modalDocTitulo').textContent = tituloCompleto;
+            
+            // Monta conteúdo
+            var modalHtml = '';
+            
+            // Barra de info do documento
+            modalHtml += '<div style="background:var(--bg-tertiary);padding:10px;border-radius:8px;margin-bottom:15px;font-size:0.85rem;">';
+            if (tipo) modalHtml += '<span style="margin-right:15px;">📄 <strong>Tipo:</strong> ' + tipo.toUpperCase() + '</span>';
+            if (paginas) modalHtml += '<span style="margin-right:15px;">📃 <strong>Páginas:</strong> ' + paginas + '</span>';
+            if (tamanho) modalHtml += '<span style="margin-right:15px;">📊 <strong>Tamanho:</strong> ~' + Math.round(tamanho/1000) + ' KB</span>';
+            if (doc.is_scanned) modalHtml += '<span style="color:var(--warning);">📷 <strong>PDF Escaneado</strong></span>';
+            modalHtml += '</div>';
+            
+            if (conteudo && conteudo.trim()) {
+                // Formata o conteúdo para exibição
+                // Detecta se é HTML ou texto puro
+                var isHtml = /<[a-z][\s\S]*>/i.test(conteudo);
+                
+                if (isHtml) {
+                    // Se for HTML, renderiza diretamente mas com estilo
+                    modalHtml += '<div style="background:#fff;color:#000;padding:20px;border-radius:8px;max-height:400px;overflow-y:auto;font-family:\'Times New Roman\',serif;font-size:12pt;line-height:1.6;">' + conteudo + '</div>';
+                } else {
+                    // Se for texto puro, formata com quebras de linha
+                    var textoFormatado = conteudo
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/\n\n/g, '</p><p>')
+                        .replace(/\n/g, '<br>');
+                    modalHtml += '<div style="background:#fff;color:#000;padding:20px;border-radius:8px;max-height:400px;overflow-y:auto;font-family:\'Times New Roman\',serif;font-size:12pt;line-height:1.6;"><p>' + textoFormatado + '</p></div>';
+                }
+            } else if (doc.is_scanned) {
+                modalHtml += '<div style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);padding:20px;border-radius:8px;text-align:center;">';
+                modalHtml += '<p style="color:var(--warning);font-size:1.1rem;margin-bottom:10px;">📷 PDF Escaneado</p>';
+                modalHtml += '<p style="color:var(--text-muted);">Este documento é uma imagem digitalizada.<br>O texto não pôde ser extraído automaticamente.</p>';
+                if (doc.metodo_extracao) modalHtml += '<p style="color:var(--text-muted);font-size:0.8rem;margin-top:10px;">Método tentado: ' + doc.metodo_extracao + '</p>';
+                modalHtml += '</div>';
+            } else if (!conteudo && idDoc) {
+                modalHtml += '<div style="background:var(--bg-tertiary);padding:20px;border-radius:8px;text-align:center;">';
+                modalHtml += '<p style="color:var(--text-muted);">Conteúdo não disponível para este documento.</p>';
+                modalHtml += '<p style="color:var(--text-muted);font-size:0.8rem;margin-top:10px;">ID SEI: ' + idDoc + '</p>';
+                modalHtml += '</div>';
+            } else {
+                modalHtml += '<div style="background:var(--bg-tertiary);padding:20px;border-radius:8px;text-align:center;">';
+                modalHtml += '<p style="color:var(--text-muted);">Conteúdo não disponível.</p>';
+                modalHtml += '</div>';
+            }
+            
+            document.getElementById('modalDocConteudo').innerHTML = modalHtml;
+            document.getElementById('modalDoc').classList.remove('hidden');
+        }
+
+        function fecharModalDoc() {
+            document.getElementById('modalDoc').classList.add('hidden');
+        }
+
+        function gerarDocumento() {
+            if (!analiseAtual || !nupAtual) {
+                alert('Primeiro analise um processo');
+                return;
+            }
+            var tipoSei = document.getElementById('tipoDocumento').value;
+                                var templateId = window.templateSelecionado || 'DESPACHO_SIMPLES';
+                                var status = document.getElementById('statusDocumento');
+                                var destinatariosData = destinatariosSelecionados.map(function(d) {
+                                        var autoridade = todasAutoridades.find(function(a) { return a.sigla === d.sigla; });
+                                        return {
+                                                   sigla: d.sigla,
+                                                   nome: autoridade ? autoridade.nome : d.nome,
+                                                   posto_grad: autoridade ? autoridade.posto_grad : '',
+                                                   cargo: autoridade ? autoridade.cargo : '',
+                                                   unidade: autoridade ? autoridade.unidade : '',
+                                                   sigla_sei: autoridade ? autoridade.sigla_sei : ''
+                                     };
+                             });
+            
+            status.className = 'status status-loading';
+            status.innerHTML = '<span class="spinner"></span> Gerando documento...';
+            status.classList.remove('hidden');
+            
+            fetch(API + '/api/processos/gerar-documento', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    nup: nupAtual,
+                    tipo_documento: tipoSei,
+                                                     template_id: templateId,
+                    destinatarios: destinatariosData,
+                    analise: analiseAtual,
+                    usuario_sei: usuarioAtual.usuario_sei,
+                    remetente: (function() {
+                        // Busca dados do remetente na tabela de autoridades
+                        var siglaUsuario = usuarioAtual.unidade || usuarioAtual.sigla || 'DRH';
+                        var autoridadeRemetente = todasAutoridades.find(function(a) { 
+                            return a.sigla === siglaUsuario; 
+                        });
+                        if (autoridadeRemetente) {
+                            return {
+                                nome: autoridadeRemetente.nome,
+                                posto_grad: autoridadeRemetente.posto_grad,
+                                cargo: autoridadeRemetente.cargo,
+                                unidade: autoridadeRemetente.unidade,
+                                sigla_sei: autoridadeRemetente.sigla_sei,
+                                portaria: autoridadeRemetente.portaria
+                            };
+                        }
+                        // Fallback para dados do usuário
+                        return {
+                            nome: usuarioAtual.nome_completo,
+                            posto_grad: usuarioAtual.posto_grad,
+                            cargo: usuarioAtual.cargo,
+                            unidade: usuarioAtual.unidade
+                        };
+                    })()
+                })
+            })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                if (data.sucesso) {
+                    document.getElementById('previewDocumento').innerHTML = data.documento || data.html || '';
+                    document.getElementById('editorContainer').classList.remove('hidden');
+                    status.className = 'status status-success';
+                    status.textContent = 'Documento gerado! Revise e insira no SEI.';
+                } else {
+                    status.className = 'status status-error';
+                                                     status.textContent = 'Erro: ' + (data.erro || 'Falha ao gerar');
+                }
+            })
+            .catch(function(e) {
+                status.className = 'status status-error';
+                status.textContent = 'Erro: ' + e.message;
+            });
+        }
+
+        function validarDocumento() {
+            var texto = getHTMLFromPreview();
+            var tipo = document.getElementById('tipoDocumento').value;
+            
+            fetch(API + '/api/validar', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ texto: texto, tipo: tipo })
+            })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                var box = document.getElementById('validacoesBox');
+                var html = '';
+                (data.validacoes || []).forEach(function(v) {
+                    html += '<div class="validacao-item validacao-' + (v.tipo === 'ok' ? 'ok' : 'warning') + '">' + (v.tipo === 'ok' ? '✅' : '⚠️') + ' ' + v.msg + '</div>';
+                });
+                box.innerHTML = html;
+                box.classList.remove('hidden');
+            })
+            .catch(function(e) { alert('Erro: ' + e.message); });
+        }
+
+        function melhorarTexto() {
+            var texto = getHTMLFromPreview();
+            if (!texto) return;
+            var status = document.getElementById('statusDocumento');
+            status.className = 'status status-loading';
+            status.innerHTML = '<span class="spinner"></span> Melhorando texto...';
+            
+            fetch(API + '/api/melhorar-texto', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ texto: texto })
+            })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                document.getElementById('previewDocumento').innerHTML = data.texto_melhorado;
+                status.className = 'status status-success';
+                status.textContent = 'Texto melhorado!';
+            })
+            .catch(function(e) {
+                status.className = 'status status-error';
+                status.textContent = 'Erro: ' + e.message;
+            });
+        }
+
+        function inserirSEI() {
+            var html = getHTMLFromPreview();
+            var tipo = document.getElementById('tipoDocumento').value;
+            var dest = document.getElementById('destinatario').value;
+            
+            if (!html || !nupAtual) {
+                alert('Gere um documento primeiro');
+                return;
+            }
+            if (!confirm('Inserir ' + tipo + ' no processo ' + nupAtual + '?')) return;
+            
+            var status = document.getElementById('statusInserir');
+            status.className = 'status status-loading';
+            status.innerHTML = '<span class="spinner"></span> Inserindo no SEI...';
+            status.classList.remove('hidden');
+            
+            fetch(API + '/api/processos/inserir-sei', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    nup: nupAtual,
+                    tipo_documento: tipo,
+                    destinatario: dest,
+                    html: html,
+                    usuario_sei: usuarioAtual.usuario_sei
+                })
+            })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                if (data.sucesso) {
+                    status.className = 'status status-success';
+                    status.innerHTML = '<strong>Documento inserido!</strong> ' + (data.documento_nome || '');
+                } else {
+                    throw new Error(data.erro || 'Erro');
+                }
+            })
+            .catch(function(e) {
+                status.className = 'status status-error';
+                status.textContent = 'Erro: ' + e.message;
+            });
+        }
+
+        function toggleChat() {
+            var container = document.getElementById('chatContainer');
+            var btn = document.getElementById('chatToggleBtn');
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                btn.classList.add('active');
+                btn.innerHTML = '💬 Fechar Chat Analitico';
+            } else {
+                container.classList.add('hidden');
+                btn.classList.remove('active');
+                btn.innerHTML = '💬 Abrir Chat Analitico';
+            }
+        }
+
+        function atualizarModelo() {
+            var modelo = document.getElementById('modeloSelect').value;
+            document.getElementById('modeloBadge').textContent = modelo === 'gpt-5-mini' ? 'GPT-5 mini' : 'GPT-4.1 mini';
+        }
+
+        function verificarTemaSensivel() {
+            if (document.getElementById('temaSensivel').checked) {
+                document.getElementById('modeloSelect').value = 'gpt-5-mini';
+                atualizarModelo();
+            }
+        }
+
+        function handleChatFile(event) {
+            var file = event.target.files[0];
+            if (!file) return;
+            var formData = new FormData();
+            formData.append('arquivo', file);
+            
+            fetch(API + '/api/upload-arquivo', { method: 'POST', body: formData })
+                .then(function(resp) { return resp.json(); })
+                .then(function(data) {
+                    if (data.sucesso) {
+                        arquivoChatAnexado = { nome: data.arquivo.nome, texto: data.texto_completo };
+                        document.getElementById('chatFileName').textContent = data.arquivo.nome;
+                        document.getElementById('chatUploadPreview').classList.remove('hidden');
+                    } else {
+                        alert('Erro: ' + data.erro);
+                    }
+                })
+                .catch(function(e) { alert('Erro: ' + e.message); });
+            event.target.value = '';
+        }
+
+        function removerChatArquivo() {
+            arquivoChatAnexado = null;
+            document.getElementById('chatUploadPreview').classList.add('hidden');
+        }
+
+        function comandoRapido(tipo) {
+            var comandos = {
+                aprofundar: 'Aprofunde a analise',
+                discorrer: 'Discorra sobre os fundamentos',
+                comparar: 'Compare os entendimentos',
+                reescrever: 'Reescreva de forma tecnica',
+                sugerir: 'Sugira uma redacao completa'
+            };
+            document.getElementById('chatInput').value = comandos[tipo];
+            enviarChat();
+        }
+
+        function enviarChat() {
+            var input = document.getElementById('chatInput');
+            var msg = input.value.trim();
+            if (!msg) return;
+            input.value = '';
+            adicionarMsgChat('user', msg);
+            adicionarLoadingChat();
+            
+            var modelo = document.getElementById('modeloSelect').value;
+            var temaSensivel = document.getElementById('temaSensivel').checked;
+            
+            fetch(API + '/api/processos/chat', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    mensagem: msg,
+                    usuario_sei: usuarioAtual.usuario_sei,
+                    texto_canonico: textoCanonicoAtual,
+                    arquivo_anexo: arquivoChatAnexado,
+                    tipo_documento: document.getElementById('tipoDocumento').value,
+                    tema_sensivel: temaSensivel,
+                    modelo_forcado: modelo !== 'gpt-4.1-mini' ? modelo : null
+                })
+            })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                removerLoadingChat();
+                if (data.sucesso || data.resposta) {
+                    ultimaRespostaSugestao = data.resposta;
+                    adicionarMsgChat('assistant', data.resposta, data.modelo_usado || modelo);
+                } else {
+                    adicionarMsgChat('assistant', 'Erro: ' + (data.erro || 'Erro'), null);
+                }
+            })
+            .catch(function(e) {
+                removerLoadingChat();
+                adicionarMsgChat('assistant', 'Erro: ' + e.message, null);
+            });
+        }
+
+        function adicionarMsgChat(role, content, modelo) {
+            var container = document.getElementById('chatMessages');
+            var div = document.createElement('div');
+            div.className = 'chat-msg chat-msg-' + role;
+            var html = content.replace(/\n/g, '<br>');
+            var hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            var headerHtml = '<div class="chat-msg-header"><span>' + (role === 'user' ? '👤 Voce' : '🤖 Agente') + ' - ' + hora + '</span>' + (modelo ? '<span style="color:var(--info);font-size:0.65rem">' + modelo + '</span>' : '') + '</div>';
+            var contentHtml = '<div class="chat-msg-content">' + html + '</div>';
+            var actionsHtml = '';
+            if (role === 'assistant' && content.indexOf('Erro') !== 0) {
+                actionsHtml = '<div class="chat-msg-actions"><button class="btn btn-xs btn-success" onclick="inserirSugestaoNoEditor()">Inserir</button><button class="btn btn-xs btn-secondary" onclick="copiarMsg(this)">Copiar</button></div>';
+            }
+            div.innerHTML = headerHtml + contentHtml + actionsHtml;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function adicionarLoadingChat() {
+            var container = document.getElementById('chatMessages');
+            var div = document.createElement('div');
+            div.id = 'chatLoading';
+            div.className = 'chat-msg chat-msg-assistant';
+            div.innerHTML = '<div class="chat-msg-content"><span class="spinner"></span> Analisando...</div>';
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function removerLoadingChat() {
+            var el = document.getElementById('chatLoading');
+            if (el) el.remove();
+        }
+
+        function inserirSugestaoNoEditor() {
+            if (!ultimaRespostaSugestao) return;
+            var editor = document.getElementById('previewDocumento');
+            editor.focus();
+            document.execCommand('insertHTML', false, '<p>' + ultimaRespostaSugestao.replace(/\n/g, '<br>') + '</p>');
+        }
+
+        function copiarMsg(btn) {
+            var content = btn.closest('.chat-msg').querySelector('.chat-msg-content').innerText;
+            navigator.clipboard.writeText(content);
+            btn.textContent = 'Copiado!';
+            setTimeout(function() { btn.textContent = 'Copiar'; }, 1500);
+        }
+
+        document.getElementById('nupInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') lerProcesso();
+        });
+        
+        document.getElementById('chatInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                enviarChat();
+            }
+        });
+// ===== BLOCOS DE ASSINATURA v2 =====
+var blocoAtual = null;
+var docsBloco = [];
+var docParaAssinar = null;
+var ultimoScreenshot = null;
+
+function abrirModalBlocos() {
+    document.getElementById('modalBlocos').classList.remove('hidden');
+    document.getElementById('inputBlocoNumero').focus();
+}
+
+function fecharModalBlocos() {
+    document.getElementById('modalBlocos').classList.add('hidden');
+}
+
+function carregarBloco() {
+    var blocoId = document.getElementById('inputBlocoNumero').value.trim();
+    if (!blocoId) {
+        alert('Digite o número do bloco');
+        return;
+    }
+    
+    blocoAtual = blocoId;
+    
+    var loading = document.getElementById('blocoLoading');
+    var resultado = document.getElementById('blocoResultado');
+    var erro = document.getElementById('blocoErro');
+    
+    loading.classList.remove('hidden');
+    resultado.classList.add('hidden');
+    erro.classList.add('hidden');
+    document.getElementById('blocoLoadingMsg').textContent = 'Carregando documentos do bloco ' + blocoId + '...';
+    
+    fetch(API + '/api/blocos/' + blocoId + '?usuario_sei=' + encodeURIComponent(usuarioAtual.usuario_sei), {
+        headers: getAuthHeaders()
+    })
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+        loading.classList.add('hidden');
+        
+        if (data.sucesso) {
+            docsBloco = data.itens || [];
+            
+            // Atualiza stats
+            document.getElementById('statTotal').textContent = data.total || 0;
+            document.getElementById('statPendentes').textContent = data.pendentes || 0;
+            document.getElementById('statAssinados').textContent = data.assinados || 0;
+            
+            renderizarDocsBloco(docsBloco);
+            resultado.classList.remove('hidden');
+        } else {
+            erro.textContent = '❌ ' + (data.erro || 'Erro ao carregar bloco');
+            erro.classList.remove('hidden');
+        }
+    })
+    .catch(function(e) {
+        loading.classList.add('hidden');
+        erro.textContent = '❌ Erro: ' + e.message;
+        erro.classList.remove('hidden');
+    });
+}
+
+function verDocumentoAvulso() {
+    var seiNumero = document.getElementById('inputDocumentoAvulso').value.trim();
+    if (!seiNumero) {
+        alert('Digite o número do documento');
+        return;
+    }
+    visualizarDoc(seiNumero);
+}
+
+function renderizarDocsBloco(docs) {
+    var lista = document.getElementById('docsLista');
+    
+    if (!docs || docs.length === 0) {
+        lista.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)">Nenhum documento no bloco</div>';
+        return;
+    }
+    
+    var html = '';
+    docs.forEach(function(doc, idx) {
+        var statusClass = doc.pendente_para_voce ? 'pendente' : 'assinado';
+        var statusTexto = doc.pendente_para_voce ? '⏳ Pendente' : '✅ Assinado';
+        var checkDisabled = doc.pendente_para_voce ? '' : 'disabled';
+        
+        // Extrai SEI nº do documento (pode estar no campo documento ou precisar parsear)
+        var seiNumero = doc.documento || '';
+        
+        html += '<div class="doc-bloco-item" data-doc="' + escapeHtml(doc.documento) + '" data-processo="' + escapeHtml(doc.processo) + '">';
+        html += '<div class="checkbox-col"><input type="checkbox" class="doc-checkbox" value="' + escapeHtml(doc.documento) + '" ' + checkDisabled + ' onchange="atualizarContador()"></div>';
+        html += '<div class="doc-info">';
+        html += '<span class="doc-numero">' + escapeHtml(doc.documento) + '</span>';
+        html += '<span class="doc-tipo">' + escapeHtml(doc.tipo || 'Documento') + '</span>';
+        html += '</div>';
+        html += '<span class="doc-processo">' + escapeHtml(doc.processo || '-') + '</span>';
+        html += '<span class="doc-status ' + statusClass + '">' + statusTexto + '</span>';
+        html += '<div class="doc-acoes">';
+        html += '<button class="btn btn-xs btn-info" onclick="visualizarDoc(\'' + escapeHtml(doc.documento) + '\')">👁️</button>';
+        if (doc.pendente_para_voce) {
+            html += '<button class="btn btn-xs btn-success" onclick="visualizarDoc(\'' + escapeHtml(doc.documento) + '\')">✍️</button>';
+        }
+        html += '</div>';
+        html += '</div>';
+    });
+    
+    lista.innerHTML = html;
+}
+
+function toggleSelectAll() {
+    var selectAll = document.getElementById('selectAllDocs');
+    var checkboxes = document.querySelectorAll('.doc-checkbox:not(:disabled)');
+    checkboxes.forEach(function(cb) {
+        cb.checked = selectAll.checked;
+    });
+    atualizarContador();
+}
+
+function atualizarContador() {
+    var checkboxes = document.querySelectorAll('.doc-checkbox:checked');
+    var count = checkboxes.length;
+    document.getElementById('countSelecionados').textContent = count;
+    document.getElementById('btnAssinarSelecionados').disabled = count === 0;
+}
+
+function visualizarDoc(seiNumero) {
+    docParaAssinar = { documento: seiNumero };
+    
+    document.getElementById('modalVisualizarDoc').classList.remove('hidden');
+    document.getElementById('visualizarLoading').classList.remove('hidden');
+    document.getElementById('visualizadorContainer').classList.add('hidden');
+    
+    fetch(API + '/api/documento/visualizar', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+            usuario_sei: usuarioAtual.usuario_sei,
+            documento_id: seiNumero
+        })
+    })
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+        document.getElementById('visualizarLoading').classList.add('hidden');
+        
+        if (data.sucesso || data.dados_extraidos) {
+            // Preenche dados
+            var tipoNum = (data.tipo_documento || 'Documento') + ' ' + (data.numero_documento || '');
+            document.getElementById('vizTipoNumero').textContent = tipoNum.trim() || '-';
+            document.getElementById('vizSeiNumero').textContent = data.sei_numero || seiNumero;
+            document.getElementById('vizNup').textContent = data.nup || '-';
+            document.getElementById('vizDestinatario').textContent = data.destinatario || '-';
+            document.getElementById('vizConteudo').textContent = data.conteudo_resumo || '(Conteúdo não disponível)';
+            
+            // Atualiza docParaAssinar com dados completos
+            docParaAssinar = {
+                documento: seiNumero,
+                tipo: data.tipo_documento,
+                numero: data.numero_documento,
+                nup: data.nup
+            };
+            
+            document.getElementById('visualizadorContainer').classList.remove('hidden');
+        } else {
+            alert('❌ Erro: ' + (data.erro || 'Não foi possível carregar'));
+            fecharModalVisualizarDoc();
+        }
+    })
+    .catch(function(e) {
+        document.getElementById('visualizarLoading').classList.add('hidden');
+        alert('❌ Erro: ' + e.message);
+        fecharModalVisualizarDoc();
+    });
+}
+
+function fecharModalVisualizarDoc() {
+    document.getElementById('modalVisualizarDoc').classList.add('hidden');
+}
+
+function assinarDoVisualizador() {
+    if (!docParaAssinar) return;
+    fecharModalVisualizarDoc();
+    prepararAssinatura(
+        docParaAssinar.documento, 
+        (docParaAssinar.tipo || 'Documento') + ' ' + (docParaAssinar.numero || ''),
+        docParaAssinar.nup || '-'
+    );
+}
+
+function prepararAssinatura(seiNumero, docNome, nup) {
+    docParaAssinar = { documento: seiNumero, nome: docNome, nup: nup };
+    document.getElementById('confirmDocNome').textContent = docNome;
+    document.getElementById('confirmDocSei').textContent = seiNumero;
+    document.getElementById('confirmDocNup').textContent = nup;
+    document.getElementById('confirmLoading').classList.add('hidden');
+    document.getElementById('confirmBotoes').classList.remove('hidden');
+    document.getElementById('modalConfirmarAssinatura').classList.remove('hidden');
+}
+
+function fecharModalConfirmarAssinatura() {
+    document.getElementById('modalConfirmarAssinatura').classList.add('hidden');
+    docParaAssinar = null;
+}
+
+function confirmarAssinatura() {
+    if (!docParaAssinar) return;
+    
+    document.getElementById('confirmLoading').classList.remove('hidden');
+    document.getElementById('confirmBotoes').classList.add('hidden');
+    
+    fetch(API + '/api/documento/assinar', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+            usuario_sei: usuarioAtual.usuario_sei,
+            documento_id: docParaAssinar.documento
+        })
+    })
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+        fecharModalConfirmarAssinatura();
+        
+        if (data.sucesso || data.assinado) {
+            ultimoScreenshot = data.screenshot;
+            mostrarComprovante(data.mensagem || 'Documento assinado com sucesso!', data.screenshot);
+            // Recarrega bloco
+            if (blocoAtual) {
+                carregarBloco();
+            }
+        } else {
+            alert('❌ Erro: ' + (data.erro || 'Falha na assinatura'));
+        }
+    })
+    .catch(function(e) {
+        fecharModalConfirmarAssinatura();
+        alert('❌ Erro: ' + e.message);
+    });
+}
+
+function assinarSelecionados() {
+    var checkboxes = document.querySelectorAll('.doc-checkbox:checked');
+    if (checkboxes.length === 0) {
+        alert('Selecione ao menos um documento');
+        return;
+    }
+    
+    // Pega o primeiro documento selecionado
+    var primeiroDoc = checkboxes[0].value;
+    var docInfo = docsBloco.find(function(d) { return d.documento === primeiroDoc; });
+    
+    if (docInfo) {
+        prepararAssinatura(primeiroDoc, docInfo.tipo || 'Documento', docInfo.processo || '-');
+    }
+}
+
+function assinarBlocoCompleto() {
+    if (!blocoAtual) return;
+    
+    var pendentes = docsBloco.filter(function(d) { return d.pendente_para_voce; });
+    if (pendentes.length === 0) {
+        alert('✅ Todos os documentos já estão assinados!');
+        return;
+    }
+    
+    if (!confirm('Deseja assinar TODOS os ' + pendentes.length + ' documentos pendentes do bloco ' + blocoAtual + '?')) {
+        return;
+    }
+    
+    // Mostra loading
+    document.getElementById('blocoLoading').classList.remove('hidden');
+    document.getElementById('blocoLoadingMsg').textContent = 'Assinando ' + pendentes.length + ' documentos...';
+    document.getElementById('blocoResultado').classList.add('hidden');
+    
+    fetch(API + '/api/bloco/assinar', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+            usuario_sei: usuarioAtual.usuario_sei,
+            bloco_id: blocoAtual
+        })
+    })
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+        document.getElementById('blocoLoading').classList.add('hidden');
+        
+        if (data.sucesso || data.assinado) {
+            ultimoScreenshot = data.screenshot;
+            mostrarComprovante(data.mensagem || 'Bloco assinado com sucesso!', data.screenshot);
+            // Recarrega bloco
+            carregarBloco();
+        } else {
+            document.getElementById('blocoResultado').classList.remove('hidden');
+            alert('❌ Erro: ' + (data.erro || 'Falha na assinatura'));
+        }
+    })
+    .catch(function(e) {
+        document.getElementById('blocoLoading').classList.add('hidden');
+        document.getElementById('blocoResultado').classList.remove('hidden');
+        alert('❌ Erro: ' + e.message);
+    });
+}
+
+function mostrarComprovante(mensagem, screenshot) {
+    document.getElementById('comprovanteMensagem').textContent = mensagem;
+    
+    var container = document.getElementById('comprovanteScreenshot');
+    if (screenshot) {
+        container.innerHTML = '<img src="data:image/png;base64,' + screenshot + '" alt="Comprovante de assinatura">';
+    } else {
+        container.innerHTML = '<p style="color:var(--text-muted);padding:20px">📸 Screenshot não disponível</p>';
+    }
+    
+    document.getElementById('modalComprovante').classList.remove('hidden');
+}
+
+function fecharModalComprovante() {
+    document.getElementById('modalComprovante').classList.add('hidden');
+}
+
+function baixarComprovante() {
+    if (!ultimoScreenshot) {
+        alert('Comprovante não disponível');
+        return;
+    }
+    
+    var link = document.createElement('a');
+    link.download = 'comprovante_assinatura_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.png';
+    link.href = 'data:image/png;base64,' + ultimoScreenshot;
+    link.click();
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Enter para buscar bloco
+document.addEventListener('DOMContentLoaded', function() {
+    var inputBloco = document.getElementById('inputBlocoNumero');
+    if (inputBloco) {
+        inputBloco.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') carregarBloco();
+        });
+    }
+});
+
+    </script>
+</body>
+</html>

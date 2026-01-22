@@ -1,0 +1,7 @@
+<p style="text-align: justify; text-indent: 1.5cm;">Tomo ciência do teor do presente processo.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Cumpridas as providências necessárias, encaminhem-se os autos para arquivamento.</p>
+
+<p style="text-align: center;"><b>{NOME_REMETENTE} - {POSTO_GRAD_REMETENTE}</b><br>
+{CARGO_REMETENTE}<br>
+{SIGLA_UNIDADE}/CBMAC</p>

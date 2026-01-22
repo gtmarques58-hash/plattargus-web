@@ -1,0 +1,18 @@
+<p style="text-align: left;">Ao Senhor<br>
+<b>{NOME_COMANDANTE}</b><br>
+{CARGO_COMANDANTE}</p>
+
+<p style="text-align: left;">Assunto: <b>{ASSUNTO}</b></p>
+
+<p style="text-align: left; text-indent: 1.5cm;">Senhor Comandante,</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Eu, {NOME_REQUERENTE}, {POSTO_GRAD_REQUERENTE}, matrícula nº {MATRICULA}, lotado(a) no(a) {UNIDADE_LOTACAO}, venho, respeitosamente, à presença de Vossa Senhoria {TEXTO_SOLICITACAO}.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">{TEXTO_COMPLEMENTAR}</p>
+
+<p style="text-align: justify;">Nestes termos, Pede deferimento.</p>
+
+<p style="text-align: left; text-indent: 1.5cm;">Atenciosamente,</p>
+
+<p style="text-align: center;"><b>{NOME_REQUERENTE} - {POSTO_GRAD_REQUERENTE}</b><br>
+Matrícula nº {MATRICULA}</p>

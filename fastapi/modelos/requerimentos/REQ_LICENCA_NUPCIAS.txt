@@ -1,0 +1,18 @@
+<p style="text-align: left;">Ao Senhor<br>
+<b>{NOME_COMANDANTE}</b><br>
+{CARGO_COMANDANTE}</p>
+
+<p style="text-align: left;">Assunto: <b>Solicitação de Licença de Núpcias.</b></p>
+
+<p style="text-align: left; text-indent: 1.5cm;">Senhor Comandante,</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Eu, {NOME_REQUERENTE}, {POSTO_GRAD_REQUERENTE}, matrícula nº {MATRICULA}, venho, respeitosamente, à presença de Vossa Senhoria requerer a concessão de licença de 08 (oito) dias por motivo de núpcias, conforme previsto na legislação estadual do Corpo de Bombeiros Militar do Estado do Acre, em razão de meu casamento, registrado sob a certidão de casamento matrícula nº {MATRICULA_CERTIDAO}.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Informo que me apresentarei ao serviço no dia {DATA_RETORNO}.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Coloco-me à disposição para quaisquer esclarecimentos e reitero protestos de elevada estima e consideração.</p>
+
+<p style="text-align: left; text-indent: 1.5cm;">Atenciosamente,</p>
+
+<p style="text-align: center;"><b>{NOME_REQUERENTE} - {POSTO_GRAD_REQUERENTE}</b><br>
+Matrícula nº {MATRICULA}</p>

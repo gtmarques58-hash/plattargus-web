@@ -1,0 +1,146 @@
+version: "3.8"
+
+# =============================================================================
+# PLATTARGUS-DETALHAR - Serviço Isolado para Operações Longas
+# =============================================================================
+# Local: /opt/plattargus-web/plattargus-detalhar/
+# Porta API: 8103
+# Porta Worker Debug: 8104
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # API - Recebe requisições e gerencia fila
+  # ===========================================================================
+  detalhar-api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    container_name: plattargus-detalhar-api
+    env_file: .env
+    depends_on:
+      detalhar-postgres:
+        condition: service_healthy
+      detalhar-redis:
+        condition: service_healthy
+    restart: always
+    ports:
+      - "8103:8000"
+    volumes:
+      - ../data/detalhar:/data/detalhar:ro
+    networks:
+      - plattargus-detalhar-net
+      - plattargus
+
+  # ===========================================================================
+  # WORKER - Processa jobs pesados (Playwright)
+  # ===========================================================================
+  detalhar-worker:
+    build:
+      context: .
+      dockerfile: docker/worker/Dockerfile
+    container_name: plattargus-detalhar-worker
+    env_file: .env
+    depends_on:
+      detalhar-postgres:
+        condition: service_healthy
+      detalhar-redis:
+        condition: service_healthy
+    init: true
+    restart: always
+    shm_size: "2gb"
+    environment:
+      - ARGUS_MASTER_KEY=${ARGUS_MASTER_KEY}
+      - ARGUS_DB_PATH=/data/argus_diretorias.db
+      - ARGUS_AUTORIDADES_DB=/data/argus_autoridades.db
+      - USAR_LLM=${USAR_LLM:-true}
+      - ARGUS_API_KEY=${ARGUS_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PYTHONUNBUFFERED=1
+      - TZ=America/Rio_Branco
+    volumes:
+      - ../fastapi/scripts:/app/scripts:ro
+      - ../data/sessions:/data/sessions
+      - ../data/detalhar:/data/detalhar
+      - ../data/sei_storage:/data/sei_storage
+      - ../data/evidencias:/data/evidencias
+      - ../data:/data
+      - ../data/logs/worker:/app/logs
+    ports:
+      - "8104:8102"
+    networks:
+      - plattargus-detalhar-net
+      - plattargus
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 8G
+        reservations:
+          cpus: "1.0"
+          memory: 4G
+
+  # ===========================================================================
+  # POSTGRES - Banco isolado do detalhar
+  # ===========================================================================
+  detalhar-postgres:
+    image: postgres:16-alpine
+    container_name: plattargus-detalhar-postgres
+    environment:
+      POSTGRES_DB: argus_detalhar
+      POSTGRES_USER: argus
+      POSTGRES_PASSWORD: ${DETALHAR_DB_PASSWORD:-argus_detalhar_2026}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - detalhar_pgdata:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d
+    restart: always
+    networks:
+      - plattargus-detalhar-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U argus -d argus_detalhar"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================================================
+  # REDIS - Fila isolada do detalhar
+  # ===========================================================================
+  detalhar-redis:
+    image: redis:7-alpine
+    container_name: plattargus-detalhar-redis
+    command: >
+      redis-server 
+      --appendonly yes 
+      --maxmemory 512mb 
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - detalhar_redisdata:/data
+    restart: always
+    networks:
+      - plattargus-detalhar-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# =============================================================================
+# VOLUMES
+# =============================================================================
+volumes:
+  detalhar_pgdata:
+    name: plattargus_detalhar_pgdata
+  detalhar_redisdata:
+    name: plattargus_detalhar_redisdata
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+networks:
+  plattargus-detalhar-net:
+    driver: bridge
+    name: plattargus-detalhar-net
+  plattargus:
+    external: true
+    name: plattargus-web_plattargus

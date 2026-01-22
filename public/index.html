@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlattArgus - Assistente SEI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg-primary:#0a0e14;--bg-secondary:#111820;--bg-tertiary:#1a222d;--bg-card:linear-gradient(145deg,#141c26 0%,#0d1219 100%);--accent:#e63946;--accent-hover:#ff4d5a;--accent-glow:rgba(230,57,70,0.4);--text-primary:#f1f5f9;--text-secondary:#94a3b8;--text-muted:#64748b;--success:#10b981;--warning:#f59e0b;--error:#ef4444;--info:#3b82f6;--border-color:rgba(255,255,255,0.08);--border-accent:rgba(230,57,70,0.3);--font-display:'Plus Jakarta Sans',sans-serif}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:var(--font-display);background:var(--bg-primary);color:var(--text-primary);min-height:100vh;line-height:1.6}
+        body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:linear-gradient(rgba(230,57,70,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(230,57,70,0.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:-1}
+        .header{background:var(--bg-secondary);border-bottom:1px solid var(--border-color);padding:12px 24px;position:sticky;top:0;z-index:100}
+        .header-content{max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+        .logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--accent) 0%,#b91c1c 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;box-shadow:0 0 20px var(--accent-glow)}
+        .logo-text{font-weight:700;font-size:1.1rem;color:var(--text-primary)}
+        .logo-text span{color:var(--accent)}
+        .logo-subtitle{color:var(--text-muted);font-size:0.75rem;margin-left:10px;padding-left:10px;border-left:1px solid var(--border-color)}
+        .user-area{display:flex;align-items:center;gap:16px}
+        .user-badge{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--bg-tertiary);border-radius:10px;border:1px solid var(--border-color)}
+        .user-avatar{width:36px;height:36px;background:linear-gradient(135deg,var(--accent) 0%,#b91c1c 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:600}
+        .user-info{display:flex;flex-direction:column}
+        .user-name{font-weight:600;font-size:0.9rem;color:var(--accent)}
+        .user-cargo{font-size:0.7rem;color:var(--text-muted)}
+        .user-sei{font-size:0.75rem;color:var(--text-muted);display:flex;align-items:center;gap:4px}
+        .status-sei{display:flex;align-items:center;gap:6px;font-size:0.75rem;padding:6px 12px;border-radius:20px;background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3)}
+        .status-sei::before{content:'';width:6px;height:6px;background:var(--success);border-radius:50%;animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+        .btn-sair{background:var(--accent);color:white;border:none;padding:8px 16px;border-radius:8px;font-weight:600;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.2s}
+        .btn-sair:hover{background:var(--accent-hover);transform:translateY(-1px)}
+        .main{max-width:1200px;margin:0 auto;padding:40px 24px}
+        .welcome-section{text-align:center;margin-bottom:40px}
+        .welcome-title{font-size:2rem;font-weight:700;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:12px}
+        .welcome-subtitle{color:var(--text-muted);font-size:1rem}
+        .cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-bottom:40px}
+        @media(max-width:900px){.cards-grid{grid-template-columns:repeat(2,1fr)}}
+        @media(max-width:600px){.cards-grid{grid-template-columns:1fr}}
+        .card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:16px;padding:28px;cursor:pointer;transition:all 0.3s;text-decoration:none;display:block}
+        .card:hover{border-color:var(--border-accent);box-shadow:0 0 40px var(--accent-glow);transform:translateY(-4px)}
+        .card-icon{width:56px;height:56px;background:linear-gradient(135deg,rgba(230,57,70,0.15) 0%,rgba(230,57,70,0.05) 100%);border:1px solid var(--border-accent);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.75rem;margin-bottom:20px}
+        .card-title{font-weight:700;font-size:1.15rem;color:var(--text-primary);margin-bottom:6px}
+        .card-subtitle{font-size:0.85rem;color:var(--text-muted);margin-bottom:16px}
+        .card-description{font-size:0.9rem;color:var(--text-secondary);line-height:1.6}
+        .acoes-section{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:16px;padding:24px}
+        .acoes-title{font-size:1rem;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+        .acoes-grid{display:flex;gap:12px;flex-wrap:wrap}
+        .btn-acao{background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-primary);padding:10px 18px;border-radius:8px;font-weight:500;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all 0.2s}
+        .btn-acao:hover{border-color:var(--accent);color:var(--accent);background:rgba(230,57,70,0.1)}
+        .login-container{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+        .login-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:20px;padding:40px;width:100%;max-width:420px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.6)}
+        .login-header{text-align:center;margin-bottom:32px}
+        .login-logo{font-size:3rem;margin-bottom:16px}
+        .login-title{font-size:1.75rem;font-weight:700;margin-bottom:4px}
+        .login-subtitle{color:var(--text-muted);font-size:0.9rem}
+        .login-tabs{display:flex;gap:8px;margin-bottom:24px}
+        .login-tab{flex:1;padding:12px;border:none;border-radius:8px;font-weight:600;font-size:0.9rem;cursor:pointer;transition:all 0.2s}
+        .login-tab.active{background:linear-gradient(135deg,var(--accent) 0%,#b91c1c 100%);color:white}
+        .login-tab:not(.active){background:var(--bg-tertiary);color:var(--text-secondary)}
+        .form-group{margin-bottom:20px}
+        .form-label{display:block;font-size:0.85rem;font-weight:500;margin-bottom:8px;color:var(--text-secondary)}
+        .form-input{width:100%;padding:14px 16px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:10px;color:var(--text-primary);font-size:0.95rem;font-family:var(--font-display);transition:all 0.2s}
+        .form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+        .form-hint{font-size:0.75rem;color:var(--text-muted);margin-top:6px}
+        .btn-login{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent) 0%,#b91c1c 100%);color:white;border:none;border-radius:10px;font-weight:600;font-size:1rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+        .btn-login:hover{background:var(--accent-hover);transform:translateY(-1px)}
+        .btn-login:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+        .login-footer{text-align:center;margin-top:24px;font-size:0.75rem;color:var(--text-muted)}
+        .alert{padding:12px 16px;border-radius:8px;font-size:0.85rem;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+        .alert-success{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:var(--success)}
+        .alert-error{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:var(--error)}
+        .spinner{width:18px;height:18px;border:2px solid var(--border-color);border-top-color:currentColor;border-radius:50%;animation:spin 0.8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.3s}
+        .modal-overlay.active{opacity:1;visibility:visible}
+        .modal{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:20px;padding:32px;width:90%;max-width:480px;max-height:90vh;overflow-y:auto;transform:scale(0.9);transition:transform 0.3s}
+        .modal-overlay.active .modal{transform:scale(1)}
+        .modal-header{text-align:center;margin-bottom:24px}
+        .modal-icon{font-size:3rem;margin-bottom:12px}
+        .modal-title{font-size:1.5rem;font-weight:700;margin-bottom:4px}
+        .modal-subtitle{color:var(--text-muted);font-size:0.85rem}
+        .modal-footer{display:flex;gap:12px;margin-top:24px}
+        .modal-footer .btn{flex:1;padding:12px;border-radius:10px;font-weight:600;font-size:0.9rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+        .btn-secondary{background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-primary)}
+        .btn-primary{background:linear-gradient(135deg,var(--accent) 0%,#b91c1c 100%);border:none;color:white}
+        .hidden{display:none!important}
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <div id="credencialModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-icon">🔐</div>
+                <h2 class="modal-title">Vincular Credencial SEI</h2>
+                <p class="modal-subtitle">Cadastre sua conta do SEI para usar o PlattArgus</p>
+            </div>
+            <div id="credencialAlert"></div>
+            <form id="credencialForm">
+                <div class="form-group">
+                    <label class="form-label">Usuário SEI</label>
+                    <input type="text" id="credencialUsuario" class="form-input" readonly style="background:var(--bg-tertiary);color:var(--text-muted)">
+                    <p class="form-hint">🔒 Travado - seu usuário SEI está vinculado à sua conta</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Senha do SEI</label>
+                    <input type="password" id="credencialSenha" class="form-input" placeholder="Sua senha do SEI" required>
+                    <p class="form-hint">⚠️ Esta senha será armazenada de forma segura</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Órgão</label>
+                    <select id="credencialOrgao" class="form-input" required>
+                        <option value="31">CBMAC</option>
+                        <option value="26">PMAC</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cargo para Assinatura</label>
+                    <input type="text" id="credencialCargo" class="form-input" placeholder="Ex: Diretor(a), Chefe de Seção" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="PlattArgus.closeCredencial()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="credencialSubmit">🔐 Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        const PlattArgus={
+            API_URL:window.location.origin+'/api',
+            user:null,
+            token:null,
+            init(){
+                this.token=localStorage.getItem('plattargus_token');
+                const userJson=localStorage.getItem('plattargus_usuario');
+                if(userJson){try{this.user=JSON.parse(userJson)}catch(e){this.user=null}}
+                if(this.token&&this.user){this.verificarSessao()}else{this.renderLogin()}
+                document.getElementById('credencialForm').addEventListener('submit',(e)=>{e.preventDefault();this.submitCredencial()});
+            },
+            async api(endpoint,method='GET',body=null){
+                const options={method,headers:{'Content-Type':'application/json','Authorization':'Bearer '+this.token}};
+                if(body)options.body=JSON.stringify(body);
+                const response=await fetch(this.API_URL+endpoint,options);
+                return response.json();
+            },
+            async verificarSessao(){
+                try{
+                    const response=await this.api('/auth/verificar','POST');
+                    if(response.valid){this.user=response.usuario;localStorage.setItem('plattargus_usuario',JSON.stringify(this.user));this.renderDashboard()}
+                    else{this.logout()}
+                }catch(error){this.logout()}
+            },
+            async login(usuarioSei,senha){
+                try{
+                    const response=await fetch(this.API_URL+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario_sei:usuarioSei,senha})});
+                    const data=await response.json();
+                    if(data.success){this.token=data.token;this.user=data.usuario;localStorage.setItem('plattargus_token',this.token);localStorage.setItem('plattargus_usuario',JSON.stringify(this.user));this.renderDashboard();return{success:true}}
+                    return{success:false,message:data.message};
+                }catch(error){return{success:false,message:'Erro de conexão'}}
+            },
+            logout(){this.token=null;this.user=null;localStorage.removeItem('plattargus_token');localStorage.removeItem('plattargus_usuario');this.renderLogin()},
+            openCredencial(){
+                document.getElementById('credencialUsuario').value=this.user.usuario_sei;
+                document.getElementById('credencialSenha').value='';
+                document.getElementById('credencialCargo').value=this.user.cargo||'';
+                document.getElementById('credencialAlert').innerHTML='';
+                document.getElementById('credencialModal').classList.add('active');
+            },
+            closeCredencial(){document.getElementById('credencialModal').classList.remove('active')},
+            async submitCredencial(){
+                const senha=document.getElementById('credencialSenha').value;
+                const orgao=document.getElementById('credencialOrgao').value;
+                const cargo=document.getElementById('credencialCargo').value;
+                const btn=document.getElementById('credencialSubmit');
+                const alertDiv=document.getElementById('credencialAlert');
+                btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Salvando...';
+                try{
+                    const response=await this.api('/credencial/vincular','POST',{senha_sei:senha,orgao_id:orgao,cargo:cargo,testar_login:true});
+                    if(response.success){alertDiv.innerHTML='<div class="alert alert-success">✅ Credencial vinculada!</div>';this.user.tem_credencial_sei=true;this.user.cargo=cargo;localStorage.setItem('plattargus_usuario',JSON.stringify(this.user));setTimeout(()=>{this.closeCredencial();this.renderDashboard()},1500)}
+                    else{alertDiv.innerHTML='<div class="alert alert-error">❌ '+response.message+'</div>'}
+                }catch(error){alertDiv.innerHTML='<div class="alert alert-error">❌ Erro de conexão</div>'}
+                finally{btn.disabled=false;btn.innerHTML='🔐 Salvar'}
+            },
+            irParaAnalisar(){if(!this.user.tem_credencial_sei){this.openCredencial();return}window.location.href='/analisar.html'},
+            irParaGerar(){if(!this.user.tem_credencial_sei){this.openCredencial();return}window.location.href='/gerar.html'},
+            irParaLegislacao(){window.location.href='/legislacao.html'},
+            renderLogin(){
+                document.getElementById('app').innerHTML=`
+                    <div class="login-container">
+                        <div class="login-card">
+                            <div class="login-header">
+                                <div class="login-logo">🔥</div>
+                                <h1 class="login-title">Platt<span style="color:var(--accent)">Argus</span></h1>
+                                <p class="login-subtitle">Assistente SEI Inteligente</p>
+                            </div>
+                            <div id="loginAlert"></div>
+                            <div class="login-tabs">
+                                <button class="login-tab active" onclick="PlattArgus.showLoginTab('login')">Login</button>
+                                <button class="login-tab" onclick="PlattArgus.showLoginTab('primeiro')">Primeiro Acesso</button>
+                            </div>
+                            <form id="loginForm" onsubmit="PlattArgus.handleLogin(event)">
+                                <div class="form-group">
+                                    <label class="form-label">Usuário SEI</label>
+                                    <input type="text" id="loginUsuario" class="form-input" placeholder="seu.usuario" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Senha</label>
+                                    <input type="password" id="loginSenha" class="form-input" placeholder="••••••••" required>
+                                </div>
+                                <button type="submit" class="btn-login" id="loginBtn">Entrar</button>
+                            </form>
+                            <form id="primeiroForm" class="hidden" onsubmit="PlattArgus.handlePrimeiroAcesso(event)">
+                                <div class="form-group">
+                                    <label class="form-label">Usuário SEI</label>
+                                    <input type="text" id="primeiroUsuario" class="form-input" placeholder="seu.usuario" required>
+                                    <p class="form-hint">Seu usuário deve ter sido pré-cadastrado</p>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Criar Senha</label>
+                                    <input type="password" id="primeiroSenha" class="form-input" placeholder="Mínimo 6 caracteres" required minlength="6">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Confirmar Senha</label>
+                                    <input type="password" id="primeiroSenhaConfirm" class="form-input" placeholder="Repita a senha" required>
+                                </div>
+                                <button type="submit" class="btn-login" id="primeiroBtn">Cadastrar Senha</button>
+                            </form>
+                            <p class="login-footer">PlattArgus v3.0 • CBMAC</p>
+                        </div>
+                    </div>`;
+            },
+            showLoginTab(tab){
+                const loginForm=document.getElementById('loginForm');
+                const primeiroForm=document.getElementById('primeiroForm');
+                const tabs=document.querySelectorAll('.login-tab');
+                if(tab==='login'){loginForm.classList.remove('hidden');primeiroForm.classList.add('hidden');tabs[0].classList.add('active');tabs[1].classList.remove('active')}
+                else{loginForm.classList.add('hidden');primeiroForm.classList.remove('hidden');tabs[0].classList.remove('active');tabs[1].classList.add('active')}
+                document.getElementById('loginAlert').innerHTML='';
+            },
+            async handleLogin(event){
+                event.preventDefault();
+                const usuario=document.getElementById('loginUsuario').value;
+                const senha=document.getElementById('loginSenha').value;
+                const btn=document.getElementById('loginBtn');
+                const alertDiv=document.getElementById('loginAlert');
+                btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Entrando...';
+                const result=await this.login(usuario,senha);
+                if(!result.success){alertDiv.innerHTML='<div class="alert alert-error">❌ '+result.message+'</div>';btn.disabled=false;btn.innerHTML='Entrar'}
+            },
+            async handlePrimeiroAcesso(event){
+                event.preventDefault();
+                const usuario=document.getElementById('primeiroUsuario').value;
+                const senha=document.getElementById('primeiroSenha').value;
+                const senhaConfirm=document.getElementById('primeiroSenhaConfirm').value;
+                const btn=document.getElementById('primeiroBtn');
+                const alertDiv=document.getElementById('loginAlert');
+                if(senha!==senhaConfirm){alertDiv.innerHTML='<div class="alert alert-error">❌ As senhas não conferem</div>';return}
+                btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Cadastrando...';
+                try{
+                    const response=await fetch(this.API_URL+'/auth/primeiro-acesso',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario_sei:usuario,senha:senha,senha_confirmation:senhaConfirm})});
+                    const data=await response.json();
+                    if(data.success){alertDiv.innerHTML='<div class="alert alert-success">✅ Senha cadastrada! Faça login.</div>';setTimeout(()=>this.showLoginTab('login'),1500)}
+                    else{alertDiv.innerHTML='<div class="alert alert-error">❌ '+data.message+'</div>'}
+                }catch(error){alertDiv.innerHTML='<div class="alert alert-error">❌ Erro de conexão</div>'}
+                finally{btn.disabled=false;btn.innerHTML='Cadastrar Senha'}
+            },
+            renderDashboard(){
+                const iniciais=this.user.nome_completo?this.user.nome_completo.split(' ').map(n=>n[0]).slice(0,2).join(''):this.user.usuario_sei.substring(0,2).toUpperCase();
+                const nomeCompleto=this.user.posto_grad?this.user.posto_grad+' '+this.user.nome_completo:this.user.nome_completo||this.user.usuario_sei;
+                const temCredencial=this.user.tem_credencial_sei;
+                document.getElementById('app').innerHTML=`
+                    <header class="header">
+                        <div class="header-content">
+                            <div class="logo">
+                                <div class="logo-icon">🔥</div>
+                                <div class="logo-text">Platt<span>Argus</span></div>
+                                <span class="logo-subtitle">ASSISTENTE-SEI v3.0</span>
+                            </div>
+                            <div class="user-area">
+                                <div class="user-badge">
+                                    <div class="user-avatar">${iniciais}</div>
+                                    <div class="user-info">
+                                        <span class="user-name">${nomeCompleto}</span>
+                                        <span class="user-cargo">${this.user.cargo||'Servidor'}</span>
+                                    </div>
+                                </div>
+                                <span class="user-sei">🔒 ${this.user.usuario_sei}</span>
+                                ${temCredencial?'<div class="status-sei">SEI Vinculado</div>':''}
+                                <button class="btn-sair" onclick="PlattArgus.logout()">🚪 Sair</button>
+                            </div>
+                        </div>
+                    </header>
+                    <main class="main">
+                        <div class="welcome-section">
+                            <h1 class="welcome-title">👋 Bem-vindo ao PlattArgus</h1>
+                            <p class="welcome-subtitle">Escolha uma opção abaixo para começar</p>
+                        </div>
+                        <div class="cards-grid">
+                            <div class="card" onclick="PlattArgus.irParaAnalisar()">
+                                <div class="card-icon">🔍</div>
+                                <h3 class="card-title">Analisar Processo</h3>
+                                <p class="card-subtitle">Extrai e analisa documentos</p>
+                                <p class="card-description">Leia o processo, obtenha análise completa com resumo inteligente, e gere documentos automaticamente.</p>
+                            </div>
+                            <div class="card" onclick="PlattArgus.irParaGerar()">
+                                <div class="card-icon">📄</div>
+                                <h3 class="card-title">Gerar Documento</h3>
+                                <p class="card-subtitle">Cria despachos e memorandos</p>
+                                <p class="card-description">Crie documentos avulsos sem análise prévia. Ideal para despachos simples e encaminhamentos.</p>
+                            </div>
+                            <div class="card" onclick="PlattArgus.irParaLegislacao()">
+                                <div class="card-icon">⚖️</div>
+                                <h3 class="card-title">Consultar Legislação</h3>
+                                <p class="card-subtitle">Base de leis do CBMAC</p>
+                                <p class="card-description">Pesquise na base de legislação do CBMAC usando linguagem natural.</p>
+                            </div>
+                        </div>
+                        <div class="acoes-section">
+                            <h3 class="acoes-title">⚡ Ações Rápidas</h3>
+                            <div class="acoes-grid">
+                                <button class="btn-acao" onclick="PlattArgus.openCredencial()">🔐 Atualizar Credencial SEI</button>
+                                <button class="btn-acao" onclick="alert('Em breve!')">📋 Histórico de Análises</button>
+                                <button class="btn-acao" onclick="alert('Em breve!')">👥 Pesquisar Efetivo</button>
+                            </div>
+                        </div>
+                    </main>`;
+            }
+        };
+        document.addEventListener('DOMContentLoaded',()=>PlattArgus.init());
+    </script>
+</body>
+</html>

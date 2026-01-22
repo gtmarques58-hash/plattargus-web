@@ -1,0 +1,12 @@
+<p style="text-align: left;">Ao(À) Sr(a). <b>{CARGO_DESTINATARIO}</b><br>
+{SIGLA_UNIDADE_DESTINATARIO}</p>
+
+<p style="text-align: left; text-indent: 1.5cm;">{VOCATIVO}</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Encaminho os autos para conhecimento e providências cabíveis.</p>
+
+<p style="text-align: left; text-indent: 1.5cm;">Atenciosamente,</p>
+
+<p style="text-align: center;"><b>{NOME_REMETENTE} - {POSTO_GRAD_REMETENTE}</b><br>
+{CARGO_REMETENTE}<br>
+{SIGLA_UNIDADE}/CBMAC</p>

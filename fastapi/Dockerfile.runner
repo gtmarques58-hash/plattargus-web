@@ -1,0 +1,57 @@
+# PlattArgus Runner - Playwright + PDF + OCR
+# Baseado no Playwright oficial com dependências para extração completa
+
+FROM mcr.microsoft.com/playwright/python:v1.49.1-jammy
+
+WORKDIR /app
+
+# Variáveis de ambiente
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+    PYTHONUNBUFFERED=1 \
+    TZ=America/Rio_Branco
+
+# Instalar Tesseract OCR + dependências do sistema
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tesseract-ocr \
+    tesseract-ocr-por \
+    poppler-utils \
+    libmupdf-dev \
+    mupdf-tools \
+    && rm -rf /var/lib/apt/lists/*
+
+# Dependências Python
+RUN pip install --no-cache-dir \
+    # API
+    fastapi==0.115.5 \
+    uvicorn[standard]==0.32.0 \
+    pydantic==2.9.2 \
+    # Playwright
+    playwright==1.49.0 \
+    # PDF
+    pdfplumber>=0.10.0 \
+    pypdfium2>=4.0.0 \
+    PyMuPDF>=1.23.0 \
+    # OCR
+    pytesseract>=0.3.10 \
+    Pillow>=10.0.0 \
+    # HTML parsing
+    beautifulsoup4>=4.12.0 \
+    lxml>=4.9.0 \
+    # Crypto (para senhas)
+    cryptography>=41.0.0 \
+    bcrypt>=4.0.0
+
+# Garantir Chromium instalado
+RUN python -m playwright install chromium
+
+# Copiar scripts
+COPY scripts/ /app/scripts/
+
+# Copiar API do runner
+COPY api_runner.py /app/api_runner.py
+
+# Porta
+EXPOSE 8001
+
+# Comando
+CMD ["uvicorn", "api_runner:app", "--host", "0.0.0.0", "--port", "8001"]

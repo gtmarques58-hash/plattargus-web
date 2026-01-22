@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlattArgus - Analisar Processo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg-primary:#0a0e14;--bg-secondary:#111820;--bg-tertiary:#1a222d;--bg-card:#141c26;--accent:#e63946;--accent-hover:#ff4d5a;--accent-glow:rgba(230,57,70,0.4);--text-primary:#f1f5f9;--text-secondary:#94a3b8;--text-muted:#64748b;--success:#10b981;--warning:#f59e0b;--error:#ef4444;--info:#3b82f6;--border-color:rgba(255,255,255,0.08);--border-accent:rgba(230,57,70,0.3);--font-display:'Plus Jakarta Sans',sans-serif}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:var(--font-display);background:var(--bg-primary);color:var(--text-primary);min-height:100vh;line-height:1.6}
+        body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(230,57,70,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(230,57,70,0.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:-1}
+        .header{background:var(--bg-secondary);border-bottom:1px solid var(--border-color);padding:12px 24px;position:sticky;top:0;z-index:100}
+        .header-content{max-width:1800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+        .logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--accent) 0%,#b91c1c 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;box-shadow:0 0 20px var(--accent-glow)}
+        .logo-text{font-weight:700;font-size:1.1rem;color:var(--text-primary)}
+        .logo-text span{color:var(--accent)}
+        .logo-subtitle{color:var(--text-muted);font-size:0.75rem;margin-left:10px;padding-left:10px;border-left:1px solid var(--border-color)}
+        .user-area{display:flex;align-items:center;gap:16px}
+        .user-badge{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--bg-tertiary);border-radius:10px;border:1px solid var(--border-color)}
+        .user-avatar{width:36px;height:36px;background:linear-gradient(135deg,var(--accent) 0%,#b91c1c 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:600}
+        .user-info{display:flex;flex-direction:column}
+        .user-name{font-weight:600;font-size:0.9rem;color:var(--accent)}
+        .user-cargo{font-size:0.7rem;color:var(--text-muted)}
+        .user-sei{font-size:0.75rem;color:var(--text-muted);display:flex;align-items:center;gap:4px}
+        .status-sei{display:flex;align-items:center;gap:6px;font-size:0.75rem;padding:6px 12px;border-radius:20px;background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3)}
+        .status-sei::before{content:'';width:6px;height:6px;background:var(--success);border-radius:50%;animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+        .btn-header{background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-primary);cursor:pointer;font-size:0.85rem;padding:8px 14px;border-radius:8px;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+        .btn-header:hover{border-color:var(--accent);color:var(--accent)}
+        .btn-sair{background:var(--accent);color:white;border:none;padding:8px 16px;border-radius:8px;font-weight:600;font-size:0.85rem;cursor:pointer}
+        .btn-sair:hover{background:var(--accent-hover)}
+        .container{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:20px;max-width:1800px;margin:0 auto}
+        @media(max-width:1200px){.container{grid-template-columns:1fr}}
+        .panel{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px}
+        .panel h2{color:var(--accent);margin-bottom:15px;font-size:1.1rem;display:flex;align-items:center;gap:8px}
+        .input-row{display:flex;gap:10px;margin-bottom:15px}
+        .form-input{flex:1;padding:12px 14px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:0.95rem;font-family:var(--font-display)}
+        .form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+        .form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+        .btn{padding:12px 20px;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.9rem;transition:all 0.2s;font-family:var(--font-display);display:inline-flex;align-items:center;gap:8px}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),#b91c1c);color:#fff;box-shadow:0 4px 15px var(--accent-glow)}
+        .btn-primary:hover{transform:translateY(-1px)}
+        .btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+        .btn-secondary{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color)}
+        .btn-success{background:var(--success);color:#fff}
+        .btn-warning{background:var(--warning);color:#fff}
+        .btn-info{background:var(--info);color:#fff}
+        .btn-sm{padding:8px 14px;font-size:0.85rem}
+        .btn-xs{padding:5px 10px;font-size:0.75rem}
+        .btn-outline{background:transparent;border:1px solid var(--border-color);color:var(--text-muted)}
+        .btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+        .btn-group{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
+        .status{padding:12px 15px;border-radius:8px;margin:15px 0;font-size:0.9rem}
+        .status-success{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:var(--success)}
+        .status-error{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:var(--error)}
+        .status-loading{background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:var(--info);display:flex;align-items:center;gap:10px}
+        .spinner{width:16px;height:16px;border:2px solid var(--border-color);border-top-color:currentColor;border-radius:50%;animation:spin 0.8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .hidden{display:none!important}
+        .resumo-box{background:var(--bg-tertiary);border-left:4px solid var(--accent);padding:15px;border-radius:0 8px 8px 0;margin:15px 0}
+        .resumo-box h3{color:var(--accent);margin-bottom:10px;font-size:1rem}
+        .resumo-box p{line-height:1.6;color:var(--text-secondary)}
+        .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:15px 0}
+        @media(max-width:600px){.info-grid{grid-template-columns:1fr}}
+        .info-card{background:var(--bg-primary);border-radius:8px;padding:12px}
+        .info-card h4{color:var(--accent);font-size:0.85rem;margin-bottom:8px}
+        .info-card p{font-size:0.9rem;color:var(--text-secondary);line-height:1.5}
+        .tag{display:inline-block;padding:4px 10px;border-radius:15px;font-size:0.75rem;margin:2px}
+        .tag-alta{background:var(--accent);color:#fff}
+        .tag-info{background:var(--info);color:#fff}
+        .docs-lista{max-height:200px;overflow-y:auto;background:var(--bg-primary);border-radius:8px;padding:10px;margin:10px 0}
+        .doc-item{padding:8px 10px;margin:5px 0;background:var(--bg-tertiary);border-radius:5px;cursor:pointer;font-size:0.85rem;transition:all 0.2s}
+        .doc-item:hover{background:var(--bg-secondary);border-left:3px solid var(--accent)}
+        .config-box{background:var(--bg-tertiary);border-radius:8px;padding:15px;margin:15px 0}
+        .config-box h3{color:var(--text-primary);font-size:0.95rem;margin-bottom:15px}
+        .config-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+        @media(max-width:700px){.config-row{grid-template-columns:1fr}}
+        .config-row label{display:block;color:var(--text-muted);font-size:0.8rem;margin-bottom:5px}
+        .editor-box{background:var(--bg-tertiary);border-radius:8px;padding:15px;margin:15px 0}
+        .editor-box h3{color:var(--success);font-size:0.95rem;margin-bottom:10px}
+        .editor-warning{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:5px;padding:8px 12px;margin-bottom:10px;font-size:0.8rem;color:var(--warning)}
+        .toolbar{display:flex;gap:5px;flex-wrap:wrap;padding:10px;background:var(--bg-primary);border-radius:8px 8px 0 0;border:1px solid var(--border-color);border-bottom:none}
+        .toolbar-btn{padding:8px 12px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-primary);cursor:pointer;border-radius:4px;font-size:0.85rem;transition:all 0.2s;font-weight:600}
+        .toolbar-btn:hover{background:var(--bg-secondary);border-color:var(--accent)}
+        .toolbar-separator{width:1px;background:var(--border-color);margin:0 5px}
+        .preview-container{background:#fff;color:#000;border-radius:0 0 8px 8px;padding:30px;min-height:300px;max-height:400px;overflow-y:auto;font-family:'Times New Roman',serif;font-size:12pt;line-height:1.6;border:1px solid var(--border-color)}
+        .preview-container:focus{outline:2px solid var(--success)}
+        .preview-container p{margin:8px 0}
+        .validacao-item{padding:8px 12px;margin:5px 0;border-radius:5px;font-size:0.85rem}
+        .validacao-ok{background:rgba(16,185,129,0.15);border-left:3px solid var(--success);color:var(--success)}
+        .validacao-warning{background:rgba(245,158,11,0.15);border-left:3px solid var(--warning);color:var(--warning)}
+        .modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000}
+        .modal-content{background:var(--bg-secondary);border-radius:12px;padding:25px;max-width:900px;width:90%;max-height:80vh;overflow-y:auto;border:1px solid var(--border-color)}
+        .modal-content h3{color:var(--accent);margin-bottom:15px}
+        .modal-close{float:right;background:none;border:none;color:var(--accent);font-size:1.5rem;cursor:pointer}
+        .autoridades-table{width:100%;border-collapse:collapse;margin-top:15px}
+        .autoridades-table th,.autoridades-table td{padding:10px;text-align:left;border-bottom:1px solid var(--border-color);font-size:0.85rem}
+        .autoridades-table th{background:var(--bg-tertiary);color:var(--accent)}
+        .autoridades-table tr:hover{background:var(--bg-tertiary)}
+        .search-box input{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary)}
+        .chat-section{margin-top:15px}
+        .chat-toggle-btn{width:100%;padding:12px;background:var(--bg-primary);border:1px dashed var(--border-color);border-radius:8px;color:var(--text-muted);cursor:pointer;font-size:0.85rem;transition:all 0.3s}
+        .chat-toggle-btn:hover{border-color:var(--info);color:var(--info)}
+        .chat-toggle-btn.active{border-color:var(--success);color:var(--success);border-style:solid}
+        .chat-container{background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;margin-top:10px;overflow:hidden}
+        .chat-header{background:var(--bg-tertiary);padding:10px 15px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color)}
+        .chat-header h4{color:var(--info);font-size:0.9rem}
+        .modelo-badge{font-size:0.7rem;padding:3px 8px;border-radius:10px;background:var(--info);color:#fff}
+        .chat-config{padding:10px 15px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+        .chat-config label{color:var(--text-muted);font-size:0.75rem}
+        .chat-config select{padding:5px 8px;border-radius:4px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-primary);font-size:0.8rem}
+        .toggle{position:relative;width:32px;height:16px}
+        .toggle input{opacity:0;width:0;height:0}
+        .toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--bg-tertiary);border-radius:16px;transition:0.3s}
+        .toggle-slider:before{position:absolute;content:"";height:10px;width:10px;left:3px;bottom:3px;background:var(--text-muted);border-radius:50%;transition:0.3s}
+        .toggle input:checked+.toggle-slider{background:var(--accent)}
+        .toggle input:checked+.toggle-slider:before{transform:translateX(16px);background:#fff}
+        .chat-messages{max-height:250px;overflow-y:auto;padding:15px}
+        .chat-msg{margin-bottom:12px;padding:10px 12px;border-radius:8px;font-size:0.85rem;line-height:1.5}
+        .chat-msg-user{background:var(--bg-tertiary);border-left:3px solid var(--accent)}
+        .chat-msg-assistant{background:rgba(16,185,129,0.1);border-left:3px solid var(--success)}
+        .chat-msg-header{font-size:0.7rem;color:var(--text-muted);margin-bottom:5px;display:flex;justify-content:space-between}
+        .chat-msg-content{color:var(--text-secondary)}
+        .chat-msg-actions{margin-top:8px;padding-top:8px;border-top:1px solid var(--border-color);display:flex;gap:5px}
+        .chat-system-msg{text-align:center;color:var(--text-muted);font-size:0.8rem;padding:10px;border:1px dashed var(--border-color);border-radius:5px;margin-bottom:10px}
+        .chat-input-area{padding:12px 15px;background:var(--bg-tertiary);border-top:1px solid var(--border-color)}
+        .chat-input-row{display:flex;gap:8px}
+        .chat-input{flex:1;padding:10px 12px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:0.85rem;resize:none;font-family:var(--font-display)}
+        .chat-input:focus{outline:none;border-color:var(--info)}
+        .chat-quick-actions{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+        .chat-upload-preview{background:var(--bg-tertiary);padding:8px 12px;margin:0 15px 10px;border-radius:5px;display:flex;justify-content:space-between;align-items:center;font-size:0.8rem}
+        .chat-upload-preview span{color:var(--success)}
+        .edit-hint{color:var(--text-muted);font-size:0.8rem;margin-bottom:5px}
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+                    <div class="logo-icon">🔥</div>
+                    <div class="logo-text">Platt<span>Argus</span></div>
+                </a>
+                <span class="logo-subtitle">ASSISTENTE-SEI v3.0</span>
+            </div>
+            <div class="user-area">
+                <div class="user-badge">
+                    <div class="user-avatar" id="userAvatar">--</div>
+                    <div class="user-info">
+                        <span class="user-name" id="userName">Carregando...</span>
+                        <span class="user-cargo" id="userCargo">-</span>
+                    </div>
+                </div>
+                <span class="user-sei" id="userSeiSpan"></span>
+                <div class="status-sei">SEI Vinculado</div>
+                <a href="/" class="btn-header">🏠 Início</a>
+                <button class="btn-header" onclick="abrirModalAutoridades()">👥 Efetivo</button>
+                <button class="btn-sair" onclick="fazerLogout()">🚪 Sair</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="panel">
+            <h2>📂 Análise do Processo</h2>
+            <div class="input-row">
+                <input type="text" id="nupInput" class="form-input" placeholder="Digite o NUP: 0609.000000.00000/2025-00">
+                <button class="btn btn-primary" id="btnLer" onclick="lerProcesso()">🔍 Analisar</button>
+            </div>
+            <div id="statusLeitura" class="status hidden"></div>
+            <div id="resumoBox" class="resumo-box hidden">
+                <h3>📋 <span id="tipoDemanda">-</span></h3>
+                <p id="resumoExecutivo">-</p>
+            </div>
+            <div id="infoGrid" class="info-grid hidden">
+                <div class="info-card"><h4>👤 Interessado</h4><p id="interessadoInfo">-</p></div>
+                <div class="info-card"><h4>📝 Pedido</h4><p id="pedidoInfo">-</p></div>
+                <div class="info-card"><h4>🏢 Unidades</h4><p id="unidadesInfo">-</p></div>
+                <div class="info-card"><h4>⚖️ Legislação</h4><div id="legislacaoInfo">-</div></div>
+            </div>
+            <div id="alertasBox" class="hidden" style="margin:10px 0"><span id="alertasInfo"></span></div>
+            <div id="docsProcessoBox" class="hidden">
+                <h4 style="color:var(--text-muted);font-size:0.85rem;margin:10px 0">📎 Documentos no Processo <small>(clique para ver)</small></h4>
+                <div id="docsLista" class="docs-lista"></div>
+            </div>
+            <div id="sugestaoBox" class="config-box hidden">
+                <h3>💡 Sugestão do Sistema</h3>
+                <p style="color:var(--text-secondary);font-size:0.9rem" id="sugestaoTexto">-</p>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>📄 Gerar Documento</h2>
+            <div id="configBox" class="config-box hidden">
+                <h3>⚙️ Configuração</h3>
+                <div class="config-row">
+                    <div>
+                        <label>Tipo de Documento</label>
+                        <select id="tipoDocumento" class="form-input form-select">
+                            <option value="Despacho">Despacho</option>
+                            <option value="Memorando">Memorando</option>
+                            <option value="Ofício">Ofício</option>
+                            <option value="Parecer">Parecer</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Destinatário</label>
+                        <select id="destinatario" class="form-input form-select">
+                            <option value="">(Sem destinatário)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="gerarDocumento()">✨ Gerar</button>
+                </div>
+            </div>
+            <div id="statusDocumento" class="status hidden"></div>
+            <div id="editorContainer" class="editor-box hidden">
+                <h3>✅ Prévia do Documento</h3>
+                <div class="editor-warning">⚠️ Texto sugerido - revise antes de inserir no SEI</div>
+                <p class="edit-hint">💡 Selecione o texto e use os botões para formatar</p>
+                <div class="toolbar">
+                    <button class="toolbar-btn" onclick="formatDoc('bold')"><b>N</b></button>
+                    <button class="toolbar-btn" onclick="formatDoc('italic')"><i>I</i></button>
+                    <button class="toolbar-btn" onclick="formatDoc('underline')"><u>S</u></button>
+                    <div class="toolbar-separator"></div>
+                    <button class="toolbar-btn" onclick="formatDoc('justifyLeft')">←</button>
+                    <button class="toolbar-btn" onclick="formatDoc('justifyCenter')">■</button>
+                    <button class="toolbar-btn" onclick="formatDoc('justifyRight')">→</button>
+                    <button class="toolbar-btn" onclick="formatDoc('justifyFull')">≡</button>
+                    <div class="toolbar-separator"></div>
+                    <button class="toolbar-btn" onclick="abrirModalAutoridades()">👥 Buscar Autoridade</button>
+                </div>
+                <div id="previewDocumento" class="preview-container" contenteditable="true"></div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="validarDocumento()">✔️ Validar</button>
+                    <button class="btn btn-warning" onclick="melhorarTexto()">✨ Melhorar</button>
+                    <button class="btn btn-success" onclick="inserirSEI()">📤 Inserir no SEI</button>
+                </div>
+            </div>
+            <div id="validacoesBox" class="hidden"></div>
+            <div id="statusInserir" class="status hidden"></div>
+            
+            <div id="chatSection" class="chat-section hidden">
+                <button class="chat-toggle-btn" id="chatToggleBtn" onclick="toggleChat()">💬 Abrir Chat Analítico</button>
+                <div id="chatContainer" class="chat-container hidden">
+                    <div class="chat-header">
+                        <h4>💬 Chat Analítico</h4>
+                        <span class="modelo-badge" id="modeloBadge">GPT-4o-mini</span>
+                    </div>
+                    <div class="chat-config">
+                        <label>Modelo:</label>
+                        <select id="modeloSelect" onchange="atualizarModelo()">
+                            <option value="gpt-4o-mini">GPT-4o-mini</option>
+                            <option value="gpt-4o">GPT-4o (Premium)</option>
+                        </select>
+                        <div style="display:flex;align-items:center;gap:6px">
+                            <label class="toggle"><input type="checkbox" id="temaSensivel" onchange="verificarTemaSensivel()"><span class="toggle-slider"></span></label>
+                            <span style="font-size:0.7rem;color:var(--text-muted)">Tema sensivel</span>
+                        </div>
+                        <button class="btn btn-xs btn-info" onclick="document.getElementById('chatFileInput').click()">📎 Anexar</button>
+                        <input type="file" id="chatFileInput" accept=".pdf,.docx,.txt" style="display:none" onchange="handleChatFile(event)">
+                    </div>
+                    <div id="chatUploadPreview" class="chat-upload-preview hidden">
+                        <span id="chatFileName">arquivo.pdf</span>
+                        <button class="btn btn-xs btn-secondary" onclick="removerChatArquivo()">X</button>
+                    </div>
+                    <div id="chatMessages" class="chat-messages">
+                        <div class="chat-system-msg">Chat analitico efemero. Nao persiste historico.<br>Pergunte para aprofundar, revisar ou comparar.</div>
+                    </div>
+                    <div class="chat-input-area">
+                        <div class="chat-input-row">
+                            <textarea id="chatInput" class="chat-input" rows="2" placeholder="Pergunte algo sobre o processo..."></textarea>
+                            <button class="btn btn-info" onclick="enviarChat()">🚀</button>
+                        </div>
+                        <div class="chat-quick-actions">
+                            <button class="btn btn-xs btn-outline" onclick="comandoRapido('aprofundar')">Aprofundar</button>
+                            <button class="btn btn-xs btn-outline" onclick="comandoRapido('discorrer')">Discorrer</button>
+                            <button class="btn btn-xs btn-outline" onclick="comandoRapido('comparar')">Comparar</button>
+                            <button class="btn btn-xs btn-outline" onclick="comandoRapido('reescrever')">Reescrever</button>
+                            <button class="btn btn-xs btn-outline" onclick="comandoRapido('sugerir')">Sugerir redacao</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalDoc" class="modal hidden">
+        <div class="modal-content">
+            <button class="modal-close" onclick="fecharModalDoc()">X</button>
+            <h3 id="modalDocTitulo">-</h3>
+            <div id="modalDocConteudo" style="color:var(--text-secondary);line-height:1.6;margin-top:15px"></div>
+        </div>
+    </div>
+    <div id="modalAutoridades" class="modal hidden">
+        <div class="modal-content">
+            <button class="modal-close" onclick="fecharModalAutoridades()">X</button>
+            <h3>👥 Pesquisar Efetivo / Autoridades</h3>
+            <div class="search-box" style="margin:15px 0">
+                <input type="text" id="searchAutoridade" placeholder="Digite para filtrar..." oninput="filtrarAutoridades()">
+            </div>
+            <table class="autoridades-table">
+                <thead><tr><th>Sigla</th><th>Unidade</th><th>Posto/Grad</th><th>Nome</th><th>Cargo</th></tr></thead>
+                <tbody id="tabelaAutoridades"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        var API = window.location.origin;
+        var analiseAtual = null;
+        var nupAtual = '';
+        var docsProcesso = [];
+        var todasAutoridades = [];
+        var textoCanonicoAtual = '';
+        var arquivoChatAnexado = null;
+        var ultimaRespostaSugestao = '';
+        var usuarioAtual = null;
+
+        window.addEventListener('load', verificarSessao);
+
+        function verificarSessao() {
+            var token = localStorage.getItem('plattargus_token');
+            var usuarioStr = localStorage.getItem('plattargus_usuario');
+            if (!token || !usuarioStr) {
+                window.location.href = '/';
+                return;
+            }
+            try {
+                usuarioAtual = JSON.parse(usuarioStr);
+                configurarUsuarioLogado(usuarioAtual);
+                carregarAutoridades();
+            } catch (e) {
+                window.location.href = '/';
+            }
+        }
+
+        function configurarUsuarioLogado(u) {
+            var iniciais = u.nome_completo ? u.nome_completo.split(' ').map(function(n) { return n[0]; }).slice(0, 2).join('') : u.usuario_sei.substring(0, 2).toUpperCase();
+            document.getElementById('userAvatar').textContent = iniciais;
+            document.getElementById('userName').textContent = u.posto_grad ? u.posto_grad + ' ' + u.nome_completo : (u.nome_completo || u.usuario_sei);
+            document.getElementById('userCargo').textContent = u.cargo || 'Servidor';
+            document.getElementById('userSeiSpan').innerHTML = '🔒 ' + u.usuario_sei;
+        }
+
+        function fazerLogout() {
+            localStorage.clear();
+            window.location.href = '/';
+        }
+
+        function carregarAutoridades() {
+            fetch(API + '/api/autoridades', { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('plattargus_token'), 'Accept': 'application/json' } })
+                .then(function(resp) { return resp.json(); })
+                .then(function(data) {
+                    todasAutoridades = data.autoridades || data.usuarios || [];
+                    var select = document.getElementById('destinatario');
+                    select.innerHTML = '<option value="">(Sem destinatario)</option>';
+                    todasAutoridades.forEach(function(a) {
+                        var opt = document.createElement('option');
+                        opt.value = a.sigla || a.chave_busca || '';
+                        opt.textContent = a.opcao_dropdown || (a.sigla + ' - ' + a.nome);
+                        select.appendChild(opt);
+                    });
+                })
+                .catch(function(e) { console.error('Erro:', e); });
+        }
+
+        function abrirModalAutoridades() {
+            renderizarAutoridades(todasAutoridades);
+            document.getElementById('searchAutoridade').value = '';
+            document.getElementById('modalAutoridades').classList.remove('hidden');
+        }
+
+        function fecharModalAutoridades() {
+            document.getElementById('modalAutoridades').classList.add('hidden');
+        }
+
+        function renderizarAutoridades(lista) {
+            var html = '';
+            lista.forEach(function(a) {
+                html += '<tr><td><strong>' + (a.chave_busca || '-') + '</strong></td><td>' + (a.unidade_destino || a.unidade || '-') + '</td><td>' + (a.posto_grad || '-') + '</td><td>' + (a.nome_atual || a.nome_completo || '-') + '</td><td>' + (a.observacoes || a.cargo || '-') + '</td></tr>';
+            });
+            document.getElementById('tabelaAutoridades').innerHTML = html;
+        }
+
+        function filtrarAutoridades() {
+            var termo = document.getElementById('searchAutoridade').value.toLowerCase();
+            if (!termo) {
+                renderizarAutoridades(todasAutoridades);
+                return;
+            }
+            var filtradas = todasAutoridades.filter(function(a) {
+                return (a.chave_busca || '').toLowerCase().indexOf(termo) >= 0 ||
+                       (a.nome_atual || a.nome_completo || '').toLowerCase().indexOf(termo) >= 0 ||
+                       (a.observacoes || a.cargo || '').toLowerCase().indexOf(termo) >= 0;
+            });
+            renderizarAutoridades(filtradas);
+        }
+
+        function formatDoc(cmd) {
+            document.getElementById('previewDocumento').focus();
+            document.execCommand(cmd, false, null);
+        }
+
+        function getHTMLFromPreview() {
+            return document.getElementById('previewDocumento').innerHTML;
+        }
+
+        function getAuthHeaders() {
+            var token = localStorage.getItem('plattargus_token');
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            };
+        }
+
+        function lerProcesso() {
+            var nup = document.getElementById('nupInput').value.trim();
+            if (!nup) {
+                alert('Digite o NUP');
+                return;
+            }
+            nupAtual = nup;
+            var status = document.getElementById('statusLeitura');
+            var btn = document.getElementById('btnLer');
+            
+            ['resumoBox', 'infoGrid', 'alertasBox', 'docsProcessoBox', 'sugestaoBox', 'configBox', 'editorContainer', 'validacoesBox', 'chatSection'].forEach(function(id) {
+                document.getElementById(id).classList.add('hidden');
+            });
+            
+            // Feedback inicial - Processo localizado
+            status.className = 'status status-loading';
+            status.innerHTML = '<span class="spinner"></span> 📂 Localizando processo no SEI...';
+            status.classList.remove('hidden');
+            btn.disabled = true;
+            
+            fetch(API + '/api/processos/analisar', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ nup: nup, usuario_sei: usuarioAtual.usuario_sei })
+            })
+            .then(function(resp) { 
+                // Atualiza status enquanto processa
+                status.innerHTML = '<span class="spinner"></span> 📂 Processo localizado! ⏳ Extraindo documentos...';
+                return resp.json(); 
+            })
+            .then(function(data) {
+                if (data.sucesso) {
+                    // A análise pode vir em data.analise ou diretamente em data
+                    analiseAtual = data.analise || data;
+                    
+                    // Mescla dados extras no analiseAtual
+                    analiseAtual.modo = data.modo || analiseAtual.modo;
+                    analiseAtual.pastas_total = data.pastas_total || analiseAtual.pastas_total || 0;
+                    analiseAtual.documentos_total = data.documentos_total || analiseAtual.documentos_total || 0;
+                    analiseAtual.docs_extraidos = data.docs_extraidos || analiseAtual.docs_extraidos || 0;
+                    analiseAtual.docs_escaneados = data.docs_escaneados || analiseAtual.docs_escaneados || 0;
+                    analiseAtual.duracao_segundos = data.duracao_segundos || analiseAtual.duracao_segundos || 0;
+                    analiseAtual.ressalvas = data.ressalvas || analiseAtual.ressalvas || [];
+                    
+                    // Documentos podem vir em diferentes campos
+                    docsProcesso = data.documentos || data.documentos_processo || analiseAtual.documentos || [];
+                    
+                    // Monta texto canônico com o resumo do processo
+                    var resumoTexto = analiseAtual.resumo_processo || analiseAtual.resumo_executivo || analiseAtual.resumo || '';
+                    textoCanonicoAtual = 'PROCESSO: ' + nup + '\n\n' + resumoTexto;
+                    
+                    exibirAnalise(analiseAtual, data);
+                    exibirDocumentosProcesso(docsProcesso);
+                    
+                    document.getElementById('configBox').classList.remove('hidden');
+                    document.getElementById('chatSection').classList.remove('hidden');
+                    
+                    if (analiseAtual.tipo_documento_sugerido) {
+                        document.getElementById('tipoDocumento').value = analiseAtual.tipo_documento_sugerido;
+                    }
+                    if (analiseAtual.destinatario_sugerido) {
+                        document.getElementById('destinatario').value = analiseAtual.destinatario_sugerido;
+                    }
+                    
+                    // Mensagem de sucesso com detalhes
+                    var modo = data.modo || analiseAtual.modo || '';
+                    var docsTotal = data.documentos_total || docsProcesso.length || 0;
+                    var duracao = data.duracao_segundos || 0;
+                    var msgSucesso = '✅ Análise concluída! ';
+                    if (modo) msgSucesso += modo === 'pastas' ? '📁 ' + (data.pastas_total || 0) + ' pastas | ' : '📁 Raiz | ';
+                    msgSucesso += '📄 ' + docsTotal + ' documentos';
+                    if (duracao) msgSucesso += ' | ⏱️ ' + duracao + 's';
+                    
+                    status.className = 'status status-success';
+                    status.textContent = msgSucesso;
+                } else {
+                    throw new Error(data.erro || data.mensagem || 'Erro ao analisar');
+                }
+            })
+            .catch(function(e) {
+                status.className = 'status status-error';
+                status.textContent = '❌ Erro: ' + e.message;
+            })
+            .finally(function() {
+                btn.disabled = false;
+            });
+        }
+
+        function montarTextoCanonica(nup, analise) {
+            var int = analise.interessado || {};
+            var ped = analise.pedido || analise.pedido_original || {};
+            return 'PROCESSO: ' + nup + '\nOBJETO: ' + (analise.tipo_demanda || '-') + '\nINTERESSADO: ' + (int.nome || '-') + '\nPEDIDO: ' + (ped.descricao || '-') + '\nSITUACAO: ' + (analise.resumo_executivo || '-');
+        }
+
+        function exibirAnalise(a, dataCompleto) {
+            // Mapeia diferentes estruturas de resposta
+            var tipoDemanda = a.tipo_demanda || a.conclusao || 'Processo';
+            var resumo = a.resumo_executivo || a.resumo || a.resumo_processo || '-';
+            
+            document.getElementById('tipoDemanda').textContent = tipoDemanda;
+            document.getElementById('resumoExecutivo').textContent = resumo;
+            document.getElementById('resumoBox').classList.remove('hidden');
+            
+            // Interessado - pode vir como objeto ou campos diretos
+            var int = a.interessado || {};
+            if (typeof int === 'string') {
+                document.getElementById('interessadoInfo').innerHTML = '<strong>' + int + '</strong>';
+            } else {
+                var intHtml = '<strong>' + (int.nome || '-') + '</strong>';
+                if (int.matricula && int.matricula !== '-') intHtml += '<br>Mat: ' + int.matricula;
+                if (int.cargo) intHtml += '<br>' + int.cargo;
+                if (int.unidade) intHtml += '<br><small style="color:var(--text-muted)">' + int.unidade + '</small>';
+                document.getElementById('interessadoInfo').innerHTML = intHtml;
+            }
+            
+            // Pedido
+            var ped = a.pedido_original || a.pedido || {};
+            if (typeof ped === 'string') {
+                document.getElementById('pedidoInfo').innerHTML = ped;
+            } else if (ped.descricao) {
+                var pedHtml = ped.descricao;
+                if (ped.periodo) pedHtml += '<br><small style="color:var(--text-muted)">Período: ' + ped.periodo + '</small>';
+                if (ped.motivo) pedHtml += '<br><small style="color:var(--text-muted)">Motivo: ' + ped.motivo + '</small>';
+                document.getElementById('pedidoInfo').innerHTML = pedHtml;
+            } else {
+                document.getElementById('pedidoInfo').innerHTML = '<span style="color:var(--text-muted);font-style:italic">Pedido não identificado</span>';
+            }
+            
+            // Unidades - extrair dos documentos (título e conteúdo) + info processamento
+            var uni = a.unidades || {};
+            var modoProcesso = dataCompleto ? dataCompleto.modo : (a.modo || '');
+            var unidadesHtml = '';
+            
+            // Tenta extrair unidades dos títulos E conteúdo dos documentos
+            var unidadesExtraidas = [];
+            var unidadesSet = new Set();
+            var docsParaAnalise = dataCompleto ? dataCompleto.documentos : (a.documentos || docsProcesso || []);
+            
+            if (docsParaAnalise && docsParaAnalise.length > 0) {
+                docsParaAnalise.forEach(function(d) {
+                    var titulo = d.titulo || '';
+                    var conteudo = d.conteudo || d.texto || '';
+                    
+                    // Padrões para extrair sigla da unidade:
+                    // 1. "CBMAC - SIGLA" ou "CBMAC-SIGLA" no título
+                    // 2. "nº XXX/2025/CBMAC - SIGLA" no conteúdo
+                    // 3. "CBMAC - SIGLA" em qualquer lugar
+                    
+                    var patterns = [
+                        /CBMAC\s*[-–]\s*([A-Z0-9]+)/gi,
+                        /\/CBMAC\s*[-–]\s*([A-Z0-9]+)/gi,
+                        /CBMAC\s*[-–]\s*([A-Z0-9]+)\s*[-–]\s*([A-Z0-9]+)/gi
+                    ];
+                    
+                    var textoCompleto = titulo + ' ' + conteudo.substring(0, 2000);
+                    
+                    patterns.forEach(function(pattern) {
+                        var match;
+                        while ((match = pattern.exec(textoCompleto)) !== null) {
+                            var sigla = match[1].toUpperCase();
+                            // Ignora siglas muito curtas ou que são só números
+                            if (sigla.length >= 2 && !/^\d+$/.test(sigla)) {
+                                if (!unidadesSet.has(sigla)) {
+                                    unidadesSet.add(sigla);
+                                    unidadesExtraidas.push(sigla);
+                                }
+                            }
+                            // Se tiver segunda parte (ex: DEPE (DPLAN))
+                            if (match[2]) {
+                                var sigla2 = match[2].toUpperCase();
+                                if (sigla2.length >= 2 && !/^\d+$/.test(sigla2) && !unidadesSet.has(sigla2)) {
+                                    unidadesSet.add(sigla2);
+                                    unidadesExtraidas.push(sigla2);
+                                }
+                            }
+                        }
+                    });
+                });
+            }
+            
+            // Monta HTML das unidades
+            if (unidadesExtraidas.length > 0) {
+                // Primeira unidade é provavelmente a origem
+                unidadesHtml += '<strong>Origem:</strong> ' + unidadesExtraidas[0];
+                
+                // Se tiver mais unidades, mostra tramitação
+                if (unidadesExtraidas.length > 1) {
+                    unidadesHtml += '<br><strong>Tramitação:</strong> ';
+                    unidadesHtml += unidadesExtraidas.map(function(u) {
+                        return '<span class="tag" style="background:var(--bg-primary);color:var(--text-secondary);font-size:0.75rem;padding:2px 8px;">' + u + '</span>';
+                    }).join(' → ');
+                }
+            } else if (typeof uni === 'object' && (uni.demandante || uni.resposta || uni.origem)) {
+                // Fallback para dados da IA
+                if (uni.origem) unidadesHtml += '<strong>Origem:</strong> ' + uni.origem + '<br>';
+                if (uni.demandante) unidadesHtml += '<strong>Demandante:</strong> ' + uni.demandante + '<br>';
+                if (uni.atual) unidadesHtml += '<strong>Atual:</strong> ' + uni.atual + '<br>';
+                if (uni.resposta) unidadesHtml += '<strong>Resposta:</strong> ' + uni.resposta;
+            } else if (a.diretoria) {
+                unidadesHtml = '<strong>Diretoria:</strong> ' + a.diretoria;
+            } else {
+                unidadesHtml = '<span style="color:var(--text-muted)">Não identificado</span>';
+            }
+            
+            // Info do modo de processamento
+            var pastasTotal = dataCompleto ? dataCompleto.pastas_total : (a.pastas_total || 0);
+            var docsTotal = dataCompleto ? dataCompleto.documentos_total : (a.documentos_total || 0);
+            var docsExtraidos = dataCompleto ? dataCompleto.docs_extraidos : (a.docs_extraidos || 0);
+            var docsEscaneados = dataCompleto ? dataCompleto.docs_escaneados : (a.docs_escaneados || 0);
+            
+            unidadesHtml += '<br><div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border-color);font-size:0.8rem;color:var(--text-muted);">';
+            if (modoProcesso) {
+                unidadesHtml += modoProcesso === 'pastas' ? '📁 ' + pastasTotal + ' pastas' : '📁 Raiz';
+                unidadesHtml += ' | ';
+            }
+            unidadesHtml += '📄 ' + docsExtraidos + ' extraídos';
+            if (docsEscaneados > 0) {
+                unidadesHtml += ' | 📷 ' + docsEscaneados + ' escaneados';
+            }
+            unidadesHtml += '</div>';
+            
+            document.getElementById('unidadesInfo').innerHTML = unidadesHtml;
+            
+            // Legislacao
+            var leg = a.legislacao_aplicavel || a.legislacao || [];
+            if (typeof leg === 'string') {
+                document.getElementById('legislacaoInfo').innerHTML = '<span class="tag tag-info">' + leg + '</span>';
+            } else if (Array.isArray(leg) && leg.length > 0) {
+                var legHtml = '';
+                leg.forEach(function(l) { 
+                    if (typeof l === 'string') {
+                        legHtml += '<span class="tag tag-info">' + l + '</span> '; 
+                    }
+                });
+                document.getElementById('legislacaoInfo').innerHTML = legHtml || '-';
+            } else {
+                document.getElementById('legislacaoInfo').innerHTML = '-';
+            }
+            document.getElementById('infoGrid').classList.remove('hidden');
+            
+            // Alertas e Ressalvas
+            var alertas = a.alertas || [];
+            var ressalvas = dataCompleto ? (dataCompleto.ressalvas || []) : (a.ressalvas || []);
+            var todosAlertas = alertas.concat(ressalvas);
+            
+            if (todosAlertas.length > 0) {
+                var alertHtml = '';
+                todosAlertas.forEach(function(al) { 
+                    if (typeof al === 'string') {
+                        alertHtml += '<span class="tag tag-alta">⚠️ ' + al + '</span> '; 
+                    }
+                });
+                document.getElementById('alertasInfo').innerHTML = alertHtml;
+                document.getElementById('alertasBox').classList.remove('hidden');
+            }
+            
+            // Sugestão do Sistema - formato melhorado
+            var tipoSugerido = a.tipo_documento_sugerido || 'Despacho';
+            var destSugerido = a.destinatario_sugerido || '(escolher)';
+            var sugestao = a.sugestao || {};
+            
+            var sugestaoHtml = '<strong>' + tipoSugerido + '</strong> para <strong>' + destSugerido + '</strong>';
+            
+            // Se tiver sugestão detalhada
+            if (sugestao.acao) {
+                sugestaoHtml += '<br><small style="color:var(--text-muted)">Ação: ' + sugestao.acao + '</small>';
+            }
+            if (sugestao.fundamentacao) {
+                sugestaoHtml += '<br><small style="color:var(--text-muted)">Base: ' + sugestao.fundamentacao + '</small>';
+            }
+            
+            // Info de processamento
+            var docsExtraidos = dataCompleto ? dataCompleto.docs_extraidos : (a.docs_extraidos || 0);
+            var docsEscaneados = dataCompleto ? dataCompleto.docs_escaneados : (a.docs_escaneados || 0);
+            var duracao = dataCompleto ? dataCompleto.duracao_segundos : (a.duracao_segundos || 0);
+            
+            if (docsExtraidos || docsEscaneados || duracao) {
+                sugestaoHtml += '<br><small style="color:var(--text-muted)">';
+                if (docsExtraidos) sugestaoHtml += '📄 ' + docsExtraidos + ' extraídos';
+                if (docsEscaneados) sugestaoHtml += ' | 📷 ' + docsEscaneados + ' escaneados';
+                if (duracao) sugestaoHtml += ' | ⏱️ ' + duracao + 's';
+                sugestaoHtml += '</small>';
+            }
+            
+            document.getElementById('sugestaoTexto').innerHTML = sugestaoHtml;
+            document.getElementById('sugestaoBox').classList.remove('hidden');
+        }
+
+        function exibirDocumentosProcesso(docs) {
+            if (!docs || docs.length === 0) return;
+            var html = '';
+            docs.forEach(function(d, i) {
+                var titulo = d.titulo || d.nome || 'Documento ' + (i + 1);
+                var idDoc = d.id_documento || '';
+                var tipo = d.tipo || d.tipo_detectado || '';
+                var extraido = d.extraido || d.extraido_com_sucesso;
+                var icone = '📄';
+                if (tipo === 'pdf') icone = '📕';
+                else if (tipo === 'image') icone = '🖼️';
+                else if (d.is_scanned) icone = '📷';
+                
+                var infoExtra = '';
+                if (d.paginas) infoExtra += d.paginas + ' pág. ';
+                if (d.tamanho_texto) infoExtra += '~' + Math.round(d.tamanho_texto/1000) + 'KB';
+                if (d.is_scanned) infoExtra += ' [escaneado]';
+                
+                html += '<div class="doc-item" onclick="verDocumento(' + i + ')">' + icone + ' ' + titulo;
+                if (infoExtra) html += ' <small style="color:var(--text-muted)">(' + infoExtra.trim() + ')</small>';
+                html += '</div>';
+            });
+            document.getElementById('docsLista').innerHTML = html;
+            document.getElementById('docsProcessoBox').classList.remove('hidden');
+        }
+
+        function verDocumento(idx) {
+            var doc = docsProcesso[idx];
+            if (!doc) return;
+            
+            var titulo = doc.titulo || doc.nome || 'Documento';
+            var conteudo = doc.conteudo || doc.texto || '';
+            var idDoc = doc.id_documento || '';
+            var tipo = doc.tipo || doc.tipo_detectado || '';
+            var paginas = doc.paginas || '';
+            var tamanho = doc.tamanho_texto || 0;
+            
+            // Monta título com metadados
+            var tituloCompleto = titulo;
+            if (idDoc) tituloCompleto += ' (' + idDoc + ')';
+            document.getElementById('modalDocTitulo').textContent = tituloCompleto;
+            
+            // Monta conteúdo
+            var modalHtml = '';
+            
+            // Barra de info do documento
+            modalHtml += '<div style="background:var(--bg-tertiary);padding:10px;border-radius:8px;margin-bottom:15px;font-size:0.85rem;">';
+            if (tipo) modalHtml += '<span style="margin-right:15px;">📄 <strong>Tipo:</strong> ' + tipo.toUpperCase() + '</span>';
+            if (paginas) modalHtml += '<span style="margin-right:15px;">📃 <strong>Páginas:</strong> ' + paginas + '</span>';
+            if (tamanho) modalHtml += '<span style="margin-right:15px;">📊 <strong>Tamanho:</strong> ~' + Math.round(tamanho/1000) + ' KB</span>';
+            if (doc.is_scanned) modalHtml += '<span style="color:var(--warning);">📷 <strong>PDF Escaneado</strong></span>';
+            modalHtml += '</div>';
+            
+            if (conteudo && conteudo.trim()) {
+                // Formata o conteúdo para exibição
+                // Detecta se é HTML ou texto puro
+                var isHtml = /<[a-z][\s\S]*>/i.test(conteudo);
+                
+                if (isHtml) {
+                    // Se for HTML, renderiza diretamente mas com estilo
+                    modalHtml += '<div style="background:#fff;color:#000;padding:20px;border-radius:8px;max-height:400px;overflow-y:auto;font-family:\'Times New Roman\',serif;font-size:12pt;line-height:1.6;">' + conteudo + '</div>';
+                } else {
+                    // Se for texto puro, formata com quebras de linha
+                    var textoFormatado = conteudo
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/\n\n/g, '</p><p>')
+                        .replace(/\n/g, '<br>');
+                    modalHtml += '<div style="background:#fff;color:#000;padding:20px;border-radius:8px;max-height:400px;overflow-y:auto;font-family:\'Times New Roman\',serif;font-size:12pt;line-height:1.6;"><p>' + textoFormatado + '</p></div>';
+                }
+            } else if (doc.is_scanned) {
+                modalHtml += '<div style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);padding:20px;border-radius:8px;text-align:center;">';
+                modalHtml += '<p style="color:var(--warning);font-size:1.1rem;margin-bottom:10px;">📷 PDF Escaneado</p>';
+                modalHtml += '<p style="color:var(--text-muted);">Este documento é uma imagem digitalizada.<br>O texto não pôde ser extraído automaticamente.</p>';
+                if (doc.metodo_extracao) modalHtml += '<p style="color:var(--text-muted);font-size:0.8rem;margin-top:10px;">Método tentado: ' + doc.metodo_extracao + '</p>';
+                modalHtml += '</div>';
+            } else if (!conteudo && idDoc) {
+                modalHtml += '<div style="background:var(--bg-tertiary);padding:20px;border-radius:8px;text-align:center;">';
+                modalHtml += '<p style="color:var(--text-muted);">Conteúdo não disponível para este documento.</p>';
+                modalHtml += '<p style="color:var(--text-muted);font-size:0.8rem;margin-top:10px;">ID SEI: ' + idDoc + '</p>';
+                modalHtml += '</div>';
+            } else {
+                modalHtml += '<div style="background:var(--bg-tertiary);padding:20px;border-radius:8px;text-align:center;">';
+                modalHtml += '<p style="color:var(--text-muted);">Conteúdo não disponível.</p>';
+                modalHtml += '</div>';
+            }
+            
+            document.getElementById('modalDocConteudo').innerHTML = modalHtml;
+            document.getElementById('modalDoc').classList.remove('hidden');
+        }
+
+        function fecharModalDoc() {
+            document.getElementById('modalDoc').classList.add('hidden');
+        }
+
+        function gerarDocumento() {
+            if (!analiseAtual || !nupAtual) {
+                alert('Primeiro analise um processo');
+                return;
+            }
+            var tipo = document.getElementById('tipoDocumento').value;
+            var dest = document.getElementById('destinatario').value;
+            var status = document.getElementById('statusDocumento');
+            
+            status.className = 'status status-loading';
+            status.innerHTML = '<span class="spinner"></span> Gerando documento...';
+            status.classList.remove('hidden');
+            
+            fetch(API + '/api/processos/gerar-documento', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    nup: nupAtual,
+                    tipo_documento: tipo,
+                    destinatario: dest,
+                    analise: analiseAtual,
+                    usuario_sei: usuarioAtual.usuario_sei
+                })
+            })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                if (data.sucesso) {
+                    document.getElementById('previewDocumento').innerHTML = data.documento || data.html || '';
+                    document.getElementById('editorContainer').classList.remove('hidden');
+                    status.className = 'status status-success';
+                    status.textContent = 'Documento gerado! Revise e insira no SEI.';
+                } else {
+                    throw new Error(data.erro || 'Erro');
+                }
+            })
+            .catch(function(e) {
+                status.className = 'status status-error';
+                status.textContent = 'Erro: ' + e.message;
+            });
+        }
+
+        function validarDocumento() {
+            var texto = getHTMLFromPreview();
+            var tipo = document.getElementById('tipoDocumento').value;
+            
+            fetch(API + '/api/validar', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ texto: texto, tipo: tipo })
+            })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                var box = document.getElementById('validacoesBox');
+                var html = '';
+                (data.validacoes || []).forEach(function(v) {
+                    html += '<div class="validacao-item validacao-' + (v.tipo === 'ok' ? 'ok' : 'warning') + '">' + (v.tipo === 'ok' ? '✅' : '⚠️') + ' ' + v.msg + '</div>';
+                });
+                box.innerHTML = html;
+                box.classList.remove('hidden');
+            })
+            .catch(function(e) { alert('Erro: ' + e.message); });
+        }
+
+        function melhorarTexto() {
+            var texto = getHTMLFromPreview();
+            if (!texto) return;
+            var status = document.getElementById('statusDocumento');
+            status.className = 'status status-loading';
+            status.innerHTML = '<span class="spinner"></span> Melhorando texto...';
+            
+            fetch(API + '/api/melhorar-texto', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ texto: texto })
+            })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                document.getElementById('previewDocumento').innerHTML = data.texto_melhorado;
+                status.className = 'status status-success';
+                status.textContent = 'Texto melhorado!';
+            })
+            .catch(function(e) {
+                status.className = 'status status-error';
+                status.textContent = 'Erro: ' + e.message;
+            });
+        }
+
+        function inserirSEI() {
+            var html = getHTMLFromPreview();
+            var tipo = document.getElementById('tipoDocumento').value;
+            var dest = document.getElementById('destinatario').value;
+            
+            if (!html || !nupAtual) {
+                alert('Gere um documento primeiro');
+                return;
+            }
+            if (!confirm('Inserir ' + tipo + ' no processo ' + nupAtual + '?')) return;
+            
+            var status = document.getElementById('statusInserir');
+            status.className = 'status status-loading';
+            status.innerHTML = '<span class="spinner"></span> Inserindo no SEI...';
+            status.classList.remove('hidden');
+            
+            fetch(API + '/api/processos/inserir-sei', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    nup: nupAtual,
+                    tipo_documento: tipo,
+                    destinatario: dest,
+                    html: html,
+                    usuario_sei: usuarioAtual.usuario_sei
+                })
+            })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                if (data.sucesso) {
+                    status.className = 'status status-success';
+                    status.innerHTML = '<strong>Documento inserido!</strong> ' + (data.documento_nome || '');
+                } else {
+                    throw new Error(data.erro || 'Erro');
+                }
+            })
+            .catch(function(e) {
+                status.className = 'status status-error';
+                status.textContent = 'Erro: ' + e.message;
+            });
+        }
+
+        function toggleChat() {
+            var container = document.getElementById('chatContainer');
+            var btn = document.getElementById('chatToggleBtn');
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                btn.classList.add('active');
+                btn.innerHTML = '💬 Fechar Chat Analitico';
+            } else {
+                container.classList.add('hidden');
+                btn.classList.remove('active');
+                btn.innerHTML = '💬 Abrir Chat Analitico';
+            }
+        }
+
+        function atualizarModelo() {
+            var modelo = document.getElementById('modeloSelect').value;
+            document.getElementById('modeloBadge').textContent = modelo === 'gpt-4o' ? 'GPT-4o' : 'GPT-4o-mini';
+        }
+
+        function verificarTemaSensivel() {
+            if (document.getElementById('temaSensivel').checked) {
+                document.getElementById('modeloSelect').value = 'gpt-4o';
+                atualizarModelo();
+            }
+        }
+
+        function handleChatFile(event) {
+            var file = event.target.files[0];
+            if (!file) return;
+            var formData = new FormData();
+            formData.append('arquivo', file);
+            
+            fetch(API + '/api/upload-arquivo', { method: 'POST', body: formData })
+                .then(function(resp) { return resp.json(); })
+                .then(function(data) {
+                    if (data.sucesso) {
+                        arquivoChatAnexado = { nome: data.arquivo.nome, texto: data.texto_completo };
+                        document.getElementById('chatFileName').textContent = data.arquivo.nome;
+                        document.getElementById('chatUploadPreview').classList.remove('hidden');
+                    } else {
+                        alert('Erro: ' + data.erro);
+                    }
+                })
+                .catch(function(e) { alert('Erro: ' + e.message); });
+            event.target.value = '';
+        }
+
+        function removerChatArquivo() {
+            arquivoChatAnexado = null;
+            document.getElementById('chatUploadPreview').classList.add('hidden');
+        }
+
+        function comandoRapido(tipo) {
+            var comandos = {
+                aprofundar: 'Aprofunde a analise',
+                discorrer: 'Discorra sobre os fundamentos',
+                comparar: 'Compare os entendimentos',
+                reescrever: 'Reescreva de forma tecnica',
+                sugerir: 'Sugira uma redacao completa'
+            };
+            document.getElementById('chatInput').value = comandos[tipo];
+            enviarChat();
+        }
+
+        function enviarChat() {
+            var input = document.getElementById('chatInput');
+            var msg = input.value.trim();
+            if (!msg) return;
+            input.value = '';
+            adicionarMsgChat('user', msg);
+            adicionarLoadingChat();
+            
+            var modelo = document.getElementById('modeloSelect').value;
+            var temaSensivel = document.getElementById('temaSensivel').checked;
+            
+            fetch(API + '/api/processos/chat', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    mensagem: msg,
+                    usuario_sei: usuarioAtual.usuario_sei,
+                    texto_canonico: textoCanonicoAtual,
+                    arquivo_anexo: arquivoChatAnexado,
+                    tipo_documento: document.getElementById('tipoDocumento').value,
+                    tema_sensivel: temaSensivel,
+                    modelo_forcado: modelo !== 'gpt-4o-mini' ? modelo : null
+                })
+            })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                removerLoadingChat();
+                if (data.sucesso || data.resposta) {
+                    ultimaRespostaSugestao = data.resposta;
+                    adicionarMsgChat('assistant', data.resposta, data.modelo_usado || modelo);
+                } else {
+                    adicionarMsgChat('assistant', 'Erro: ' + (data.erro || 'Erro'), null);
+                }
+            })
+            .catch(function(e) {
+                removerLoadingChat();
+                adicionarMsgChat('assistant', 'Erro: ' + e.message, null);
+            });
+        }
+
+        function adicionarMsgChat(role, content, modelo) {
+            var container = document.getElementById('chatMessages');
+            var div = document.createElement('div');
+            div.className = 'chat-msg chat-msg-' + role;
+            var html = content.replace(/\n/g, '<br>');
+            var hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            var headerHtml = '<div class="chat-msg-header"><span>' + (role === 'user' ? '👤 Voce' : '🤖 Agente') + ' - ' + hora + '</span>' + (modelo ? '<span style="color:var(--info);font-size:0.65rem">' + modelo + '</span>' : '') + '</div>';
+            var contentHtml = '<div class="chat-msg-content">' + html + '</div>';
+            var actionsHtml = '';
+            if (role === 'assistant' && content.indexOf('Erro') !== 0) {
+                actionsHtml = '<div class="chat-msg-actions"><button class="btn btn-xs btn-success" onclick="inserirSugestaoNoEditor()">Inserir</button><button class="btn btn-xs btn-secondary" onclick="copiarMsg(this)">Copiar</button></div>';
+            }
+            div.innerHTML = headerHtml + contentHtml + actionsHtml;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function adicionarLoadingChat() {
+            var container = document.getElementById('chatMessages');
+            var div = document.createElement('div');
+            div.id = 'chatLoading';
+            div.className = 'chat-msg chat-msg-assistant';
+            div.innerHTML = '<div class="chat-msg-content"><span class="spinner"></span> Analisando...</div>';
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function removerLoadingChat() {
+            var el = document.getElementById('chatLoading');
+            if (el) el.remove();
+        }
+
+        function inserirSugestaoNoEditor() {
+            if (!ultimaRespostaSugestao) return;
+            var editor = document.getElementById('previewDocumento');
+            editor.focus();
+            document.execCommand('insertHTML', false, '<p>' + ultimaRespostaSugestao.replace(/\n/g, '<br>') + '</p>');
+        }
+
+        function copiarMsg(btn) {
+            var content = btn.closest('.chat-msg').querySelector('.chat-msg-content').innerText;
+            navigator.clipboard.writeText(content);
+            btn.textContent = 'Copiado!';
+            setTimeout(function() { btn.textContent = 'Copiar'; }, 1500);
+        }
+
+        document.getElementById('nupInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') lerProcesso();
+        });
+        
+        document.getElementById('chatInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                enviarChat();
+            }
+        });
+    </script>
+</body>
+</html>

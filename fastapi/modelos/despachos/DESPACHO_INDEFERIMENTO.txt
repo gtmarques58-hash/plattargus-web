@@ -1,0 +1,11 @@
+<p style="text-align: justify; text-indent: 1.5cm;">Analisado o presente requerimento, verifico que NÃO atende aos requisitos legais pelos seguintes motivos:</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">{MOTIVOS_INDEFERIMENTO}</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;"><b>INDEFIRO</b> o pedido.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Dê-se ciência ao interessado.</p>
+
+<p style="text-align: center;"><b>{NOME_REMETENTE} - {POSTO_GRAD_REMETENTE}</b><br>
+{CARGO_REMETENTE}<br>
+{SIGLA_UNIDADE}/CBMAC</p>

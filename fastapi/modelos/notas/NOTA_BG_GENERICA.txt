@@ -1,0 +1,23 @@
+<p style="text-align: center;"><b>1ª P A R T E</b><br>
+(ESCALA DE SERVIÇO)</p>
+
+<p style="text-align: justify;">{ALTERACAO_ESCALA}</p>
+
+<p style="text-align: center;"><b>2ª P A R T E</b><br>
+(INSTRUÇÃO)</p>
+
+<p style="text-align: justify;">{ALTERACAO_INSTRUCAO}</p>
+
+<p style="text-align: center;"><b>3ª P A R T E</b><br>
+(ASSUNTOS GERAIS E ADMINISTRATIVOS)</p>
+
+<p style="text-align: justify;">{ALTERACAO_ASSUNTOS_GERAIS}</p>
+
+<p style="text-align: center;"><b>4ª P A R T E</b><br>
+(JUSTIÇA E DISCIPLINA)</p>
+
+<p style="text-align: justify;">{ALTERACAO_JUSTICA}</p>
+
+<p style="text-align: center;"><b>{NOME_REMETENTE} {POSTO_GRAD_REMETENTE}</b><br>
+{CARGO_REMETENTE}<br>
+Port. nº {NUMERO_PORTARIA}</p>

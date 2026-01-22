@@ -1,0 +1,12 @@
+<p style="text-align: left;">Ao(À) Sr(a). <b>{NOME_DESTINATARIO} – {POSTO_GRAD_DESTINATARIO}</b><br>
+{CARGO_DESTINATARIO}</p>
+
+<p style="text-align: left; text-indent: 1.5cm;">{VOCATIVO}</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Com os cumprimentos de estilo, encaminho a Vossa Senhoria os documentos anexos para conhecimento e providências decorrentes, em face {MOTIVO_ENCAMINHAMENTO}.</p>
+
+<p style="text-align: left; text-indent: 1.5cm;">Atenciosamente,</p>
+
+<p style="text-align: center;"><b>{NOME_REMETENTE} - {POSTO_GRAD_REMETENTE}</b><br>
+{CARGO_REMETENTE}<br>
+Port. nº {NUMERO_PORTARIA}</p>

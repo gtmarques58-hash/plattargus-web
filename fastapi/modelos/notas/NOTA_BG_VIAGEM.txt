@@ -1,0 +1,29 @@
+<p style="text-align: center;"><b>1ª P A R T E</b><br>
+(ESCALA DE SERVIÇO)</p>
+
+<p style="text-align: justify;">Sem Alteração</p>
+
+<p style="text-align: center;"><b>2ª P A R T E</b><br>
+(INSTRUÇÃO)</p>
+
+<p style="text-align: justify;">Sem Alteração</p>
+
+<p style="text-align: center;"><b>3ª P A R T E</b><br>
+(ASSUNTOS GERAIS E ADMINISTRATIVOS)</p>
+
+<p style="text-align: justify;"><b>1. ALTERAÇÕES DE OFICIAIS</b></p>
+
+<p style="text-align: justify;">a) VIAGEM A SERVIÇO DA CORPORAÇÃO - {TIPO_ONUS}</p>
+
+<p style="text-align: justify;">Em {DATA_VIAGEM},</p>
+
+<p style="text-align: justify;">Viajará a serviço da corporação, às {HORA_SAIDA} na data acima, o {POSTO_GRAD} Mat. {MATRICULA} {NOME_MILITAR}, autorizado pelo Comandante Geral do CBMAC, com destino a cidade de {CIDADE_DESTINO} - {UF_DESTINO}, para {MOTIVO_VIAGEM}. A viagem será por transporte {TIPO_TRANSPORTE}, com retorno previsto para {DATA_RETORNO}, às {HORA_RETORNO}. SEI nº ({NUP_PROCESSO}).</p>
+
+<p style="text-align: center;"><b>4ª P A R T E</b><br>
+(JUSTIÇA E DISCIPLINA)</p>
+
+<p style="text-align: justify;">Sem Alteração</p>
+
+<p style="text-align: center;"><b>{NOME_REMETENTE} {POSTO_GRAD_REMETENTE}</b><br>
+{CARGO_REMETENTE}<br>
+Port. nº {NUMERO_PORTARIA}</p>

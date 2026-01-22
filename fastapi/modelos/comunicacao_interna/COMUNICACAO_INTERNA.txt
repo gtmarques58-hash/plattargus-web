@@ -1,0 +1,13 @@
+<p style="text-align: left;">Ao(À) Sr(a). <b>{POSTO_GRAD} {NOME_COMPLETO}</b></p>
+
+<p style="text-align: left;">Assunto: <b>{ASSUNTO_RESUMIDO}</b></p>
+
+<p style="text-align: left; text-indent: 1.5cm;">{VOCATIVO}</p>
+
+{TEXTO_CORPO}
+
+<p style="text-align: left; text-indent: 1.5cm;">Atenciosamente,</p>
+
+<p style="text-align: center;"><b>{NOME_REMETENTE}</b><br>
+{CARGO_REMETENTE}<br>
+{SIGLA_REMETENTE}/CBMAC</p>

@@ -1,0 +1,113 @@
+Gere o CORPO de um {tipo_documento} formal para o CBMAC.
+
+ANÁLISE DO PROCESSO:
+{analise}
+
+NUP: {nup}
+TIPO DE DOCUMENTO: {tipo_documento}
+
+======================================================================
+DADOS DO DESTINATÁRIO (USE EXATAMENTE COMO FORNECIDO!)
+======================================================================
+{dados_destinatario}
+
+======================================================================
+DADOS DO REMETENTE (USE EXATAMENTE COMO FORNECIDO!)
+======================================================================
+{dados_remetente}
+
+{legislacao}
+
+======================================================================
+ESTRUTURA OBRIGATÓRIA DO DOCUMENTO
+======================================================================
+
+1. SEMPRE INICIE COM:
+<p>• NUP: {nup}<br>
+- Tipo de documento: {tipo_documento}</p>
+
+2. DESTINATÁRIO(S) - COPIE EXATAMENTE OS DADOS FORNECIDOS ACIMA:
+
+   Para CADA destinatário listado acima, use este formato:
+   <p style="text-align: left;">Ao(À) Sr(a). <b>[POSTO] [NOME]</b><br>
+   [CARGO] - [SIGLA_SEI]</p>
+
+   ⚠️ IMPORTANTE:
+   - NÃO invente cargos - use EXATAMENTE o que foi fornecido
+   - NÃO altere a ordem dos destinatários
+   - NÃO omita nenhum destinatário da lista
+
+3. VOCATIVO (com recuo):
+   - Se 1 destinatário: Use o tratamento adequado ao cargo
+     Ex: "Senhor Diretor," ou "Senhora Diretora," ou "Senhor Comandante,"
+   - Se 2+ destinatários com mesmo cargo: "Senhores Diretores," ou "Senhores Comandantes,"
+   - Se 2+ destinatários com cargos diferentes: "Senhores,"
+
+<p style="text-align: left; text-indent: 1.5cm;">[Vocativo apropriado]</p>
+
+4. CORPO DO DOCUMENTO:
+<p style="text-align: justify; text-indent: 1.5cm;">[Texto do documento...]</p>
+
+5. FECHO:
+<p style="text-align: left; text-indent: 1.5cm;">Atenciosamente,</p>
+
+6. ASSINATURA - USE EXATAMENTE OS DADOS DO REMETENTE:
+<p style="text-align: center;"><b>[NOME DO REMETENTE] - [POSTO]</b><br>
+[CARGO DO REMETENTE]<br>
+[PORTARIA SE HOUVER]</p>
+
+======================================================================
+REGRAS OBRIGATÓRIAS
+======================================================================
+
+- Use <p> com style inline para cada parágrafo
+- Parágrafos do corpo DEVEM ter text-indent: 1.5cm
+- Texto do corpo DEVE ser justificado (text-align: justify)
+- Assinatura DEVE ser centralizada (text-align: center)
+- NÃO use apenas <br><br> para separar parágrafos
+- NÃO coloque [PREENCHER] ou [Cargo do Destinatário] - use os dados fornecidos!
+- NÃO invente nomes ou cargos - use APENAS os dados fornecidos acima
+- O título do documento (DESPACHO, MEMORANDO) NÃO vai no corpo - o SEI adiciona
+
+======================================================================
+EXEMPLO COM 1 DESTINATÁRIO
+======================================================================
+
+<p>• NUP: 0609.012043.00323/2025-11<br>
+- Tipo de documento: Despacho</p>
+
+<p style="text-align: left;">Ao(À) Sr(a). <b>MAJ QOBMEC GILMAR TORRES MARQUES MOURA</b><br>
+Diretor de Recursos Humanos - CBMAC-DRH</p>
+
+<p style="text-align: left; text-indent: 1.5cm;">Senhor Diretor,</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">[Corpo do documento...]</p>
+
+<p style="text-align: left; text-indent: 1.5cm;">Atenciosamente,</p>
+
+<p style="text-align: center;"><b>CHARLES DA SILVA SANTOS - CEL QOBMEC</b><br>
+Comandante-Geral do CBMAC<br>
+Portaria XXXX</p>
+
+======================================================================
+EXEMPLO COM 2+ DESTINATÁRIOS (CIRCULAR)
+======================================================================
+
+<p>• NUP: 0609.012043.00323/2025-11<br>
+- Tipo de documento: Memorando-Circular</p>
+
+<p style="text-align: left;">Ao(À) Sr(a). <b>MAJ QOBMEC RUANA DA CONCEIÇÃO XAVIER CASAS</b><br>
+Diretora de Planejamento - CBMAC-DPLAN</p>
+
+<p style="text-align: left;">Ao(À) Sr(a). <b>CAP QOBMEC FRANCIMAR ELY SOUSA DO NASCIMENTO</b><br>
+Diretor de Saúde - CBMAC-DSAU</p>
+
+<p style="text-align: left; text-indent: 1.5cm;">Senhores Diretores,</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">[Corpo do documento...]</p>
+
+<p style="text-align: left; text-indent: 1.5cm;">Atenciosamente,</p>
+
+<p style="text-align: center;"><b>GILMAR TORRES MARQUES MOURA - MAJ QOBMEC</b><br>
+Diretor de Recursos Humanos - DRH/CBMAC<br>
+Portaria 288/CmtGeral/2025</p>

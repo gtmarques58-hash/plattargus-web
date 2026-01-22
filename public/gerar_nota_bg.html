@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerar Nota para BG - PlattArgus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .autocomplete-dropdown {
+            position: absolute;
+            z-index: 1000;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            max-height: 300px;
+            overflow-y: auto;
+            width: 100%;
+        }
+        .autocomplete-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .autocomplete-item:hover {
+            background: #f9fafb;
+        }
+        .autocomplete-item.selected {
+            background: #eff6ff;
+        }
+        .preview-html {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            padding: 20px;
+            background: white;
+            border: 1px solid #e5e7eb;
+        }
+        .campo-obrigatorio::after {
+            content: " *";
+            color: #ef4444;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f4f6;
+            border-radius: 50%;
+            border-top-color: #3b82f6;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-red-700 to-red-900 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-fire-extinguisher text-2xl"></i>
+                    <div>
+                        <h1 class="text-xl font-bold">PlattArgus</h1>
+                        <p class="text-xs text-red-200">Gerar Nota para Boletim Geral</p>
+                    </div>
+                </div>
+                <a href="/analisar.html" class="text-sm text-red-200 hover:text-white">
+                    <i class="fas fa-arrow-left mr-1"></i> Voltar
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Formulário -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-edit text-red-600 mr-2"></i>
+                    Dados da Nota
+                </h2>
+
+                <form id="formNota" class="space-y-4">
+                    <!-- Tipo de Ato -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1 campo-obrigatorio">
+                            Tipo de Ato
+                        </label>
+                        <select id="tipoAto" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            <option value="">Selecione o tipo de ato...</option>
+                            <optgroup label="📅 Férias">
+                                <option value="FERIAS_CONCESSAO">FÉRIAS - CONCESSÃO</option>
+                                <option value="FERIAS_APRESENTACAO">FÉRIAS - APRESENTAÇÃO</option>
+                                <option value="FERIAS_SUSTACAO">FÉRIAS - SUSTAÇÃO</option>
+                                <option value="FERIAS_INTERRUPCAO">FÉRIAS - INTERRUPÇÃO</option>
+                            </optgroup>
+                            <optgroup label="🎖️ Dispensa como Recompensa">
+                                <option value="DISPENSA_RECOMPENSA_CONCESSAO">DISPENSA COMO RECOMPENSA - CONCESSÃO</option>
+                                <option value="DISPENSA_RECOMPENSA_APRESENTACAO">DISPENSA COMO RECOMPENSA - APRESENTAÇÃO</option>
+                            </optgroup>
+                            <optgroup label="🏠 Dispensa">
+                                <option value="DISPENSA_CONCESSAO">DISPENSA - CONCESSÃO</option>
+                                <option value="DISPENSA_APRESENTACAO">DISPENSA - APRESENTAÇÃO</option>
+                            </optgroup>
+                            <optgroup label="📋 Licença Especial">
+                                <option value="LICENCA_ESPECIAL_CONCESSAO">LICENÇA ESPECIAL - CONCESSÃO</option>
+                                <option value="LICENCA_ESPECIAL_APRESENTACAO">LICENÇA ESPECIAL - APRESENTAÇÃO</option>
+                            </optgroup>
+                            <optgroup label="👶 Licença Paternidade">
+                                <option value="LICENCA_PATERNIDADE_CONCESSAO">LICENÇA PATERNIDADE - CONCESSÃO</option>
+                                <option value="LICENCA_PATERNIDADE_APRESENTACAO">LICENÇA PATERNIDADE - APRESENTAÇÃO</option>
+                            </optgroup>
+                            <optgroup label="🕯️ Luto">
+                                <option value="LUTO_CONCESSAO">LUTO - CONCESSÃO</option>
+                                <option value="LUTO_APRESENTACAO">LUTO - APRESENTAÇÃO</option>
+                            </optgroup>
+                            <optgroup label="💒 Núpcias">
+                                <option value="NUPCAS_CONCESSAO">NÚPCIAS - CONCESSÃO</option>
+                                <option value="NUPCAS_APRESENTACAO">NÚPCIAS - APRESENTAÇÃO</option>
+                            </optgroup>
+                            <optgroup label="✈️ Viagem">
+                                <option value="VIAGEM_SERVICO">VIAGEM A SERVIÇO - COM ÔNUS</option>
+                            </optgroup>
+                            <optgroup label="⭐ Outros">
+                                <option value="ELOGIO">ELOGIO</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <!-- Data do Ato -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1 campo-obrigatorio">
+                            Data do Ato
+                        </label>
+                        <input type="date" id="dataAto" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                    </div>
+
+                    <!-- Militar (Autocomplete) -->
+                    <div class="relative">
+                        <label class="block text-sm font-medium text-gray-700 mb-1 campo-obrigatorio">
+                            Militar
+                        </label>
+                        <div class="relative">
+                            <input type="text" id="militarBusca" required
+                                placeholder="Digite o nome ou matrícula..."
+                                autocomplete="off"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 pr-10">
+                            <span id="loadingMilitar" class="hidden absolute right-3 top-1/2 -translate-y-1/2">
+                                <span class="loading"></span>
+                            </span>
+                        </div>
+                        <div id="autocompleteDropdown" class="autocomplete-dropdown hidden"></div>
+                        
+                        <!-- Militar selecionado -->
+                        <div id="militarSelecionado" class="hidden mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="font-medium text-green-800" id="militarFormatado"></p>
+                                    <p class="text-sm text-green-600" id="militarLotacao"></p>
+                                </div>
+                                <button type="button" onclick="limparMilitar()" class="text-green-600 hover:text-green-800">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <input type="hidden" id="militarMatricula">
+                        <input type="hidden" id="militarNome">
+                    </div>
+
+                    <!-- Campos dinâmicos baseados no tipo -->
+                    <div id="camposDinamicos" class="space-y-4">
+                        <!-- Dias -->
+                        <div id="campoDias" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-1 campo-obrigatorio">
+                                Quantidade de Dias
+                            </label>
+                            <input type="number" id="dias" min="1" max="90"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        </div>
+
+                        <!-- Período Aquisitivo -->
+                        <div id="campoPeriodo" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-1 campo-obrigatorio">
+                                Período Aquisitivo
+                            </label>
+                            <input type="text" id="periodoAquisitivo" placeholder="2025/2026"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        </div>
+
+                        <!-- Data de Apresentação -->
+                        <div id="campoApresentacao" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-1 campo-obrigatorio">
+                                Data de Apresentação
+                            </label>
+                            <input type="date" id="dataApresentacao"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        </div>
+
+                        <!-- Motivo -->
+                        <div id="campoMotivo" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Motivo / Observação
+                            </label>
+                            <textarea id="motivo" rows="2" placeholder="Ex: por bons serviços prestados..."
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"></textarea>
+                        </div>
+
+                        <!-- Origem/Destino (viagem) -->
+                        <div id="campoViagem" class="hidden grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Origem</label>
+                                <input type="text" id="origem" placeholder="Rio Branco - AC"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Destino</label>
+                                <input type="text" id="destino" placeholder="Cruzeiro do Sul - AC"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Processo SEI -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Nº Processo SEI (opcional)
+                        </label>
+                        <input type="text" id="seiProcesso" placeholder="0609.012080.00284/2025-14"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                    </div>
+
+                    <!-- NUP para inserção -->
+                    <div class="pt-4 border-t border-gray-200">
+                        <label class="block text-sm font-medium text-gray-700 mb-1 campo-obrigatorio">
+                            NUP (processo onde inserir a nota)
+                        </label>
+                        <input type="text" id="nupDestino" required placeholder="0609.012080.00284/2025-14"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                    </div>
+
+                    <!-- Botões -->
+                    <div class="flex gap-3 pt-4">
+                        <button type="button" onclick="validarEGerar()" 
+                            class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-check mr-2"></i> Validar e Gerar
+                        </button>
+                        <button type="button" onclick="limparFormulario()" 
+                            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-eraser mr-1"></i> Limpar
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Preview e Ações -->
+            <div class="space-y-6">
+                <!-- Alertas -->
+                <div id="alertas" class="hidden">
+                    <div id="alertasContent" class="space-y-2"></div>
+                </div>
+
+                <!-- Preview -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-eye text-blue-600 mr-2"></i>
+                        Preview da Nota
+                    </h2>
+                    
+                    <div id="previewVazio" class="text-center py-12 text-gray-400">
+                        <i class="fas fa-file-alt text-4xl mb-3"></i>
+                        <p>Preencha o formulário e clique em "Validar e Gerar"</p>
+                    </div>
+
+                    <div id="previewContent" class="hidden">
+                        <div id="previewHtml" class="preview-html rounded-lg mb-4"></div>
+                        
+                        <!-- Ações -->
+                        <div class="flex gap-3">
+                            <button onclick="inserirNoSei()" 
+                                class="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                                <i class="fas fa-paper-plane mr-2"></i> Inserir no SEI
+                            </button>
+                            <button onclick="copiarHtml()" 
+                                class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-copy mr-1"></i> Copiar
+                            </button>
+                            <button onclick="baixarHtml()" 
+                                class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-download mr-1"></i> Baixar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Homônimos -->
+                <div id="modalHomonimos" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[80vh] overflow-hidden">
+                        <div class="p-4 border-b bg-yellow-50">
+                            <h3 class="font-semibold text-yellow-800">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                Múltiplos militares encontrados
+                            </h3>
+                            <p class="text-sm text-yellow-700 mt-1">Selecione o militar correto:</p>
+                        </div>
+                        <div id="listaHomonimos" class="p-4 space-y-2 max-h-96 overflow-y-auto"></div>
+                        <div class="p-4 border-t bg-gray-50">
+                            <button onclick="fecharModalHomonimos()" class="w-full px-4 py-2 border rounded-lg hover:bg-gray-100">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // ================================================================
+        // CONFIGURAÇÃO
+        // ================================================================
+        const API_BASE = '/api/nota-bg';
+        const MILITAR_API = '/api/nota-bg/militar';
+        
+        let militarSelecionadoData = null;
+        let htmlGerado = null;
+        let debounceTimer = null;
+
+        // ================================================================
+        // CAMPOS POR TIPO DE ATO
+        // ================================================================
+        const camposPorTipo = {
+            // Férias
+            'FERIAS_CONCESSAO': ['dias', 'periodo', 'apresentacao'],
+            'FERIAS_APRESENTACAO': ['dias', 'periodo'],
+            'FERIAS_SUSTACAO': ['dias', 'periodo', 'apresentacao'],
+            'FERIAS_INTERRUPCAO': ['dias', 'periodo'],
+            
+            // Dispensa Recompensa
+            'DISPENSA_RECOMPENSA_CONCESSAO': ['dias', 'apresentacao', 'motivo'],
+            'DISPENSA_RECOMPENSA_APRESENTACAO': ['dias'],
+            
+            // Dispensa
+            'DISPENSA_CONCESSAO': ['dias', 'apresentacao', 'motivo'],
+            'DISPENSA_APRESENTACAO': ['dias'],
+            
+            // Licença Especial
+            'LICENCA_ESPECIAL_CONCESSAO': ['dias', 'periodo', 'apresentacao'],
+            'LICENCA_ESPECIAL_APRESENTACAO': ['dias', 'periodo'],
+            
+            // Licença Paternidade
+            'LICENCA_PATERNIDADE_CONCESSAO': ['dias', 'apresentacao'],
+            'LICENCA_PATERNIDADE_APRESENTACAO': ['dias'],
+            
+            // Luto
+            'LUTO_CONCESSAO': ['dias', 'apresentacao', 'motivo'],
+            'LUTO_APRESENTACAO': ['dias'],
+            
+            // Núpcias
+            'NUPCAS_CONCESSAO': ['dias', 'apresentacao'],
+            'NUPCAS_APRESENTACAO': ['dias'],
+            
+            // Viagem
+            'VIAGEM_SERVICO': ['viagem', 'apresentacao', 'motivo'],
+            
+            // Elogio
+            'ELOGIO': ['motivo'],
+        };
+
+        // ================================================================
+        // EVENT LISTENERS
+        // ================================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            // Data padrão = hoje
+            document.getElementById('dataAto').valueAsDate = new Date();
+            
+            // Tipo de ato muda campos
+            document.getElementById('tipoAto').addEventListener('change', atualizarCampos);
+            
+            // Autocomplete militar
+            document.getElementById('militarBusca').addEventListener('input', (e) => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => buscarMilitar(e.target.value), 300);
+            });
+            
+            // Fechar dropdown ao clicar fora
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#militarBusca') && !e.target.closest('#autocompleteDropdown')) {
+                    document.getElementById('autocompleteDropdown').classList.add('hidden');
+                }
+            });
+        });
+
+        // ================================================================
+        // FUNÇÕES DE UI
+        // ================================================================
+        function atualizarCampos() {
+            const tipo = document.getElementById('tipoAto').value;
+            const campos = camposPorTipo[tipo] || [];
+            
+            // Esconde todos
+            document.getElementById('campoDias').classList.add('hidden');
+            document.getElementById('campoPeriodo').classList.add('hidden');
+            document.getElementById('campoApresentacao').classList.add('hidden');
+            document.getElementById('campoMotivo').classList.add('hidden');
+            document.getElementById('campoViagem').classList.add('hidden');
+            
+            // Mostra os necessários
+            if (campos.includes('dias')) {
+                document.getElementById('campoDias').classList.remove('hidden');
+            }
+            if (campos.includes('periodo')) {
+                document.getElementById('campoPeriodo').classList.remove('hidden');
+            }
+            if (campos.includes('apresentacao')) {
+                document.getElementById('campoApresentacao').classList.remove('hidden');
+            }
+            if (campos.includes('motivo')) {
+                document.getElementById('campoMotivo').classList.remove('hidden');
+            }
+            if (campos.includes('viagem')) {
+                document.getElementById('campoViagem').classList.remove('hidden');
+            }
+        }
+
+        // ================================================================
+        // AUTOCOMPLETE MILITAR
+        // ================================================================
+        async function buscarMilitar(query) {
+            if (query.length < 2) {
+                document.getElementById('autocompleteDropdown').classList.add('hidden');
+                return;
+            }
+            
+            document.getElementById('loadingMilitar').classList.remove('hidden');
+            
+            try {
+                const response = await fetch(`${MILITAR_API}/buscar?q=${encodeURIComponent(query)}&limit=10`);
+                const data = await response.json();
+                
+                const dropdown = document.getElementById('autocompleteDropdown');
+                
+                if (data.resultados && data.resultados.length > 0) {
+                    dropdown.innerHTML = data.resultados.map((m, i) => `
+                        <div class="autocomplete-item" onclick="selecionarMilitar(${i})" data-index="${i}">
+                            <div class="font-medium text-gray-800">${m.formatado}</div>
+                            <div class="text-sm text-gray-500">${m.lotacao || ''}</div>
+                        </div>
+                    `).join('');
+                    dropdown.classList.remove('hidden');
+                    
+                    // Guarda os dados para seleção
+                    window.resultadosBusca = data.resultados;
+                } else {
+                    dropdown.innerHTML = `
+                        <div class="p-4 text-center text-gray-500">
+                            <i class="fas fa-search mr-2"></i> Nenhum militar encontrado
+                        </div>
+                    `;
+                    dropdown.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Erro ao buscar militar:', error);
+            } finally {
+                document.getElementById('loadingMilitar').classList.add('hidden');
+            }
+        }
+
+        function selecionarMilitar(index) {
+            const militar = window.resultadosBusca[index];
+            militarSelecionadoData = militar;
+            
+            // Atualiza UI
+            document.getElementById('militarBusca').value = militar.nome;
+            document.getElementById('militarBusca').classList.add('hidden');
+            document.getElementById('autocompleteDropdown').classList.add('hidden');
+            
+            document.getElementById('militarSelecionado').classList.remove('hidden');
+            document.getElementById('militarFormatado').textContent = militar.formatado;
+            document.getElementById('militarLotacao').textContent = militar.lotacao || '';
+            
+            document.getElementById('militarMatricula').value = militar.matricula_completa;
+            document.getElementById('militarNome').value = militar.nome;
+        }
+
+        function limparMilitar() {
+            militarSelecionadoData = null;
+            document.getElementById('militarBusca').value = '';
+            document.getElementById('militarBusca').classList.remove('hidden');
+            document.getElementById('militarSelecionado').classList.add('hidden');
+            document.getElementById('militarMatricula').value = '';
+            document.getElementById('militarNome').value = '';
+        }
+
+        // ================================================================
+        // MODAL HOMÔNIMOS
+        // ================================================================
+        function mostrarModalHomonimos(militares) {
+            const lista = document.getElementById('listaHomonimos');
+            lista.innerHTML = militares.map((m, i) => `
+                <div class="p-3 border rounded-lg hover:bg-blue-50 cursor-pointer transition-colors"
+                     onclick="selecionarHomonimo(${i})">
+                    <div class="font-medium">${m.formatado}</div>
+                    <div class="text-sm text-gray-500">${m.lotacao || 'Sem lotação informada'}</div>
+                </div>
+            `).join('');
+            
+            window.homonimosDisponiveis = militares;
+            document.getElementById('modalHomonimos').classList.remove('hidden');
+        }
+
+        function selecionarHomonimo(index) {
+            const militar = window.homonimosDisponiveis[index];
+            militarSelecionadoData = militar;
+            
+            document.getElementById('militarBusca').classList.add('hidden');
+            document.getElementById('militarSelecionado').classList.remove('hidden');
+            document.getElementById('militarFormatado').textContent = militar.formatado;
+            document.getElementById('militarLotacao').textContent = militar.lotacao || '';
+            document.getElementById('militarMatricula').value = militar.matricula_completa;
+            document.getElementById('militarNome').value = militar.nome;
+            
+            fecharModalHomonimos();
+        }
+
+        function fecharModalHomonimos() {
+            document.getElementById('modalHomonimos').classList.add('hidden');
+        }
+
+        // ================================================================
+        // VALIDAR E GERAR
+        // ================================================================
+        async function validarEGerar() {
+            // Validação básica
+            const tipoAto = document.getElementById('tipoAto').value;
+            const dataAto = document.getElementById('dataAto').value;
+            const nupDestino = document.getElementById('nupDestino').value;
+            
+            if (!tipoAto || !dataAto || !militarSelecionadoData || !nupDestino) {
+                mostrarAlerta('error', 'Preencha todos os campos obrigatórios');
+                return;
+            }
+            
+            // Pega usuário SEI
+            let usuarioSei = localStorage.getItem('usuario_sei');
+            if (!usuarioSei) {
+                usuarioSei = prompt('Informe seu usuário SEI:');
+                if (!usuarioSei) return;
+                localStorage.setItem('usuario_sei', usuarioSei);
+            }
+            
+            // Formata data
+            const dataFormatada = formatarData(dataAto);
+            
+            // Pega o nome do tipo de ato (não o ID)
+            const tipoAtoSelect = document.getElementById('tipoAto');
+            const tipoAtoNome = tipoAtoSelect.options[tipoAtoSelect.selectedIndex].text;
+            
+            // Monta payload
+            const payload = {
+                tipo_ato: tipoAtoNome,
+                data_ato: dataFormatada,
+                militar_nome: militarSelecionadoData.nome,
+                militar_matricula: militarSelecionadoData.matricula_completa,
+                usuario_sei: usuarioSei,
+                dias: parseInt(document.getElementById('dias').value) || null,
+                periodo_aquisitivo: document.getElementById('periodoAquisitivo').value || null,
+                data_apresentacao: document.getElementById('dataApresentacao').value 
+                    ? formatarData(document.getElementById('dataApresentacao').value) 
+                    : null,
+                motivo: document.getElementById('motivo').value || null,
+                origem: document.getElementById('origem').value || null,
+                destino: document.getElementById('destino').value || null,
+                sei_processo: document.getElementById('seiProcesso').value || null,
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/gerar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    htmlGerado = data.html;
+                    mostrarPreview(data.html);
+                    
+                    if (data.alertas && data.alertas.length > 0) {
+                        mostrarAlertas(data.alertas, 'warning');
+                    } else {
+                        document.getElementById('alertas').classList.add('hidden');
+                    }
+                } else if (data.homonimos) {
+                    // Múltiplos militares encontrados
+                    mostrarModalHomonimos(data.opcoes);
+                } else {
+                    mostrarAlertas(data.erros || ['Erro ao gerar nota'], 'error');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                mostrarAlerta('error', 'Erro de conexão com a API');
+            }
+        }
+
+        // ================================================================
+        // PREVIEW E AÇÕES
+        // ================================================================
+        function mostrarPreview(html) {
+            document.getElementById('previewVazio').classList.add('hidden');
+            document.getElementById('previewContent').classList.remove('hidden');
+            document.getElementById('previewHtml').innerHTML = html;
+        }
+
+        function mostrarAlerta(tipo, mensagem) {
+            mostrarAlertas([mensagem], tipo);
+        }
+
+        function mostrarAlertas(mensagens, tipo = 'warning') {
+            const container = document.getElementById('alertas');
+            const content = document.getElementById('alertasContent');
+            
+            const cores = {
+                'warning': 'bg-yellow-50 border-yellow-200 text-yellow-800',
+                'error': 'bg-red-50 border-red-200 text-red-800',
+                'success': 'bg-green-50 border-green-200 text-green-800',
+            };
+            
+            const icones = {
+                'warning': 'fa-exclamation-triangle',
+                'error': 'fa-times-circle',
+                'success': 'fa-check-circle',
+            };
+            
+            content.innerHTML = mensagens.map(msg => `
+                <div class="p-3 border rounded-lg ${cores[tipo]}">
+                    <i class="fas ${icones[tipo]} mr-2"></i>
+                    ${msg}
+                </div>
+            `).join('');
+            
+            container.classList.remove('hidden');
+            
+            // Auto-hide após 5s se for sucesso
+            if (tipo === 'success') {
+                setTimeout(() => container.classList.add('hidden'), 5000);
+            }
+        }
+
+        async function inserirNoSei() {
+            if (!htmlGerado) {
+                mostrarAlerta('error', 'Gere a nota primeiro');
+                return;
+            }
+            
+            const nup = document.getElementById('nupDestino').value;
+            if (!nup) {
+                mostrarAlerta('error', 'Informe o NUP de destino');
+                return;
+            }
+            
+            // Pega usuário SEI do localStorage ou pede
+            let usuarioSei = localStorage.getItem('usuario_sei');
+            if (!usuarioSei) {
+                usuarioSei = prompt('Informe seu usuário SEI:');
+                if (!usuarioSei) return;
+                localStorage.setItem('usuario_sei', usuarioSei);
+            }
+            
+            mostrarAlerta('warning', 'Inserindo no SEI...');
+            
+            try {
+                const response = await fetch(`${API_BASE}/inserir`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nup: nup,
+                        html: htmlGerado,
+                        usuario_sei: usuarioSei
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    mostrarAlerta('success', 'Nota inserida no SEI com sucesso!');
+                } else {
+                    mostrarAlerta('error', data.erro || 'Erro ao inserir no SEI');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                mostrarAlerta('error', 'Erro de conexão');
+            }
+        }
+
+        function copiarHtml() {
+            if (htmlGerado) {
+                navigator.clipboard.writeText(htmlGerado);
+                mostrarAlerta('success', 'HTML copiado!');
+            }
+        }
+
+        function baixarHtml() {
+            if (htmlGerado) {
+                const blob = new Blob([htmlGerado], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `nota_bg_${Date.now()}.html`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        function limparFormulario() {
+            document.getElementById('formNota').reset();
+            limparMilitar();
+            document.getElementById('previewVazio').classList.remove('hidden');
+            document.getElementById('previewContent').classList.add('hidden');
+            document.getElementById('alertas').classList.add('hidden');
+            htmlGerado = null;
+            atualizarCampos();
+        }
+
+        // ================================================================
+        // UTILITÁRIOS
+        // ================================================================
+        function formatarData(dataISO) {
+            const [ano, mes, dia] = dataISO.split('-');
+            return `${dia}/${mes}/${ano}`;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<p style="text-align: left;">Ao Senhor<br>
+<b>{NOME_COMANDANTE}</b><br>
+{CARGO_COMANDANTE}</p>
+
+<p style="text-align: left;">Assunto: <b>Requerimento de Dispensa por Luto.</b></p>
+
+<p style="text-align: left; text-indent: 1.5cm;">Senhor Comandante,</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Eu, {NOME_REQUERENTE}, {POSTO_GRAD_REQUERENTE}, matrícula nº {MATRICULA}, lotado(a) no(a) {UNIDADE_LOTACAO}, vem, respeitosamente, perante Vossa Excelência, requerer a concessão de dispensa do serviço, por motivo de luto, em conformidade com o previsto no Estatuto dos Militares do Estado do Acre (Lei Complementar nº 164/2006) e demais regulamentações pertinentes.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">O presente pedido se faz em razão do falecimento de seu/sua {GRAU_PARENTESCO}, Sr(a). {NOME_FALECIDO}, ocorrido em {DATA_FALECIMENTO}, na cidade de {LOCAL_FALECIMENTO}.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Para fins de comprovação, anexa a este requerimento uma cópia da Certidão de Óbito.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Diante do exposto, e amparado pela legislação vigente, o requerente solicita a dispensa das atividades laborais pelo período de 8 (oito) dias, a contar da data do óbito, para que possa prestar as últimas homenagens e realizar os procedimentos necessários neste momento de dor.</p>
+
+<p style="text-align: justify;">Nestes termos, Pede deferimento.</p>
+
+<p style="text-align: left; text-indent: 1.5cm;">Atenciosamente,</p>
+
+<p style="text-align: center;"><b>{NOME_REQUERENTE} - {POSTO_GRAD_REQUERENTE}</b><br>
+Matrícula nº {MATRICULA}</p>

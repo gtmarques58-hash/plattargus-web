@@ -1,0 +1,25 @@
+<p style="text-align: left;">Ao Senhor<br>
+<b>{NOME_COMANDANTE}</b><br>
+{CARGO_COMANDANTE}</p>
+
+<p style="text-align: left;">Assunto: <b>Solicitação de Inclusão no ROL de Dependentes.</b></p>
+
+<p style="text-align: left; text-indent: 1.5cm;">Senhor Comandante,</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Eu, {NOME_REQUERENTE}, {POSTO_GRAD_REQUERENTE}, matrícula nº {MATRICULA}, lotado(a) no(a) {UNIDADE_LOTACAO}, venho, respeitosamente, à presença de Vossa Senhoria requerer a inclusão de dependente no meu cadastro funcional.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Dados do dependente a ser incluído:</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Nome: {NOME_DEPENDENTE}<br>
+Grau de parentesco: {GRAU_PARENTESCO}<br>
+Data de nascimento: {DATA_NASCIMENTO_DEPENDENTE}<br>
+CPF: {CPF_DEPENDENTE}</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Para fins de comprovação, anexo a este requerimento os documentos comprobatórios necessários.</p>
+
+<p style="text-align: justify;">Nestes termos, Pede deferimento.</p>
+
+<p style="text-align: left; text-indent: 1.5cm;">Atenciosamente,</p>
+
+<p style="text-align: center;"><b>{NOME_REQUERENTE} - {POSTO_GRAD_REQUERENTE}</b><br>
+Matrícula nº {MATRICULA}</p>

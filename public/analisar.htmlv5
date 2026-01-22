@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlattArgus - Analisar Processo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg-primary:#0a0e14;--bg-secondary:#111820;--bg-tertiary:#1a222d;--bg-card:#141c26;--accent:#e63946;--accent-hover:#ff4d5a;--accent-glow:rgba(230,57,70,0.4);--text-primary:#f1f5f9;--text-secondary:#94a3b8;--text-muted:#64748b;--success:#10b981;--warning:#f59e0b;--error:#ef4444;--info:#3b82f6;--border-color:rgba(255,255,255,0.08);--border-accent:rgba(230,57,70,0.3);--font-display:'Plus Jakarta Sans',sans-serif}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:var(--font-display);background:var(--bg-primary);color:var(--text-primary);min-height:100vh;line-height:1.6}
+        body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(230,57,70,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(230,57,70,0.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:-1}
+        .header{background:var(--bg-secondary);border-bottom:1px solid var(--border-color);padding:12px 24px;position:sticky;top:0;z-index:100}
+        .header-content{max-width:1800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+        .logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--accent) 0%,#b91c1c 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;box-shadow:0 0 20px var(--accent-glow)}
+        .logo-text{font-weight:700;font-size:1.1rem;color:var(--text-primary)}
+        .logo-text span{color:var(--accent)}
+        .logo-subtitle{color:var(--text-muted);font-size:0.75rem;margin-left:10px;padding-left:10px;border-left:1px solid var(--border-color)}
+        .user-area{display:flex;align-items:center;gap:16px}
+        .user-badge{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--bg-tertiary);border-radius:10px;border:1px solid var(--border-color)}
+        .user-avatar{width:36px;height:36px;background:linear-gradient(135deg,var(--accent) 0%,#b91c1c 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:600}
+        .user-info{display:flex;flex-direction:column}
+        .user-name{font-weight:600;font-size:0.9rem;color:var(--accent)}
+        .user-cargo{font-size:0.7rem;color:var(--text-muted)}
+        .user-sei{font-size:0.75rem;color:var(--text-muted);display:flex;align-items:center;gap:4px}
+        .status-sei{display:flex;align-items:center;gap:6px;font-size:0.75rem;padding:6px 12px;border-radius:20px;background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3)}
+        .status-sei::before{content:'';width:6px;height:6px;background:var(--success);border-radius:50%;animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+        .btn-header{background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-primary);cursor:pointer;font-size:0.85rem;padding:8px 14px;border-radius:8px;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+        .btn-header:hover{border-color:var(--accent);color:var(--accent)}
+        .btn-sair{background:var(--accent);color:white;border:none;padding:8px 16px;border-radius:8px;font-weight:600;font-size:0.85rem;cursor:pointer}
+        .btn-sair:hover{background:var(--accent-hover)}
+        .container{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:20px;max-width:1800px;margin:0 auto}
+        @media(max-width:1200px){.container{grid-template-columns:1fr}}
+        .panel{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px}
+        .panel h2{color:var(--accent);margin-bottom:15px;font-size:1.1rem;display:flex;align-items:center;gap:8px}
+        .input-row{display:flex;gap:10px;margin-bottom:15px}
+        .form-input{flex:1;padding:12px 14px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-size:0.95rem;font-family:var(--font-display)}
+        .form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+        .form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+        .btn{padding:12px 20px;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.9rem;transition:all 0.2s;font-family:var(--font-display);display:inline-flex;align-items:center;gap:8px}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),#b91c1c);color:#fff;box-shadow:0 4px 15px var(--accent-glow)}
+        .btn-primary:hover{transform:translateY(-1px)}
+        .btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+        .btn-secondary{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color)}
+        .btn-success{background:var(--success);color:#fff}
+        .btn-warning{background:var(--warning);color:#fff}
+        .btn-info{background:var(--info);color:#fff}
+        .btn-sm{padding:8px 14px;font-size:0.85rem}
+        .btn-xs{padding:5px 10px;font-size:0.75rem}
+        .btn-outline{background:transparent;border:1px solid var(--border-color);color:var(--text-muted)}
+        .btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+        .btn-group{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
+        .status{padding:12px 15px;border-radius:8px;margin:15px 0;font-size:0.9rem}
+        .status-success{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:var(--success)}
+        .status-error{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:var(--error)}
+        .status-loading{background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:var(--info);display:flex;align-items:center;gap:10px}
+        .spinner{width:16px;height:16px;border:2px solid var(--border-color);border-top-color:currentColor;border-radius:50%;animation:spin 0.8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .hidden{display:none!important}
+        .resumo-box{background:var(--bg-tertiary);border-left:4px solid var(--accent);padding:15px;border-radius:0 8px 8px 0;margin:15px 0}
+        .resumo-box h3{color:var(--accent);margin-bottom:10px;font-size:1rem}
+        .resumo-box p{line-height:1.6;color:var(--text-secondary)}
+        .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:15px 0}
+        @media(max-width:600px){.info-grid{grid-template-columns:1fr}}
+        .info-card{background:var(--bg-primary);border-radius:8px;padding:12px}
+        .info-card h4{color:var(--accent);font-size:0.85rem;margin-bottom:8px}
+        .info-card p{font-size:0.9rem;color:var(--text-secondary);line-height:1.5}
+        .tag{display:inline-block;padding:4px 10px;border-radius:15px;font-size:0.75rem;margin:2px}
+        .tag-alta{background:var(--accent);color:#fff}
+        .tag-info{background:var(--info);color:#fff}
+        .docs-lista{max-height:200px;overflow-y:auto;background:var(--bg-primary);border-radius:8px;padding:10px;margin:10px 0}
+        .doc-item{padding:8px 10px;margin:5px 0;background:var(--bg-tertiary);border-radius:5px;cursor:pointer;font-size:0.85rem;transition:all 0.2s}
+        .doc-item:hover{background:var(--bg-secondary);border-left:3px solid var(--accent)}
+        .config-box{background:var(--bg-tertiary);border-radius:8px;padding:15px;margin:15px 0}
+        .config-box h3{color:var(--text-primary);font-size:0.95rem;margin-bottom:15px}
+        .config-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+        @media(max-width:700px){.config-row{grid-template-columns:1fr}}
+        .config-row label{display:block;color:var(--text-muted);font-size:0.8rem;margin-bottom:5px}
+        .editor-box{background:var(--bg-tertiary);border-radius:8px;padding:15px;margin:15px 0}
+        .editor-box h3{color:var(--success);font-size:0.95rem;margin-bottom:10px}
+        .editor-warning{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:5px;padding:8px 12px;margin-bottom:10px;font-size:0.8rem;color:var(--warning)}
+        .toolbar{display:flex;gap:5px;flex-wrap:wrap;padding:10px;background:var(--bg-primary);border-radius:8px 8px 0 0;border:1px solid var(--border-color);border-bottom:none}
+        .toolbar-btn{padding:8px 12px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-primary);cursor:pointer;border-radius:4px;font-size:0.85rem;transition:all 0.2s;font-weight:600}
+        .toolbar-btn:hover{background:var(--bg-secondary);border-color:var(--accent)}
+        .toolbar-separator{width:1px;background:var(--border-color);margin:0 5px}
+        .preview-container{background:#fff;color:#000;border-radius:0 0 8px 8px;padding:30px;min-height:300px;max-height:400px;overflow-y:auto;font-family:'Times New Roman',serif;font-size:12pt;line-height:1.6;border:1px solid var(--border-color)}
+        .preview-container:focus{outline:2px solid var(--success)}
+        .preview-container p{margin:8px 0}
+        .validacao-item{padding:8px 12px;margin:5px 0;border-radius:5px;font-size:0.85rem}
+        .validacao-ok{background:rgba(16,185,129,0.15);border-left:3px solid var(--success);color:var(--success)}
+        .validacao-warning{background:rgba(245,158,11,0.15);border-left:3px solid var(--warning);color:var(--warning)}
+        .modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000}
+        .modal-content{background:var(--bg-secondary);border-radius:12px;padding:25px;max-width:900px;width:90%;max-height:80vh;overflow-y:auto;border:1px solid var(--border-color)}
+        .modal-content h3{color:var(--accent);margin-bottom:15px}
+        .modal-close{float:right;background:none;border:none;color:var(--accent);font-size:1.5rem;cursor:pointer}
+        .autoridades-table{width:100%;border-collapse:collapse;margin-top:15px}
+        .autoridades-table th,.autoridades-table td{padding:10px;text-align:left;border-bottom:1px solid var(--border-color);font-size:0.85rem}
+        .autoridades-table th{background:var(--bg-tertiary);color:var(--accent)}
+        .autoridades-table tr:hover{background:var(--bg-tertiary)}
+        .search-box input{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary)}
+        .chat-section{margin-top:15px}
+        .chat-toggle-btn{width:100%;padding:12px;background:var(--bg-secondary);border:1px dashed var(--border-color);border-radius:8px;color:var(--text-muted);cursor:pointer;font-size:0.9rem;transition:all 0.2s}
+        .chat-toggle-btn:hover{border-color:var(--accent);color:var(--accent)}
+        .chat-container{background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;margin-top:10px}
+        .chat-header{padding:10px 15px;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center}
+        .chat-header h4{font-size:0.9rem;color:var(--text-primary)}
+        .modelo-badge{font-size:0.7rem;padding:3px 8px;border-radius:10px;background:var(--info);color:#fff}
+        .chat-messages{height:200px;overflow-y:auto;padding:10px}
+        .chat-msg{margin:8px 0;padding:10px 12px;border-radius:8px;font-size:0.85rem}
+        .chat-msg-user{background:var(--bg-tertiary);margin-left:20%}
+        .chat-msg-assistant{background:var(--bg-secondary);margin-right:20%;border-left:3px solid var(--accent)}
+        .chat-msg-header{display:flex;justify-content:space-between;margin-bottom:5px;font-size:0.75rem;color:var(--text-muted)}
+        .chat-msg-content{line-height:1.5}
+        .chat-msg-actions{margin-top:8px;display:flex;gap:5px}
+        .chat-input-row{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border-color)}
+        .chat-input-row input,.chat-input-row textarea{flex:1;padding:10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-primary);font-size:0.9rem;resize:none}
+        .chat-options{padding:10px;border-top:1px solid var(--border-color);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+        .chat-options select{padding:6px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-primary);font-size:0.8rem}
+        .chat-options label{font-size:0.8rem;color:var(--text-muted);display:flex;align-items:center;gap:5px}
+        .quick-btns{display:flex;gap:5px;flex-wrap:wrap;padding:5px 10px}
+        .quick-btn{padding:5px 10px;font-size:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:15px;color:var(--text-muted);cursor:pointer}
+        .quick-btn:hover{border-color:var(--accent);color:var(--accent)}
+        .anexo-badge{font-size:0.75rem;padding:4px 8px;background:var(--info);color:#fff;border-radius:4px;display:inline-flex;align-items:center;gap:5px}
+        .edit-hint{font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;font-style:italic}
+        /* Autocomplete Styles */
+        .autocomplete-wrapper{position:relative}
+        .autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;max-height:280px;overflow-y:auto;z-index:100;margin-top:4px;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
+        .autocomplete-item{padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border-color);transition:all 0.15s}
+        .autocomplete-item:last-child{border-bottom:none}
+        .autocomplete-item:hover,.autocomplete-item.selected{background:var(--bg-tertiary);border-left:3px solid var(--accent)}
+        .autocomplete-item .sigla{font-weight:bold;color:var(--accent);margin-right:8px}
+        .autocomplete-item .nome{color:var(--text-primary)}
+        .autocomplete-item .cargo{display:block;font-size:0.8rem;color:var(--text-muted);margin-top:2px}
+        .autocomplete-group{padding:8px 12px;background:var(--bg-secondary);color:var(--accent);font-weight:bold;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;position:sticky;top:0;border-bottom:1px solid var(--border-color)}
+        .autocomplete-empty{padding:15px;text-align:center;color:var(--text-muted);font-size:0.9rem}
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="/dashboard.html" class="logo">
+                <div class="logo-icon">🔥</div>
+                <div class="logo-text">Platt<span>Argus</span></div>
+                <span class="logo-subtitle">Análise Inteligente</span>
+            </a>
+            <div class="user-area">
+                <div class="status-sei">SEI Vinculado</div>
+                <div class="user-badge">
+                    <div class="user-avatar" id="userAvatar">--</div>
+                    <div class="user-info">
+                        <span class="user-name" id="userName">Carregando...</span>
+                        <span class="user-cargo" id="userCargo">-</span>
+                        <span class="user-sei" id="userSeiSpan">-</span>
+                    </div>
+                </div>
+                <a href="/dashboard.html" class="btn-header">📊 Dashboard</a>
+                <button class="btn-sair" onclick="fazerLogout()">Sair</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="panel">
+            <h2>🔍 Analisar Processo</h2>
+            <div class="input-row">
+                <input type="text" id="nupInput" class="form-input" placeholder="Digite o NUP (ex: 0057.013287.00006/2025-05)">
+                <button class="btn btn-primary" onclick="lerProcesso()">🔍 Analisar</button>
+            </div>
+            <div id="statusLeitura" class="status hidden"></div>
+            <div id="resultadoAnalise" class="hidden">
+                <div class="resumo-box">
+                    <h3>📋 Resumo da Análise</h3>
+                    <div id="resumoConteudo"></div>
+                </div>
+                <div class="info-grid" id="infoGrid"></div>
+                <details style="margin-top:15px">
+                    <summary style="cursor:pointer;color:var(--accent);font-weight:600">📁 Documentos do Processo (<span id="qtdDocs">0</span>)</summary>
+                    <div class="docs-lista" id="docsLista"></div>
+                </details>
+            </div>
+            <div id="sugestaoBox" class="config-box hidden">
+                <h3>💡 Sugestão do Sistema</h3>
+                <p style="color:var(--text-secondary);font-size:0.9rem" id="sugestaoTexto">-</p>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>📄 Gerar Documento</h2>
+            <div id="configBox" class="config-box hidden">
+                <h3>⚙️ Configuração</h3>
+                <div class="config-row">
+                    <div class="autocomplete-wrapper">
+                        <label>Tipo de Documento</label>
+                        <input type="text" id="tipoDocumentoInput" class="form-input" placeholder="Digite: DES, MEM, OFI..." autocomplete="off">
+                        <input type="hidden" id="tipoDocumento" value="Despacho">
+                        <div id="tipoDocumentoList" class="autocomplete-list hidden"></div>
+                    </div>
+                    <div class="autocomplete-wrapper">
+                        <label>Destinatário</label>
+                        <input type="text" id="destinatarioInput" class="form-input" placeholder="Digite sigla: DRH, CMDGER..." autocomplete="off">
+                        <input type="hidden" id="destinatario" value="">
+                        <div id="destinatarioList" class="autocomplete-list hidden"></div>
+                    </div>
+                    <button class="btn btn-primary" onclick="gerarDocumento()" style="margin-top:22px">✨ Gerar</button>
+                </div>
+            </div>
+            <div id="statusDocumento" class="status hidden"></div>
+            <div id="editorContainer" class="editor-box hidden">
+                <h3>✅ Prévia do Documento</h3>
+                <div class="editor-warning">⚠️ Texto sugerido - revise antes de inserir no SEI</div>
+                <p class="edit-hint">💡 Selecione o texto e use os botões para formatar</p>
+                <div class="toolbar">
+                    <button class="toolbar-btn" onclick="formatDoc('bold')"><b>N</b></button>
+                    <button class="toolbar-btn" onclick="formatDoc('italic')"><i>I</i></button>
+                    <button class="toolbar-btn" onclick="formatDoc('underline')"><u>S</u></button>
+                    <div class="toolbar-separator"></div>
+                    <button class="toolbar-btn" onclick="formatDoc('justifyLeft')">←</button>
+                    <button class="toolbar-btn" onclick="formatDoc('justifyCenter')">■</button>
+                    <button class="toolbar-btn" onclick="formatDoc('justifyRight')">→</button>
+                    <button class="toolbar-btn" onclick="formatDoc('justifyFull')">≡</button>
+                    <div class="toolbar-separator"></div>
+                    <button class="toolbar-btn" onclick="abrirModalAutoridades()">👥 Buscar Autoridade</button>
+                </div>
+                <div id="previewDocumento" class="preview-container" contenteditable="true"></div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="validarDocumento()">✔️ Validar</button>
+                    <button class="btn btn-warning" onclick="melhorarTexto()">✨ Melhorar</button>
+                    <button class="btn btn-success" onclick="inserirSEI()">📤 Inserir no SEI</button>
+                </div>
+            </div>
+            <div id="validacoesBox" class="hidden"></div>
+            <div id="statusInserir" class="status hidden"></div>
+            
+            <div id="chatSection" class="chat-section hidden">
+                <button class="chat-toggle-btn" id="chatToggleBtn" onclick="toggleChat()">💬 Abrir Chat Analítico</button>
+                <div id="chatContainer" class="chat-container hidden">
+                    <div class="chat-header">
+                        <h4>💬 Chat Analítico</h4>
+                        <span class="modelo-badge" id="modeloBadge">GPT-4o-mini</span>
+                    </div>
+                    <div class="chat-messages" id="chatMessages"></div>
+                    <div class="quick-btns">
+                        <button class="quick-btn" onclick="enviarComando('resumir')">📝 Resumir</button>
+                        <button class="quick-btn" onclick="enviarComando('legislacao')">⚖️ Legislação</button>
+                        <button class="quick-btn" onclick="enviarComando('pendencias')">⚠️ Pendências</button>
+                        <button class="quick-btn" onclick="enviarComando('sugerir')">💡 Sugerir Despacho</button>
+                    </div>
+                    <div class="chat-options">
+                        <select id="modeloSelect" onchange="atualizarModeloBadge()">
+                            <option value="gpt-4o-mini">GPT-4o-mini (rápido)</option>
+                            <option value="gpt-4o">GPT-4o (preciso)</option>
+                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                        </select>
+                        <label><input type="checkbox" id="temaSensivel"> Tema sensível</label>
+                        <label style="cursor:pointer">
+                            📎 <input type="file" id="anexoChat" style="display:none" onchange="anexarArquivo(this)">
+                            <span id="anexoNome">Anexar</span>
+                        </label>
+                    </div>
+                    <div class="chat-input-row">
+                        <textarea id="chatInput" placeholder="Digite sua pergunta sobre o processo..." rows="2"></textarea>
+                        <button class="btn btn-primary btn-sm" onclick="enviarChat()">Enviar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalAutoridades" class="modal hidden">
+        <div class="modal-content">
+            <button class="modal-close" onclick="fecharModalAutoridades()">×</button>
+            <h3>👥 Buscar Autoridade</h3>
+            <div class="search-box">
+                <input type="text" id="searchAutoridade" placeholder="Digite para filtrar..." oninput="filtrarAutoridades()">
+            </div>
+            <table class="autoridades-table">
+                <thead><tr><th>Sigla</th><th>Unidade</th><th>Posto/Grad</th><th>Nome</th><th>Cargo</th></tr></thead>
+                <tbody id="tabelaAutoridades"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modalDocumento" class="modal hidden">
+        <div class="modal-content" style="max-width:800px">
+            <button class="modal-close" onclick="fecharModalDocumento()">×</button>
+            <h3 id="modalDocTitulo">Documento</h3>
+            <div id="modalDocMeta" style="margin-bottom:15px;padding:10px;background:var(--bg-tertiary);border-radius:8px;font-size:0.85rem;color:var(--text-muted)"></div>
+            <div id="modalDocConteudo" style="background:#fff;color:#000;padding:25px;border-radius:8px;font-family:'Times New Roman',serif;font-size:12pt;line-height:1.6;max-height:60vh;overflow-y:auto"></div>
+        </div>
+    </div>
+
+    <script>
+        var API = window.location.origin;
+        var analiseAtual = null;
+        var nupAtual = '';
+        var docsProcesso = [];
+        var todasAutoridades = [];
+        var textoCanonicoAtual = '';
+        var arquivoChatAnexado = null;
+        var ultimaRespostaSugestao = '';
+        var usuarioAtual = null;
+
+        // Tipos de documento disponíveis
+        var tiposDocumento = [
+            { codigo: 'DESPACHO_SIMPLES', tipo: 'Despacho', nome: 'Despacho Simples', descricao: 'Texto livre para qualquer finalidade' },
+            { codigo: 'DESPACHO_ENCAMINHAMENTO', tipo: 'Despacho', nome: 'Despacho de Encaminhamento', descricao: 'Encaminhar processo a outra unidade' },
+            { codigo: 'DESPACHO_DEFERIMENTO', tipo: 'Despacho', nome: 'Despacho de Deferimento', descricao: 'Deferir solicitação' },
+            { codigo: 'DESPACHO_INDEFERIMENTO', tipo: 'Despacho', nome: 'Despacho de Indeferimento', descricao: 'Indeferir solicitação' },
+            { codigo: 'MEMO_GENERICO', tipo: 'Memorando', nome: 'Memorando Genérico', descricao: 'Comunicação interna geral' },
+            { codigo: 'MEMO_ENCAMINHAMENTO', tipo: 'Memorando', nome: 'Memorando de Encaminhamento', descricao: 'Encaminhar documentos' },
+            { codigo: 'REQ_GENERICO', tipo: 'Requerimento', nome: 'Requerimento Genérico', descricao: 'Solicitação formal' },
+            { codigo: 'REQ_FERIAS', tipo: 'Requerimento', nome: 'Requerimento de Férias', descricao: 'Solicitar férias' },
+            { codigo: 'OFICIO_EXTERNO', tipo: 'Ofício', nome: 'Ofício Externo', descricao: 'Comunicação com órgãos externos' },
+            { codigo: 'NOTA_BG_VIAGEM', tipo: 'Nota BG', nome: 'Nota BG - Viagem', descricao: 'Nota para Boletim Geral' }
+        ];
+
+        window.addEventListener('load', verificarSessao);
+
+        function verificarSessao() {
+            var token = localStorage.getItem('plattargus_token');
+            var usuarioStr = localStorage.getItem('plattargus_usuario');
+            if (!token || !usuarioStr) {
+                window.location.href = '/';
+                return;
+            }
+            try {
+                usuarioAtual = JSON.parse(usuarioStr);
+                configurarUsuarioLogado(usuarioAtual);
+                carregarAutoridades();
+                configurarAutocomplete();
+            } catch (e) {
+                window.location.href = '/';
+            }
+        }
+
+        function configurarUsuarioLogado(u) {
+            var iniciais = u.nome_completo ? u.nome_completo.split(' ').map(function(n) { return n[0]; }).slice(0, 2).join('') : u.usuario_sei.substring(0, 2).toUpperCase();
+            document.getElementById('userAvatar').textContent = iniciais;
+            document.getElementById('userName').textContent = u.posto_grad ? u.posto_grad + ' ' + u.nome_completo : (u.nome_completo || u.usuario_sei);
+            document.getElementById('userCargo').textContent = u.cargo || 'Servidor';
+            document.getElementById('userSeiSpan').innerHTML = '🔒 ' + u.usuario_sei;
+        }
+
+        function fazerLogout() {
+            localStorage.clear();
+            window.location.href = '/';
+        }
+
+        function carregarAutoridades() {
+            fetch(API + '/api/autoridades', { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('plattargus_token'), 'Accept': 'application/json' } })
+                .then(function(resp) { return resp.json(); })
+                .then(function(data) {
+                    todasAutoridades = data.autoridades || data.usuarios || [];
+                })
+                .catch(function(e) { console.error('Erro ao carregar autoridades:', e); });
+        }
+
+        // ========== AUTOCOMPLETE ==========
+        function configurarAutocomplete() {
+            var tipoInput = document.getElementById('tipoDocumentoInput');
+            var destInput = document.getElementById('destinatarioInput');
+
+            tipoInput.addEventListener('input', filtrarTipos);
+            tipoInput.addEventListener('focus', filtrarTipos);
+            tipoInput.addEventListener('keydown', function(e) { navegarAutocomplete(e, 'tipoDocumentoList', 'tipo'); });
+
+            destInput.addEventListener('input', filtrarDestinatarios);
+            destInput.addEventListener('focus', filtrarDestinatarios);
+            destInput.addEventListener('keydown', function(e) { navegarAutocomplete(e, 'destinatarioList', 'dest'); });
+
+            // Fecha ao clicar fora
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.autocomplete-wrapper')) {
+                    document.getElementById('tipoDocumentoList').classList.add('hidden');
+                    document.getElementById('destinatarioList').classList.add('hidden');
+                }
+            });
+        }
+
+        function filtrarTipos() {
+            var input = document.getElementById('tipoDocumentoInput');
+            var list = document.getElementById('tipoDocumentoList');
+            var termo = input.value.toLowerCase().trim();
+
+            var filtrados = tiposDocumento;
+            if (termo) {
+                filtrados = tiposDocumento.filter(function(t) {
+                    return t.codigo.toLowerCase().indexOf(termo) >= 0 ||
+                           t.tipo.toLowerCase().indexOf(termo) >= 0 ||
+                           t.nome.toLowerCase().indexOf(termo) >= 0;
+                });
+            }
+
+            if (filtrados.length === 0) {
+                list.innerHTML = '<div class="autocomplete-empty">Nenhum tipo encontrado</div>';
+            } else {
+                var html = '';
+                var tipoAtual = '';
+                filtrados.forEach(function(t) {
+                    if (t.tipo !== tipoAtual) {
+                        tipoAtual = t.tipo;
+                        html += '<div class="autocomplete-group">' + t.tipo + '</div>';
+                    }
+                    html += '<div class="autocomplete-item" data-codigo="' + t.codigo + '" data-nome="' + t.nome + '" onclick="selecionarTipo(this)">';
+                    html += '<span class="sigla">' + t.codigo.split('_')[0] + '</span>';
+                    html += '<span class="nome">' + t.nome + '</span>';
+                    html += '<span class="cargo">' + t.descricao + '</span>';
+                    html += '</div>';
+                });
+                list.innerHTML = html;
+            }
+            list.classList.remove('hidden');
+        }
+
+        function selecionarTipo(el) {
+            var codigo = el.getAttribute('data-codigo');
+            var nome = el.getAttribute('data-nome');
+            document.getElementById('tipoDocumentoInput').value = nome;
+            document.getElementById('tipoDocumento').value = codigo;
+            document.getElementById('tipoDocumentoList').classList.add('hidden');
+        }
+
+        function categorizarAutoridade(a) {
+            var sigla = (a.sigla || '').toUpperCase();
+            if (sigla === 'CMDGER' || sigla === 'SUBCMD') return '1-Comando Geral';
+            if (sigla.match(/^(DRH|DEI|DATOP|DLPF|DPLAN|DSAU)$/)) return '2-Diretorias';
+            if (sigla.indexOf('DRH') >= 0 || sigla === 'SUBDRH') return '3-DRH e Divisões';
+            if (sigla.match(/^(COI|COC|COA|CORGER)$/)) return '4-Comandos e Corregedoria';
+            if (sigla.match(/ASS|AJGER/)) return '5-Assessorias';
+            if (sigla.indexOf('BEPCIF') >= 0 || sigla.indexOf('GOA') >= 0 || sigla.indexOf('CIACIAER') >= 0) return '6-Batalhões e Unidades';
+            if (sigla.indexOf('CMDPII') >= 0) return '7-Colégios Militares';
+            return '8-Outros';
+        }
+
+        function filtrarDestinatarios() {
+            var input = document.getElementById('destinatarioInput');
+            var list = document.getElementById('destinatarioList');
+            var termo = input.value.toLowerCase().trim();
+
+            var filtrados = todasAutoridades;
+            if (termo) {
+                filtrados = todasAutoridades.filter(function(a) {
+                    return (a.sigla || '').toLowerCase().indexOf(termo) >= 0 ||
+                           (a.nome || '').toLowerCase().indexOf(termo) >= 0 ||
+                           (a.cargo || '').toLowerCase().indexOf(termo) >= 0 ||
+                           (a.unidade || '').toLowerCase().indexOf(termo) >= 0;
+                });
+            }
+
+            if (filtrados.length === 0) {
+                list.innerHTML = '<div class="autocomplete-empty">Nenhuma autoridade encontrada. Digite parte da sigla ou nome.</div>';
+            } else {
+                // Agrupa por categoria
+                var grupos = {};
+                filtrados.forEach(function(a) {
+                    var cat = categorizarAutoridade(a);
+                    if (!grupos[cat]) grupos[cat] = [];
+                    grupos[cat].push(a);
+                });
+
+                // Ordena categorias
+                var cats = Object.keys(grupos).sort();
+
+                var html = '';
+                cats.forEach(function(cat) {
+                    var nomeCategoria = cat.substring(2); // Remove "1-", "2-", etc
+                    html += '<div class="autocomplete-group">' + nomeCategoria + '</div>';
+                    grupos[cat].forEach(function(a) {
+                        var nomeEscapado = (a.nome || '').replace(/'/g, "\\'");
+                        html += '<div class="autocomplete-item" data-sigla="' + a.sigla + '" data-nome="' + nomeEscapado + '" onclick="selecionarDestinatario(this)">';
+                        html += '<span class="sigla">[' + a.sigla + ']</span>';
+                        html += '<span class="nome">' + (a.posto_grad || '') + ' ' + (a.nome || '') + '</span>';
+                        html += '<span class="cargo">' + (a.cargo || a.unidade || '') + '</span>';
+                        html += '</div>';
+                    });
+                });
+                list.innerHTML = html;
+            }
+            list.classList.remove('hidden');
+        }
+
+        function selecionarDestinatario(el) {
+            var sigla = el.getAttribute('data-sigla');
+            var nome = el.getAttribute('data-nome');
+            document.getElementById('destinatarioInput').value = '[' + sigla + '] ' + nome;
+            document.getElementById('destinatario').value = sigla;
+            document.getElementById('destinatarioList').classList.add('hidden');
+        }
+
+        function navegarAutocomplete(e, listId, tipo) {
+            var list = document.getElementById(listId);
+            var items = list.querySelectorAll('.autocomplete-item');
+            var selected = list.querySelector('.autocomplete-item.selected');
+            var idx = -1;
+
+            if (selected) {
+                items.forEach(function(item, i) { if (item === selected) idx = i; });
+            }
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (selected) selected.classList.remove('selected');
+                idx = (idx + 1) % items.length;
+                if (items[idx]) { items[idx].classList.add('selected'); items[idx].scrollIntoView({ block: 'nearest' }); }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (selected) selected.classList.remove('selected');
+                idx = idx <= 0 ? items.length - 1 : idx - 1;
+                if (items[idx]) { items[idx].classList.add('selected'); items[idx].scrollIntoView({ block: 'nearest' }); }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selected) selected.click();
+            } else if (e.key === 'Escape') {
+                list.classList.add('hidden');
+            }
+        }
+
+        // ========== MODAL AUTORIDADES (tabela) ==========
+        function abrirModalAutoridades() {
+            renderizarAutoridades(todasAutoridades);
+            document.getElementById('searchAutoridade').value = '';
+            document.getElementById('modalAutoridades').classList.remove('hidden');
+        }
+
+        function fecharModalAutoridades() {
+            document.getElementById('modalAutoridades').classList.add('hidden');
+        }
+
+        function renderizarAutoridades(lista) {
+            var html = '';
+            lista.forEach(function(a) {
+                html += '<tr><td><strong>' + (a.sigla || '-') + '</strong></td><td>' + (a.unidade || '-') + '</td><td>' + (a.posto_grad || '-') + '</td><td>' + (a.nome || '-') + '</td><td>' + (a.cargo || '-') + '</td></tr>';
+            });
+            document.getElementById('tabelaAutoridades').innerHTML = html;
+        }
+
+        function filtrarAutoridades() {
+            var termo = document.getElementById('searchAutoridade').value.toLowerCase();
+            if (!termo) {
+                renderizarAutoridades(todasAutoridades);
+                return;
+            }
+            var filtradas = todasAutoridades.filter(function(a) {
+                return (a.sigla || '').toLowerCase().indexOf(termo) >= 0 ||
+                       (a.nome || '').toLowerCase().indexOf(termo) >= 0 ||
+                       (a.cargo || '').toLowerCase().indexOf(termo) >= 0;
+            });
+            renderizarAutoridades(filtradas);
+        }
+
+        function formatDoc(cmd) {
+            document.getElementById('previewDocumento').focus();
+            document.execCommand(cmd, false, null);
+        }
+
+        function getHTMLFromPreview() {
+            return document.getElementById('previewDocumento').innerHTML;
+        }
+
+        function getAuthHeaders() {
+            var token = localStorage.getItem('plattargus_token');
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            };
+        }
+
+        function lerProcesso() {
+            var nup = document.getElementById('nupInput').value.trim();
+            if (!nup) {
+                alert('Digite o NUP do processo');
+                return;
+            }
+            nupAtual = nup;
+            var status = document.getElementById('statusLeitura');
+            status.className = 'status status-loading';
+            status.innerHTML = '<span class="spinner"></span> 📂 Localizando processo no SEI...';
+            status.classList.remove('hidden');
+            document.getElementById('resultadoAnalise').classList.add('hidden');
+            document.getElementById('sugestaoBox').classList.add('hidden');
+            document.getElementById('configBox').classList.add('hidden');
+            document.getElementById('editorContainer').classList.add('hidden');
+            document.getElementById('chatSection').classList.add('hidden');
+
+            fetch(API + '/api/processos/analisar', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    nup: nup,
+                    usuario_sei: usuarioAtual.usuario_sei,
+                    full: true
+                })
+            })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                status.className = 'status status-loading';
+                status.innerHTML = '<span class="spinner"></span> 📂 Processo localizado! ⏳ Extraindo documentos...';
+                
+                setTimeout(function() {
+                    if (data.sucesso || data.analise) {
+                        analiseAtual = data.analise || data;
+                        docsProcesso = data.documentos || analiseAtual.documentos || [];
+                        textoCanonicoAtual = data.texto_canonico || '';
+
+                        var tempo = data.tempo_total || analiseAtual.tempo_total || 0;
+                        var docsExtraidos = docsProcesso.length;
+                        var pastas = data.pastas || 1;
+                        
+                        status.className = 'status status-success';
+                        status.textContent = '✅ Análise concluída! 📁 ' + pastas + ' pasta(s) | 📄 ' + docsExtraidos + ' documento(s) | ⏱️ ' + tempo.toFixed(1) + 's';
+
+                        exibirAnalise(analiseAtual, data);
+                        document.getElementById('resultadoAnalise').classList.remove('hidden');
+                        document.getElementById('sugestaoBox').classList.remove('hidden');
+                        document.getElementById('configBox').classList.remove('hidden');
+                        document.getElementById('chatSection').classList.remove('hidden');
+
+                        if (analiseAtual.tipo_documento_sugerido) {
+                            var tipoSug = analiseAtual.tipo_documento_sugerido;
+                            document.getElementById('tipoDocumentoInput').value = tipoSug;
+                            document.getElementById('tipoDocumento').value = tipoSug;
+                        }
+                        if (analiseAtual.destinatario_sugerido) {
+                            var destSug = analiseAtual.destinatario_sugerido;
+                            document.getElementById('destinatarioInput').value = destSug;
+                            document.getElementById('destinatario').value = destSug;
+                        }
+                    } else {
+                        status.className = 'status status-error';
+                        status.textContent = '❌ Erro: ' + (data.erro || 'Falha na análise');
+                    }
+                }, 500);
+            })
+            .catch(function(e) {
+                status.className = 'status status-error';
+                status.textContent = '❌ Erro: ' + e.message;
+            });
+        }
+
+        function exibirAnalise(a, data) {
+            // Resumo formatado estilo Telegram
+            var interessado = a.interessado || {};
+            var pedido = a.pedido || {};
+            var legislacao = a.legislacao_aplicavel || a.legislacao || [];
+            var alertas = a.alertas || [];
+            var sugestao = a.sugestao || {};
+            
+            var html = '';
+            
+            // Interessado
+            html += '<p><strong>👤 Interessado:</strong> ';
+            if (typeof interessado === 'object' && interessado.nome) {
+                html += interessado.nome;
+                if (interessado.matricula) html += ' (Mat. ' + interessado.matricula + ')';
+                if (interessado.cargo) html += ' - ' + interessado.cargo;
+                if (interessado.unidade) html += ' / ' + interessado.unidade;
+            } else {
+                html += interessado || 'Não identificado';
+            }
+            html += '</p>';
+            
+            // Pedido
+            html += '<p><strong>📋 Pedido:</strong> ';
+            if (typeof pedido === 'object' && pedido.descricao) {
+                html += pedido.descricao;
+                if (pedido.periodo) html += ' (' + pedido.periodo + ')';
+                if (pedido.motivo) html += ' - Motivo: ' + pedido.motivo;
+            } else {
+                html += pedido || a.resumo || 'Não identificado';
+            }
+            html += '</p>';
+            
+            // Unidades (extraídas do conteúdo)
+            var unidades = extrairUnidades(docsProcesso);
+            if (unidades.length > 0) {
+                html += '<p><strong>🏢 Unidades:</strong> ';
+                html += unidades.join(' → ');
+                html += '</p>';
+            }
+            
+            // Legislação
+            if (legislacao && legislacao.length > 0) {
+                html += '<p><strong>⚖️ Legislação:</strong> ';
+                legislacao.forEach(function(l) {
+                    html += '<span class="tag tag-info">' + l + '</span> ';
+                });
+                html += '</p>';
+            }
+            
+            // Alertas
+            if (alertas && alertas.length > 0) {
+                html += '<p><strong>⚠️ Alertas:</strong></p><ul style="margin-left:20px;color:var(--warning)">';
+                alertas.forEach(function(al) {
+                    html += '<li>' + al + '</li>';
+                });
+                html += '</ul>';
+            }
+            
+            document.getElementById('resumoConteudo').innerHTML = html;
+            
+            // Sugestão
+            var tipoSugerido = a.tipo_documento_sugerido || sugestao.tipo_documento || 'Despacho';
+            var destSugerido = a.destinatario_sugerido || sugestao.destinatario || '(escolher)';
+            var sugestaoHtml = '<strong>' + tipoSugerido + '</strong> para <strong>' + destSugerido + '</strong>';
+            if (sugestao.acao) sugestaoHtml += '<br>Ação: ' + sugestao.acao;
+            if (sugestao.fundamentacao) sugestaoHtml += '<br>Base: ' + sugestao.fundamentacao;
+            document.getElementById('sugestaoTexto').innerHTML = sugestaoHtml;
+            
+            // Info grid
+            var infoHtml = '';
+            infoHtml += '<div class="info-card"><h4>📊 Status</h4><p>' + (a.status_processo || a.status || 'Em análise') + '</p></div>';
+            infoHtml += '<div class="info-card"><h4>📅 Data</h4><p>' + (a.data_abertura || new Date().toLocaleDateString('pt-BR')) + '</p></div>';
+            document.getElementById('infoGrid').innerHTML = infoHtml;
+            
+            // Documentos
+            document.getElementById('qtdDocs').textContent = docsProcesso.length;
+            var docsHtml = '';
+            docsProcesso.forEach(function(d, i) {
+                var nome = d.nome || d.titulo || ('Documento ' + (i + 1));
+                var tipo = d.tipo || 'PDF';
+                var icone = tipo.toLowerCase().indexOf('pdf') >= 0 ? '📄' : '📝';
+                docsHtml += '<div class="doc-item" onclick="verDocumento(' + i + ')">' + icone + ' ' + nome + '</div>';
+            });
+            document.getElementById('docsLista').innerHTML = docsHtml;
+        }
+
+        function extrairUnidades(docs) {
+            var unidades = [];
+            var seen = {};
+            var patterns = [
+                /CBMAC\s*-\s*([A-Z0-9]+)/gi,
+                /nº\s*\d+\/\d+\/CBMAC\s*-\s*([A-Z0-9]+)/gi
+            ];
+            
+            docs.forEach(function(d) {
+                var texto = (d.conteudo || d.texto || '').substring(0, 2000);
+                patterns.forEach(function(p) {
+                    var m;
+                    while ((m = p.exec(texto)) !== null) {
+                        var sigla = m[1].toUpperCase();
+                        if (sigla.length >= 2 && sigla.length <= 15 && !seen[sigla] && !/^\d+$/.test(sigla)) {
+                            seen[sigla] = true;
+                            unidades.push(sigla);
+                        }
+                    }
+                });
+            });
+            return unidades;
+        }
+
+        function verDocumento(idx) {
+            var doc = docsProcesso[idx];
+            if (!doc) return;
+            
+            document.getElementById('modalDocTitulo').textContent = doc.nome || doc.titulo || 'Documento';
+            
+            var meta = '';
+            meta += '📄 Tipo: ' + (doc.tipo || 'PDF');
+            if (doc.paginas) meta += ' | 📃 Páginas: ' + doc.paginas;
+            if (doc.tamanho) meta += ' | 📊 Tamanho: ' + doc.tamanho;
+            if (doc.escaneado) meta += ' | 📷 PDF Escaneado';
+            document.getElementById('modalDocMeta').innerHTML = meta;
+            
+            var conteudo = doc.conteudo || doc.texto || '(Conteúdo não disponível)';
+            if (conteudo.indexOf('<') >= 0 && conteudo.indexOf('>') >= 0) {
+                document.getElementById('modalDocConteudo').innerHTML = conteudo;
+            } else {
+                var paragrafos = conteudo.split(/\n\n+/);
+                var htmlConteudo = paragrafos.map(function(p) {
+                    return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
+                }).join('');
+                document.getElementById('modalDocConteudo').innerHTML = htmlConteudo;
+            }
+            
+            document.getElementById('modalDocumento').classList.remove('hidden');
+        }
+
+        function fecharModalDocumento() {
+            document.getElementById('modalDocumento').classList.add('hidden');
+        }
+
+        function gerarDocumento() {
+            var tipo = document.getElementById('tipoDocumento').value;
+            var dest = document.getElementById('destinatario').value;
+            var status = document.getElementById('statusDocumento');
+
+            status.className = 'status status-loading';
+            status.innerHTML = '<span class="spinner"></span> Gerando documento...';
+            status.classList.remove('hidden');
+
+            fetch(API + '/api/processos/gerar-documento', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    tipo_documento: tipo,
+                    destinatario: dest,
+                    analise: analiseAtual,
+                    usuario_sei: usuarioAtual.usuario_sei
+                })
+            })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                if (data.sucesso || data.html) {
+                    status.className = 'status status-success';
+                    status.textContent = '✅ Documento gerado!';
+                    document.getElementById('previewDocumento').innerHTML = data.html || data.conteudo || '';
+                    document.getElementById('editorContainer').classList.remove('hidden');
+                } else {
+                    status.className = 'status status-error';
+                    status.textContent = '❌ Erro: ' + (data.erro || 'Falha ao gerar');
+                }
+            })
+            .catch(function(e) {
+                status.className = 'status status-error';
+                status.textContent = '❌ Erro: ' + e.message;
+            });
+        }
+
+        function validarDocumento() {
+            var html = getHTMLFromPreview();
+            var box = document.getElementById('validacoesBox');
+            
+            fetch(API + '/api/validar', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ html: html, tipo: document.getElementById('tipoDocumento').value })
+            })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                var items = data.validacoes || [];
+                var htmlV = '<h4 style="margin:10px 0">📋 Validações</h4>';
+                items.forEach(function(v) {
+                    var cls = v.ok ? 'validacao-ok' : 'validacao-warning';
+                    var icon = v.ok ? '✅' : '⚠️';
+                    htmlV += '<div class="validacao-item ' + cls + '">' + icon + ' ' + v.mensagem + '</div>';
+                });
+                box.innerHTML = htmlV;
+                box.classList.remove('hidden');
+            })
+            .catch(function(e) {
+                box.innerHTML = '<div class="validacao-item validacao-warning">❌ Erro ao validar: ' + e.message + '</div>';
+                box.classList.remove('hidden');
+            });
+        }
+
+        function melhorarTexto() {
+            var html = getHTMLFromPreview();
+            var status = document.getElementById('statusDocumento');
+            status.className = 'status status-loading';
+            status.innerHTML = '<span class="spinner"></span> Melhorando texto com IA...';
+            status.classList.remove('hidden');
+
+            fetch(API + '/api/melhorar-texto', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ html: html })
+            })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                if (data.sucesso || data.html) {
+                    document.getElementById('previewDocumento').innerHTML = data.html || data.texto;
+                    status.className = 'status status-success';
+                    status.textContent = '✅ Texto melhorado!';
+                } else {
+                    status.className = 'status status-error';
+                    status.textContent = '❌ ' + (data.erro || 'Erro');
+                }
+            })
+            .catch(function(e) {
+                status.className = 'status status-error';
+                status.textContent = '❌ Erro: ' + e.message;
+            });
+        }
+
+        function inserirSEI() {
+            var html = getHTMLFromPreview();
+            var dest = document.getElementById('destinatario').value;
+
+            if (!html || !nupAtual) {
+                alert('Gere um documento primeiro');
+                return;
+            }
+            var status = document.getElementById('statusInserir');
+            status.className = 'status status-loading';
+            status.innerHTML = '<span class="spinner"></span> Inserindo no SEI...';
+            status.classList.remove('hidden');
+
+            fetch(API + '/api/processos/inserir-sei', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    nup: nupAtual,
+                    tipo_documento: document.getElementById('tipoDocumento').value,
+                    destinatario: dest,
+                    html: html,
+                    usuario_sei: usuarioAtual.usuario_sei
+                })
+            })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                if (data.sucesso) {
+                    status.className = 'status status-success';
+                    status.innerHTML = '✅ Documento inserido no SEI! ' + (data.numero_documento ? 'Nº ' + data.numero_documento : '');
+                } else {
+                    status.className = 'status status-error';
+                    status.textContent = '❌ Erro: ' + (data.erro || 'Falha');
+                }
+            })
+            .catch(function(e) {
+                status.className = 'status status-error';
+                status.textContent = '❌ Erro: ' + e.message;
+            });
+        }
+
+        function toggleChat() {
+            var container = document.getElementById('chatContainer');
+            var btn = document.getElementById('chatToggleBtn');
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                btn.textContent = '💬 Fechar Chat';
+            } else {
+                container.classList.add('hidden');
+                btn.textContent = '💬 Abrir Chat Analítico';
+            }
+        }
+
+        function atualizarModeloBadge() {
+            var modelo = document.getElementById('modeloSelect').value;
+            document.getElementById('modeloBadge').textContent = modelo;
+        }
+
+        function anexarArquivo(input) {
+            if (input.files && input.files[0]) {
+                var file = input.files[0];
+                arquivoChatAnexado = { nome: file.name, tipo: file.type };
+                document.getElementById('anexoNome').innerHTML = '<span class="anexo-badge">' + file.name + ' <button onclick="removerAnexo(event)" style="background:none;border:none;color:#fff;cursor:pointer">×</button></span>';
+                var reader = new FileReader();
+                reader.onload = function(e) { arquivoChatAnexado.conteudo = e.target.result; };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function removerAnexo(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            arquivoChatAnexado = null;
+            document.getElementById('anexoNome').textContent = 'Anexar';
+            document.getElementById('anexoChat').value = '';
+        }
+
+        function enviarComando(tipo) {
+            var comandos = {
+                resumir: 'Faça um resumo executivo deste processo',
+                legislacao: 'Quais são as leis e normas aplicáveis a este caso?',
+                pendencias: 'Liste as pendências e pontos de atenção deste processo',
+                sugerir: 'Sugira um despacho apropriado para este processo'
+            };
+            document.getElementById('chatInput').value = comandos[tipo];
+            enviarChat();
+        }
+
+        function enviarChat() {
+            var input = document.getElementById('chatInput');
+            var msg = input.value.trim();
+            if (!msg) return;
+            input.value = '';
+            adicionarMsgChat('user', msg);
+            adicionarLoadingChat();
+
+            var modelo = document.getElementById('modeloSelect').value;
+            var temaSensivel = document.getElementById('temaSensivel').checked;
+
+            fetch(API + '/api/processos/chat', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    mensagem: msg,
+                    usuario_sei: usuarioAtual.usuario_sei,
+                    texto_canonico: textoCanonicoAtual,
+                    arquivo_anexo: arquivoChatAnexado,
+                    tipo_documento: document.getElementById('tipoDocumento').value,
+                    tema_sensivel: temaSensivel,
+                    modelo_forcado: modelo !== 'gpt-4o-mini' ? modelo : null
+                })
+            })
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                removerLoadingChat();
+                if (data.sucesso || data.resposta) {
+                    ultimaRespostaSugestao = data.resposta;
+                    adicionarMsgChat('assistant', data.resposta, data.modelo_usado || modelo);
+                } else {
+                    adicionarMsgChat('assistant', 'Erro: ' + (data.erro || 'Erro'), null);
+                }
+            })
+            .catch(function(e) {
+                removerLoadingChat();
+                adicionarMsgChat('assistant', 'Erro: ' + e.message, null);
+            });
+        }
+
+        function adicionarMsgChat(role, content, modelo) {
+            var container = document.getElementById('chatMessages');
+            var div = document.createElement('div');
+            div.className = 'chat-msg chat-msg-' + role;
+            var html = content.replace(/\n/g, '<br>');
+            var hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            var headerHtml = '<div class="chat-msg-header"><span>' + (role === 'user' ? '👤 Voce' : '🤖 Agente') + ' - ' + hora + '</span>' + (modelo ? '<span style="color:var(--info);font-size:0.65rem">' + modelo + '</span>' : '') + '</div>';
+            var contentHtml = '<div class="chat-msg-content">' + html + '</div>';
+            var actionsHtml = '';
+            if (role === 'assistant' && content.indexOf('Erro') !== 0) {
+                actionsHtml = '<div class="chat-msg-actions"><button class="btn btn-xs btn-success" onclick="inserirSugestaoNoEditor()">Inserir</button><button class="btn btn-xs btn-secondary" onclick="copiarMsg(this)">Copiar</button></div>';
+            }
+            div.innerHTML = headerHtml + contentHtml + actionsHtml;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function adicionarLoadingChat() {
+            var container = document.getElementById('chatMessages');
+            var div = document.createElement('div');
+            div.id = 'chatLoading';
+            div.className = 'chat-msg chat-msg-assistant';
+            div.innerHTML = '<div class="chat-msg-content"><span class="spinner"></span> Analisando...</div>';
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function removerLoadingChat() {
+            var el = document.getElementById('chatLoading');
+            if (el) el.remove();
+        }
+
+        function inserirSugestaoNoEditor() {
+            if (!ultimaRespostaSugestao) return;
+            var editor = document.getElementById('previewDocumento');
+            editor.focus();
+            document.execCommand('insertHTML', false, '<p>' + ultimaRespostaSugestao.replace(/\n/g, '<br>') + '</p>');
+        }
+
+        function copiarMsg(btn) {
+            var content = btn.closest('.chat-msg').querySelector('.chat-msg-content').innerText;
+            navigator.clipboard.writeText(content);
+            btn.textContent = 'Copiado!';
+            setTimeout(function() { btn.textContent = 'Copiar'; }, 1500);
+        }
+
+        document.getElementById('nupInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') lerProcesso();
+        });
+
+        document.getElementById('chatInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                enviarChat();
+            }
+        });
+    </script>
+</body>
+</html>

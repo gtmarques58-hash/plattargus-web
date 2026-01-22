@@ -1,0 +1,20 @@
+<p style="text-align: left;">Ao Senhor<br>
+<b>{NOME_COMANDANTE}</b><br>
+{CARGO_COMANDANTE}</p>
+
+<p style="text-align: left;">Assunto: <b>Solicitação de Adicional de Titulação.</b></p>
+
+<p style="text-align: left; text-indent: 1.5cm;">Senhor Comandante,</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Eu, {NOME_REQUERENTE}, {POSTO_GRAD_REQUERENTE}, matrícula nº {MATRICULA}, lotado(a) no(a) {UNIDADE_LOTACAO}, venho, respeitosamente, à presença de Vossa Senhoria requerer a concessão de Adicional de Titulação, conforme previsto na legislação vigente.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">O presente pedido se faz em razão da conclusão do curso de {NOME_CURSO}, nível {NIVEL_CURSO}, na instituição {NOME_INSTITUICAO}, em {DATA_CONCLUSAO}.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Para fins de comprovação, anexo a este requerimento cópia do Diploma/Certificado devidamente registrado.</p>
+
+<p style="text-align: justify;">Nestes termos, Pede deferimento.</p>
+
+<p style="text-align: left; text-indent: 1.5cm;">Atenciosamente,</p>
+
+<p style="text-align: center;"><b>{NOME_REQUERENTE} - {POSTO_GRAD_REQUERENTE}</b><br>
+Matrícula nº {MATRICULA}</p>

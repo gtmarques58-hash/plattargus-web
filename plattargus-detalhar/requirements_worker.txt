@@ -1,0 +1,19 @@
+# API deps
+fastapi==0.115.6
+pydantic==2.9.2
+pydantic-settings==2.6.1
+SQLAlchemy==2.0.36
+asyncpg==0.30.0
+redis==5.0.8
+python-dateutil==2.9.0.post0
+
+# Detalhar deps (do seu detalhar_processo.py)
+playwright==1.49.1
+beautifulsoup4==4.12.3
+pdfplumber==0.11.5
+pytesseract==0.3.13
+pypdfium2==4.30.0
+Pillow==10.4.0
+httpx>=0.25.0
+uvicorn
+fastapi

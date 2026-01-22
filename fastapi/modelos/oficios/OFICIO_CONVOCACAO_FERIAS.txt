@@ -1,0 +1,23 @@
+<p style="text-align: left;">A Sua Excelência o(a) Senhor(a)<br>
+<b>{NOME_DESTINATARIO}</b><br>
+{CARGO_DESTINATARIO}</p>
+
+<p style="text-align: left;">Assunto: <b>Convocação para agendamento de férias regulamentares pendentes.</b></p>
+
+<p style="text-align: left; text-indent: 1.5cm;">{VOCATIVO}</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Cumprimento-o cordialmente, ao tempo em que me reporto à Instrução Normativa SEAD/PGE nº 14, de 2023, que disciplina o acúmulo e a fruição de férias dos servidores no âmbito da Administração Pública Estadual. A referida norma estabelece, em seu Art. 4º, § 3º, a obrigatoriedade de convocação dos servidores com mais de dois períodos de férias acumulados para que indiquem as datas de gozo.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Em cumprimento ao Art. 5º, § 1º da mesma Instrução, este Departamento de Recursos Humanos convoca o(a) servidor(a) {NOME_SERVIDOR}, lotado(a) neste órgão, para apresentar, no prazo máximo de 30 (trinta) dias, a contar do recebimento deste, a programação para o usufruto de seus períodos de férias pendentes.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Ressalta-se que a regularização dos períodos em atraso é condição indispensável para o lançamento de férias futuras, em virtude de parametrização do novo sistema de gestão de pessoas do Estado (e-turmalina). A quitação dos períodos mais antigos é mandatória para o agendamento dos subsequentes.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Por fim, salienta-se que a inobservância dos procedimentos previstos na Instrução Normativa poderá acarretar a apuração de responsabilidade administrativa, conforme o Art. 5º, § 3º do citado dispositivo.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Solicitamos, portanto, o apoio de Vossa Excelência para dar ciência ao(à) servidor(a) e orientá-lo(a) a contactar este Departamento de Recursos Humanos para a formalização do agendamento.</p>
+
+<p style="text-align: left; text-indent: 1.5cm;">Atenciosamente,</p>
+
+<p style="text-align: center;"><b>{NOME_REMETENTE} - {POSTO_GRAD_REMETENTE}</b><br>
+{CARGO_REMETENTE}<br>
+Port. nº {NUMERO_PORTARIA}</p>

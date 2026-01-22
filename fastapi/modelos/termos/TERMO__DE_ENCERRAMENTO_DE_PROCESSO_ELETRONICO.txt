@@ -1,0 +1,9 @@
+<p style="text-align: justify; text-indent: 1.5cm;">Nesta data, procedo o encerramento da tramitação do Processo Eletrônico, tendo em vista {MOTIVO_ENCERRAMENTO}.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Para constar, eu , subscrevo eletronicamente.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">O referido é verdade e dou fé.</p>
+
+<p style="text-align: center;"><b>{NOME_RESPONSAVEL} - {POSTO_GRAD_RESPONSAVEL}</b><br>
+{CARGO_RESPONSAVEL}<br>
+mat. {MATRICULA}</p>

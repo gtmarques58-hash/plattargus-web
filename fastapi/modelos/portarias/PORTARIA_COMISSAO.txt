@@ -1,0 +1,19 @@
+<p style="text-align: justify; text-indent: 1.5cm;">O Comandante Geral do Corpo de Bombeiros Militar do Estado do Acre, no uso de suas atribuições legais, com base no Decreto nº {DECRETO_NOMEACAO}, e Art. 6º da Lei Complementar nº 2.009, de 2 de julho de 2008 (LOB do CBMAC);</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Considerando {CONSIDERANDOS};</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;"><b>RESOLVE:</b></p>
+
+<p style="text-align: justify; text-indent: 1.5cm;"><b>Art. 1º</b> - Nomear a comissão formada pelos oficiais abaixo relacionados para {FINALIDADE_COMISSAO}:</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">{LISTA_MEMBROS}</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;"><b>Art. 2º</b> - Esta comissão deverá {ATRIBUICOES_COMISSAO}.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;"><b>Art. 3º</b> - Esta Portaria entra em vigor a contar de {DATA_VIGENCIA}.</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">Registre-se; Publique-se; Cumpra-se;</p>
+
+<p style="text-align: center;"><b>{NOME_COMANDANTE} - {POSTO_COMANDANTE}</b><br>
+Comandante-geral do CBMAC<br>
+Decreto nº {DECRETO_NOMEACAO}</p>

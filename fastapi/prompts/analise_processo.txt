@@ -1,0 +1,73 @@
+Analise este processo administrativo do CBMAC e retorne APENAS JSON válido.
+
+PROCESSO (NUP: {nup}):
+{conteudo}
+
+{legislacao}
+
+INSTRUÇÕES ESPECIAIS DE ANÁLISE:
+1. Identifique o ÚLTIMO documento pendente de resposta (despacho, memorando, diligência)
+2. Se for uma DILIGÊNCIA ou documento que SOLICITA informações/providências:
+   - Liste CADA PONTO/ITEM solicitado separadamente
+   - Identifique se são perguntas, solicitações de documentos ou providências
+3. Verifique se já existem respostas/pareceres no processo para os pontos solicitados
+4. NUNCA sugira ações que JÁ FORAM REALIZADAS no processo
+
+RETORNE EXATAMENTE ESTE JSON (sem texto adicional):
+{{
+  "tipo_demanda": "descrição clara e objetiva do tipo de demanda",
+  "resumo_executivo": "resumo em 2-3 linhas do processo completo",
+  "interessado": {{
+    "nome": "nome completo do interessado",
+    "matricula": "número da matrícula ou -",
+    "cargo": "posto/graduação e cargo",
+    "unidade": "unidade de lotação"
+  }},
+  "pedido_original": {{
+    "descricao": "o que foi solicitado INICIALMENTE no processo",
+    "periodo": "período se houver, senão null",
+    "motivo": "justificativa apresentada"
+  }},
+  "ultimo_documento_pendente": {{
+    "tipo": "Despacho/Memorando/Diligência/etc",
+    "numero": "número do documento se houver",
+    "origem": "quem enviou (órgão/setor)",
+    "data": "data do documento",
+    "assunto": "resumo do que solicita"
+  }},
+  "pontos_a_responder": [
+    {{
+      "item": "a",
+      "solicitacao": "descrição exata do que foi pedido",
+      "tipo": "INFORMAÇÃO | DOCUMENTO | PROVIDÊNCIA | MANIFESTAÇÃO",
+      "ja_respondido": true/false,
+      "resposta_existente": "se já respondido, qual foi a resposta no processo"
+    }}
+  ],
+  "documentos_relevantes": [
+    {{
+      "tipo": "Parecer/Portaria/Memorando/etc",
+      "numero": "número do documento",
+      "resumo": "o que decide ou informa",
+      "relevancia": "por que é importante para a resposta"
+    }}
+  ],
+  "alertas": ["pontos de atenção, riscos, prazos importantes"],
+  "situacao_atual": "descrição clara do STATUS ATUAL do processo",
+  "sugestao": {{
+    "acao": "RESPONDER DILIGÊNCIA | DEFERIR | INDEFERIR | ENCAMINHAR | etc",
+    "fundamentacao": "cite a lei/artigo/portaria específica",
+    "justificativa": "explicação clara do porquê da ação sugerida"
+  }},
+  "tipo_documento_sugerido": "Memorando ou Despacho ou Ofício",
+  "destinatario_sugerido": "sigla da unidade destino baseado no fluxo",
+  "legislacao_aplicavel": ["lista de leis/artigos/portarias relevantes"]
+}}
+
+REGRAS IMPORTANTES:
+- Foque no ÚLTIMO DOCUMENTO que requer resposta
+- Se houver DILIGÊNCIA, liste TODOS os pontos solicitados no campo "pontos_a_responder"
+- Verifique se já existem respostas no processo antes de sugerir ação
+- NUNCA invente dados - use apenas o que está no processo
+- Cite legislação ESPECÍFICA (não use "legislação vigente")
+- Se o processo já tem Parecer/Portaria resolvendo o caso, indique isso claramente
