@@ -1,6 +1,8 @@
 /vendor
 /node_modules
-/.env
+.env
+*.bak
+*.bak2
 /data
 /storage/*.key
 /storage/logs/*
