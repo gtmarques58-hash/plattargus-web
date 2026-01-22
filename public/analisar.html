@@ -211,6 +211,8 @@
                 <a href="/" class="btn-header">🏠 Início</a>
                 <button class="btn-header" onclick="abrirModalAutoridades()">👥 Efetivo</button>
                 <button class="btn-header" onclick="abrirModalBlocos()">📦 Blocos</button>
+                <button class="btn-header" onclick="abrirModalHistorico()">📋 Histórico</button>
+                <button class="btn-header" onclick="abrirModalDocumentos()">📄 Docs</button>
                 <button class="btn-sair" onclick="fazerLogout()">🚪 Sair</button>
             </div>
         </div>
@@ -242,6 +244,11 @@
             <div id="sugestaoBox" class="config-box hidden">
                 <h3>💡 Sugestão do Sistema</h3>
                 <p style="color:var(--text-secondary);font-size:0.9rem" id="sugestaoTexto">-</p>
+            </div>
+            <div id="acoesProcessoBox" class="btn-group hidden">
+                <button class="btn btn-info btn-sm" onclick="abrirModalConsultarLei()">⚖️ Consultar Lei</button>
+                <button class="btn btn-warning btn-sm" onclick="abrirModalEnviar()">📨 Enviar</button>
+                <button class="btn btn-secondary btn-sm" onclick="abrirModalAtribuir()">👤 Atribuir</button>
             </div>
         </div>
 
@@ -290,6 +297,7 @@
                     <button class="btn btn-secondary" onclick="validarDocumento()">✔️ Validar</button>
                     <button class="btn btn-warning" onclick="melhorarTexto()">✨ Melhorar</button>
                     <button class="btn btn-success" onclick="inserirSEI()">📤 Inserir no SEI</button>
+                    <button class="btn btn-info btn-sm hidden" id="btnAssinarProcesso" onclick="abrirFluxoAssinar()">✍️ Assinar</button>
                 </div>
             </div>
             <div id="validacoesBox" class="hidden"></div>
@@ -502,6 +510,115 @@
             <div class="btn-group" style="justify-content:center;margin-top:20px">
                 <button class="btn btn-secondary" onclick="fecharModalComprovante()">Fechar</button>
                 <button class="btn btn-info" onclick="baixarComprovante()">📥 Baixar Comprovante</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Histórico de Análises -->
+<div id="modalHistorico" class="modal hidden">
+    <div class="modal-content modal-lg">
+        <button class="modal-close" onclick="fecharModalHistorico()">X</button>
+        <h3>📋 Histórico de Análises</h3>
+        <div id="historicoLoading" class="status status-loading hidden"><span class="spinner"></span> Carregando...</div>
+        <div id="historicoLista" style="max-height:500px;overflow-y:auto;margin-top:15px"></div>
+    </div>
+</div>
+
+<!-- Modal: Documentos Gerados -->
+<div id="modalDocumentos" class="modal hidden">
+    <div class="modal-content modal-lg">
+        <button class="modal-close" onclick="fecharModalDocumentos()">X</button>
+        <h3>📄 Documentos Gerados</h3>
+        <div id="documentosLoading" class="status status-loading hidden"><span class="spinner"></span> Carregando...</div>
+        <div id="documentosLista" style="max-height:500px;overflow-y:auto;margin-top:15px"></div>
+    </div>
+</div>
+
+<!-- Modal: Consultar Legislação -->
+<div id="modalConsultarLei" class="modal hidden">
+    <div class="modal-content modal-lg">
+        <button class="modal-close" onclick="fecharModalConsultarLei()">X</button>
+        <h3>⚖️ Consultar Legislação</h3>
+        <div class="input-row" style="margin-top:15px">
+            <input type="text" id="inputConsultaLei" class="form-input" placeholder="Digite sua consulta (ex: férias de bombeiro militar)...">
+            <button class="btn btn-primary" onclick="consultarLei()">🔍 Buscar</button>
+        </div>
+        <div id="consultaLeiLoading" class="status status-loading hidden"><span class="spinner"></span> Pesquisando legislação...</div>
+        <div id="consultaLeiResultado" style="margin-top:15px"></div>
+    </div>
+</div>
+
+<!-- Modal: Enviar Processo -->
+<div id="modalEnviar" class="modal hidden">
+    <div class="modal-content" style="max-width:600px">
+        <button class="modal-close" onclick="fecharModalEnviar()">X</button>
+        <h3>📨 Enviar Processo</h3>
+        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:15px">Processo: <strong id="enviarNup">-</strong></p>
+
+        <div id="enviarStage1">
+            <div class="input-row">
+                <input type="text" id="inputFiltroUnidade" class="form-input" placeholder="Filtrar unidades (ex: DRH, DATOP)...">
+                <button class="btn btn-primary" onclick="enviarBuscarUnidades()">🔍 Buscar</button>
+            </div>
+            <div id="enviarBuscaLoading" class="status status-loading hidden"><span class="spinner"></span> Buscando unidades...</div>
+            <div id="enviarUnidadesLista" style="max-height:250px;overflow-y:auto;margin-top:10px"></div>
+        </div>
+
+        <div id="enviarStage2" class="hidden">
+            <div style="background:var(--bg-tertiary);padding:15px;border-radius:8px;margin-bottom:15px">
+                <p style="color:var(--text-secondary);font-size:0.9rem"><strong>Unidades selecionadas:</strong></p>
+                <div id="enviarSelecionadas" style="margin-top:8px"></div>
+            </div>
+            <div id="enviarPreflightLoading" class="status status-loading hidden"><span class="spinner"></span> Verificando...</div>
+            <div id="enviarPreflightInfo" class="hidden"></div>
+            <div class="btn-group" style="justify-content:center">
+                <button class="btn btn-secondary" onclick="enviarVoltarStage1()">Voltar</button>
+                <button class="btn btn-success" onclick="enviarCommit()">📨 Confirmar Envio</button>
+            </div>
+        </div>
+
+        <div id="enviarStage3" class="hidden">
+            <div id="enviarCommitLoading" class="status status-loading"><span class="spinner"></span> Enviando processo...</div>
+            <div id="enviarResultado" class="hidden"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Atribuir Processo -->
+<div id="modalAtribuir" class="modal hidden">
+    <div class="modal-content" style="max-width:500px">
+        <button class="modal-close" onclick="fecharModalAtribuir()">X</button>
+        <h3>👤 Atribuir Processo</h3>
+        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:15px">Processo: <strong id="atribuirNup">-</strong></p>
+        <div class="input-row">
+            <input type="text" id="inputApelido" class="form-input" placeholder="Apelido do servidor no SEI (ex: joao.silva)...">
+            <button class="btn btn-primary" onclick="atribuirProcesso()">✅ Atribuir</button>
+        </div>
+        <div id="atribuirLoading" class="status status-loading hidden"><span class="spinner"></span> Atribuindo processo...</div>
+        <div id="atribuirResultado" class="hidden"></div>
+    </div>
+</div>
+
+<!-- Modal: Assinar Documento do Processo -->
+<div id="modalAssinarProcesso" class="modal hidden">
+    <div class="modal-content" style="max-width:500px">
+        <button class="modal-close" onclick="fecharModalAssinarProcesso()">X</button>
+        <div class="confirmacao-assinatura">
+            <h4>✍️ Assinar Documento</h4>
+            <p style="color:var(--text-secondary);margin-bottom:15px">Digite o número SEI do documento a assinar:</p>
+            <div class="input-row">
+                <input type="text" id="inputSeiAssinar" class="form-input" placeholder="Número SEI (ex: 0018912592)">
+            </div>
+            <div id="assinarStepUpBox" class="hidden" style="margin-top:15px">
+                <p style="color:var(--warning);font-size:0.85rem;margin-bottom:10px">Autenticação Step-Up necessária. Digite sua senha:</p>
+                <input type="password" id="inputSenhaStepUp" class="form-input" placeholder="Senha do PlattArgus" style="margin-bottom:10px">
+            </div>
+            <div id="assinarProcessoLoading" class="status status-loading hidden"><span class="spinner"></span> Processando...</div>
+            <div id="assinarProcessoResultado" class="hidden"></div>
+            <div class="btn-group" style="justify-content:center;margin-top:15px" id="assinarProcessoBotoes">
+                <button class="btn btn-secondary" onclick="fecharModalAssinarProcesso()">Cancelar</button>
+                <button class="btn btn-success" onclick="executarAssinaturaProcesso()">✍️ Assinar</button>
             </div>
         </div>
     </div>
@@ -847,7 +964,7 @@
             var status = document.getElementById('statusLeitura');
             var btn = document.getElementById('btnLer');
             
-            ['resumoBox', 'infoGrid', 'alertasBox', 'docsProcessoBox', 'sugestaoBox', 'configBox', 'editorContainer', 'validacoesBox', 'chatSection'].forEach(function(id) {
+            ['resumoBox', 'infoGrid', 'alertasBox', 'docsProcessoBox', 'sugestaoBox', 'configBox', 'editorContainer', 'validacoesBox', 'chatSection', 'acoesProcessoBox'].forEach(function(id) {
                 document.getElementById(id).classList.add('hidden');
             });
             
@@ -893,6 +1010,7 @@
                     
                     document.getElementById('configBox').classList.remove('hidden');
                     document.getElementById('chatSection').classList.remove('hidden');
+                    document.getElementById('acoesProcessoBox').classList.remove('hidden');
                     
                     if (analiseAtual.tipo_documento_sugerido) {
                         document.getElementById('tipoDocumento').value = analiseAtual.tipo_documento_sugerido;
@@ -1376,6 +1494,10 @@
                 if (data.sucesso) {
                     status.className = 'status status-success';
                     status.innerHTML = '<strong>Documento inserido!</strong> ' + (data.documento_nome || '');
+                    if (data.sei_numero) {
+                        window.ultimoSeiNumeroInserido = data.sei_numero;
+                    }
+                    document.getElementById('btnAssinarProcesso').classList.remove('hidden');
                 } else {
                     throw new Error(data.erro || 'Erro');
                 }
@@ -1910,7 +2032,525 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.key === 'Enter') carregarBloco();
         });
     }
+    var inputLei = document.getElementById('inputConsultaLei');
+    if (inputLei) {
+        inputLei.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') consultarLei();
+        });
+    }
+    var inputApelido = document.getElementById('inputApelido');
+    if (inputApelido) {
+        inputApelido.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') atribuirProcesso();
+        });
+    }
 });
+
+// ===== HISTÓRICO DE ANÁLISES =====
+function abrirModalHistorico() {
+    document.getElementById('modalHistorico').classList.remove('hidden');
+    carregarHistorico();
+}
+
+function fecharModalHistorico() {
+    document.getElementById('modalHistorico').classList.add('hidden');
+}
+
+function carregarHistorico() {
+    var loading = document.getElementById('historicoLoading');
+    var lista = document.getElementById('historicoLista');
+    loading.classList.remove('hidden');
+    lista.innerHTML = '';
+
+    fetch(API + '/api/processos/analises', { headers: getAuthHeaders() })
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+        loading.classList.add('hidden');
+        var analises = data.analises || [];
+        if (analises.length === 0) {
+            lista.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)">Nenhuma análise encontrada</div>';
+            return;
+        }
+        var html = '';
+        analises.forEach(function(a) {
+            var dataFormatada = new Date(a.created_at).toLocaleString('pt-BR');
+            html += '<div class="doc-item" onclick="carregarAnaliseHistorico(' + a.id + ')" style="display:flex;justify-content:space-between;align-items:center">';
+            html += '<div><strong>' + escapeHtml(a.nup) + '</strong>';
+            if (a.conclusao) html += ' <small style="color:var(--text-muted)">- ' + escapeHtml(a.conclusao) + '</small>';
+            html += '</div>';
+            html += '<small style="color:var(--text-muted)">' + dataFormatada + '</small>';
+            html += '</div>';
+        });
+        lista.innerHTML = html;
+    })
+    .catch(function(e) {
+        loading.classList.add('hidden');
+        lista.innerHTML = '<div class="status status-error">Erro: ' + e.message + '</div>';
+    });
+}
+
+function carregarAnaliseHistorico(id) {
+    fetch(API + '/api/processos/analises/' + id, { headers: getAuthHeaders() })
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+        if (data.erro) {
+            alert('Erro: ' + data.erro);
+            return;
+        }
+        fecharModalHistorico();
+        // Preenche o NUP e simula carregamento
+        document.getElementById('nupInput').value = data.nup || '';
+        nupAtual = data.nup || '';
+        analiseAtual = {
+            tipo_demanda: data.conclusao,
+            resumo_executivo: data.resumo,
+            interessado: data.interessado,
+            pedido_original: data.pedido,
+            legislacao_aplicavel: data.legislacao,
+            alertas: data.alertas,
+            unidades: data.unidades,
+            documentos: data.documentos
+        };
+        docsProcesso = data.documentos || [];
+        textoCanonicoAtual = data.texto_canonico || ('PROCESSO: ' + data.nup + '\n\n' + (data.resumo || ''));
+
+        exibirAnalise(analiseAtual, {});
+        exibirDocumentosProcesso(docsProcesso);
+        document.getElementById('configBox').classList.remove('hidden');
+        document.getElementById('chatSection').classList.remove('hidden');
+        document.getElementById('acoesProcessoBox').classList.remove('hidden');
+
+        var status = document.getElementById('statusLeitura');
+        status.className = 'status status-success';
+        status.textContent = '✅ Análise carregada do histórico';
+        status.classList.remove('hidden');
+    })
+    .catch(function(e) { alert('Erro: ' + e.message); });
+}
+
+// ===== DOCUMENTOS GERADOS =====
+function abrirModalDocumentos() {
+    document.getElementById('modalDocumentos').classList.remove('hidden');
+    carregarDocumentosGerados();
+}
+
+function fecharModalDocumentos() {
+    document.getElementById('modalDocumentos').classList.add('hidden');
+}
+
+function carregarDocumentosGerados() {
+    var loading = document.getElementById('documentosLoading');
+    var lista = document.getElementById('documentosLista');
+    loading.classList.remove('hidden');
+    lista.innerHTML = '';
+
+    fetch(API + '/api/processos/documentos', { headers: getAuthHeaders() })
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+        loading.classList.add('hidden');
+        var docs = data.documentos || [];
+        if (docs.length === 0) {
+            lista.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)">Nenhum documento gerado</div>';
+            return;
+        }
+        var html = '';
+        docs.forEach(function(d) {
+            var dataFormatada = new Date(d.created_at).toLocaleString('pt-BR');
+            var statusBadge = '';
+            if (d.assinado) {
+                statusBadge = '<span class="tag" style="background:var(--success);color:#fff">Assinado</span>';
+            } else if (d.inserido_sei) {
+                statusBadge = '<span class="tag" style="background:var(--info);color:#fff">No SEI</span>';
+            } else {
+                statusBadge = '<span class="tag" style="background:var(--bg-tertiary);color:var(--text-muted)">Rascunho</span>';
+            }
+            html += '<div class="doc-item" style="display:flex;justify-content:space-between;align-items:center">';
+            html += '<div>';
+            html += '<strong>' + escapeHtml(d.tipo || 'Documento') + '</strong>';
+            html += ' <small style="color:var(--text-muted)">- ' + escapeHtml(d.nup || '') + '</small>';
+            if (d.destinatario) html += ' <small style="color:var(--accent)">→ ' + escapeHtml(d.destinatario) + '</small>';
+            html += '</div>';
+            html += '<div style="display:flex;align-items:center;gap:8px">';
+            html += statusBadge;
+            if (d.sei_numero) html += '<small style="color:var(--text-muted)">SEI: ' + escapeHtml(d.sei_numero) + '</small>';
+            html += '<small style="color:var(--text-muted)">' + dataFormatada + '</small>';
+            html += '</div>';
+            html += '</div>';
+        });
+        lista.innerHTML = html;
+    })
+    .catch(function(e) {
+        loading.classList.add('hidden');
+        lista.innerHTML = '<div class="status status-error">Erro: ' + e.message + '</div>';
+    });
+}
+
+// ===== CONSULTAR LEGISLAÇÃO =====
+function abrirModalConsultarLei() {
+    document.getElementById('modalConsultarLei').classList.remove('hidden');
+    document.getElementById('inputConsultaLei').value = '';
+    document.getElementById('consultaLeiResultado').innerHTML = '';
+    document.getElementById('inputConsultaLei').focus();
+}
+
+function fecharModalConsultarLei() {
+    document.getElementById('modalConsultarLei').classList.add('hidden');
+}
+
+function consultarLei() {
+    var consulta = document.getElementById('inputConsultaLei').value.trim();
+    if (!consulta) {
+        alert('Digite uma consulta');
+        return;
+    }
+    var loading = document.getElementById('consultaLeiLoading');
+    var resultado = document.getElementById('consultaLeiResultado');
+    loading.classList.remove('hidden');
+    resultado.innerHTML = '';
+
+    fetch(API + '/api/processos/consultar-lei', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ consulta: consulta, n_results: 5 })
+    })
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+        loading.classList.add('hidden');
+        if (data.erro) {
+            resultado.innerHTML = '<div class="status status-error">' + data.erro + '</div>';
+            return;
+        }
+        var resultados = data.resultados || data.results || [];
+        if (resultados.length === 0) {
+            resultado.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Nenhum resultado encontrado</div>';
+            return;
+        }
+        var html = '';
+        resultados.forEach(function(r, idx) {
+            html += '<div class="resumo-box" style="margin-bottom:10px">';
+            html += '<h3 style="font-size:0.9rem">' + (idx + 1) + '. ' + escapeHtml(r.titulo || r.fonte || 'Resultado') + '</h3>';
+            if (r.artigo) html += '<p style="color:var(--accent);font-size:0.8rem;margin-bottom:5px">' + escapeHtml(r.artigo) + '</p>';
+            html += '<p style="font-size:0.85rem">' + escapeHtml(r.texto || r.conteudo || r.trecho || '') + '</p>';
+            if (r.relevancia) html += '<small style="color:var(--text-muted)">Relevância: ' + Math.round(r.relevancia * 100) + '%</small>';
+            html += '</div>';
+        });
+        if (data.resposta_ia) {
+            html += '<div class="config-box"><h3 style="color:var(--success)">Análise da IA</h3><p style="color:var(--text-secondary);font-size:0.9rem;white-space:pre-wrap">' + escapeHtml(data.resposta_ia) + '</p></div>';
+        }
+        resultado.innerHTML = html;
+    })
+    .catch(function(e) {
+        loading.classList.add('hidden');
+        resultado.innerHTML = '<div class="status status-error">Erro: ' + e.message + '</div>';
+    });
+}
+
+// ===== ENVIAR PROCESSO =====
+var enviarToken = null;
+var enviarUnidadesSelecionadas = [];
+
+function abrirModalEnviar() {
+    if (!nupAtual) { alert('Primeiro analise um processo'); return; }
+    document.getElementById('modalEnviar').classList.remove('hidden');
+    document.getElementById('enviarNup').textContent = nupAtual;
+    document.getElementById('inputFiltroUnidade').value = '';
+    document.getElementById('enviarUnidadesLista').innerHTML = '';
+    document.getElementById('enviarStage1').classList.remove('hidden');
+    document.getElementById('enviarStage2').classList.add('hidden');
+    document.getElementById('enviarStage3').classList.add('hidden');
+    enviarToken = null;
+    enviarUnidadesSelecionadas = [];
+    document.getElementById('inputFiltroUnidade').focus();
+}
+
+function fecharModalEnviar() {
+    document.getElementById('modalEnviar').classList.add('hidden');
+}
+
+function enviarBuscarUnidades() {
+    var filtro = document.getElementById('inputFiltroUnidade').value.trim();
+    if (!filtro) { alert('Digite o nome ou sigla da unidade'); return; }
+
+    var loading = document.getElementById('enviarBuscaLoading');
+    var lista = document.getElementById('enviarUnidadesLista');
+    loading.classList.remove('hidden');
+    lista.innerHTML = '';
+
+    fetch(API + '/api/processos/enviar', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ nup: nupAtual, stage: 'search', filtro: filtro })
+    })
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+        loading.classList.add('hidden');
+        if (!data.sucesso) {
+            lista.innerHTML = '<div class="status status-error">' + (data.erro || 'Erro') + '</div>';
+            return;
+        }
+        enviarToken = data.token || null;
+        var unidades = data.unidades || [];
+        if (unidades.length === 0) {
+            lista.innerHTML = '<div style="text-align:center;padding:15px;color:var(--text-muted)">Nenhuma unidade encontrada</div>';
+            return;
+        }
+        var html = '';
+        unidades.forEach(function(u) {
+            var label = u.label || u.nome || u.sigla || '';
+            html += '<div class="doc-item" style="display:flex;align-items:center;gap:10px" onclick="selecionarUnidadeEnviar(this, \'' + escapeHtml(label).replace(/'/g, "\\'") + '\')">';
+            html += '<input type="checkbox" class="unidade-checkbox" value="' + escapeHtml(label) + '">';
+            html += '<span>' + escapeHtml(label) + '</span>';
+            html += '</div>';
+        });
+        lista.innerHTML = html;
+    })
+    .catch(function(e) {
+        loading.classList.add('hidden');
+        lista.innerHTML = '<div class="status status-error">Erro: ' + e.message + '</div>';
+    });
+}
+
+function selecionarUnidadeEnviar(el, label) {
+    var cb = el.querySelector('.unidade-checkbox');
+    cb.checked = !cb.checked;
+    if (cb.checked) {
+        if (enviarUnidadesSelecionadas.indexOf(label) === -1) enviarUnidadesSelecionadas.push(label);
+    } else {
+        enviarUnidadesSelecionadas = enviarUnidadesSelecionadas.filter(function(u) { return u !== label; });
+    }
+    // Se tiver selecionados, mostra botão de prosseguir
+    if (enviarUnidadesSelecionadas.length > 0) {
+        var existente = document.getElementById('btnProsseguirEnviar');
+        if (!existente) {
+            var btnHtml = '<button id="btnProsseguirEnviar" class="btn btn-success" style="margin-top:10px;width:100%" onclick="enviarPreflight()">Prosseguir com ' + enviarUnidadesSelecionadas.length + ' unidade(s)</button>';
+            document.getElementById('enviarUnidadesLista').insertAdjacentHTML('afterend', btnHtml);
+        } else {
+            existente.textContent = 'Prosseguir com ' + enviarUnidadesSelecionadas.length + ' unidade(s)';
+        }
+    }
+}
+
+function enviarPreflight() {
+    document.getElementById('enviarStage1').classList.add('hidden');
+    var btnProsseguir = document.getElementById('btnProsseguirEnviar');
+    if (btnProsseguir) btnProsseguir.remove();
+    document.getElementById('enviarStage2').classList.remove('hidden');
+
+    var selHtml = enviarUnidadesSelecionadas.map(function(u) {
+        return '<span class="tag tag-info">' + escapeHtml(u) + '</span>';
+    }).join(' ');
+    document.getElementById('enviarSelecionadas').innerHTML = selHtml;
+
+    var loading = document.getElementById('enviarPreflightLoading');
+    loading.classList.remove('hidden');
+
+    fetch(API + '/api/processos/enviar', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ nup: nupAtual, stage: 'preflight', labels: enviarUnidadesSelecionadas, token: enviarToken })
+    })
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+        loading.classList.add('hidden');
+        var infoBox = document.getElementById('enviarPreflightInfo');
+        if (data.sucesso) {
+            enviarToken = data.token || enviarToken;
+            infoBox.innerHTML = '<div class="status status-success" style="margin-bottom:10px">Pronto para enviar</div>';
+            infoBox.classList.remove('hidden');
+        } else {
+            infoBox.innerHTML = '<div class="status status-error">' + (data.erro || 'Erro no preflight') + '</div>';
+            infoBox.classList.remove('hidden');
+        }
+    })
+    .catch(function(e) {
+        loading.classList.add('hidden');
+        document.getElementById('enviarPreflightInfo').innerHTML = '<div class="status status-error">Erro: ' + e.message + '</div>';
+        document.getElementById('enviarPreflightInfo').classList.remove('hidden');
+    });
+}
+
+function enviarVoltarStage1() {
+    document.getElementById('enviarStage2').classList.add('hidden');
+    document.getElementById('enviarStage1').classList.remove('hidden');
+}
+
+function enviarCommit() {
+    document.getElementById('enviarStage2').classList.add('hidden');
+    document.getElementById('enviarStage3').classList.remove('hidden');
+    document.getElementById('enviarCommitLoading').classList.remove('hidden');
+    document.getElementById('enviarResultado').classList.add('hidden');
+
+    fetch(API + '/api/processos/enviar', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ nup: nupAtual, stage: 'commit', labels: enviarUnidadesSelecionadas, token: enviarToken })
+    })
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+        document.getElementById('enviarCommitLoading').classList.add('hidden');
+        var resultado = document.getElementById('enviarResultado');
+        if (data.sucesso) {
+            resultado.innerHTML = '<div class="status status-success">Processo enviado com sucesso!</div><div class="btn-group" style="justify-content:center;margin-top:10px"><button class="btn btn-secondary" onclick="fecharModalEnviar()">Fechar</button></div>';
+        } else {
+            resultado.innerHTML = '<div class="status status-error">Erro: ' + (data.erro || 'Falha no envio') + '</div><div class="btn-group" style="justify-content:center;margin-top:10px"><button class="btn btn-secondary" onclick="enviarVoltarStage1();document.getElementById(\'enviarStage3\').classList.add(\'hidden\');document.getElementById(\'enviarStage1\').classList.remove(\'hidden\');">Tentar novamente</button></div>';
+        }
+        resultado.classList.remove('hidden');
+    })
+    .catch(function(e) {
+        document.getElementById('enviarCommitLoading').classList.add('hidden');
+        var resultado = document.getElementById('enviarResultado');
+        resultado.innerHTML = '<div class="status status-error">Erro: ' + e.message + '</div>';
+        resultado.classList.remove('hidden');
+    });
+}
+
+// ===== ATRIBUIR PROCESSO =====
+function abrirModalAtribuir() {
+    if (!nupAtual) { alert('Primeiro analise um processo'); return; }
+    document.getElementById('modalAtribuir').classList.remove('hidden');
+    document.getElementById('atribuirNup').textContent = nupAtual;
+    document.getElementById('inputApelido').value = '';
+    document.getElementById('atribuirLoading').classList.add('hidden');
+    document.getElementById('atribuirResultado').classList.add('hidden');
+    document.getElementById('inputApelido').focus();
+}
+
+function fecharModalAtribuir() {
+    document.getElementById('modalAtribuir').classList.add('hidden');
+}
+
+function atribuirProcesso() {
+    var apelido = document.getElementById('inputApelido').value.trim();
+    if (!apelido) { alert('Digite o apelido do servidor'); return; }
+
+    var loading = document.getElementById('atribuirLoading');
+    var resultado = document.getElementById('atribuirResultado');
+    loading.classList.remove('hidden');
+    resultado.classList.add('hidden');
+
+    fetch(API + '/api/processos/atribuir', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ nup: nupAtual, apelido: apelido })
+    })
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+        loading.classList.add('hidden');
+        if (data.sucesso) {
+            resultado.innerHTML = '<div class="status status-success">Processo atribuído para <strong>' + escapeHtml(apelido) + '</strong>!</div>';
+        } else {
+            resultado.innerHTML = '<div class="status status-error">Erro: ' + (data.erro || 'Falha ao atribuir') + '</div>';
+        }
+        resultado.classList.remove('hidden');
+    })
+    .catch(function(e) {
+        loading.classList.add('hidden');
+        resultado.innerHTML = '<div class="status status-error">Erro: ' + e.message + '</div>';
+        resultado.classList.remove('hidden');
+    });
+}
+
+// ===== ASSINAR DOCUMENTO DO PROCESSO =====
+function abrirFluxoAssinar() {
+    document.getElementById('modalAssinarProcesso').classList.remove('hidden');
+    document.getElementById('inputSeiAssinar').value = window.ultimoSeiNumeroInserido || '';
+    document.getElementById('assinarStepUpBox').classList.add('hidden');
+    document.getElementById('assinarProcessoLoading').classList.add('hidden');
+    document.getElementById('assinarProcessoResultado').classList.add('hidden');
+    document.getElementById('assinarProcessoBotoes').classList.remove('hidden');
+}
+
+function fecharModalAssinarProcesso() {
+    document.getElementById('modalAssinarProcesso').classList.add('hidden');
+}
+
+function executarAssinaturaProcesso() {
+    var seiNumero = document.getElementById('inputSeiAssinar').value.trim();
+    if (!seiNumero) { alert('Digite o número SEI'); return; }
+
+    var loading = document.getElementById('assinarProcessoLoading');
+    var resultado = document.getElementById('assinarProcessoResultado');
+    var botoes = document.getElementById('assinarProcessoBotoes');
+
+    // Primeiro: verificar se precisa step-up
+    var stepUpBox = document.getElementById('assinarStepUpBox');
+    if (!stepUpBox.classList.contains('hidden')) {
+        // Step-up já visível, envia senha
+        var senha = document.getElementById('inputSenhaStepUp').value.trim();
+        if (!senha) { alert('Digite sua senha'); return; }
+
+        loading.classList.remove('hidden');
+        botoes.classList.add('hidden');
+
+        // Grant step-up
+        fetch(API + '/api/step-up/grant', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ action: 'sign', target_id: seiNumero, password: senha })
+        })
+        .then(function(resp) { return resp.json(); })
+        .then(function(data) {
+            if (data.sucesso || data.granted) {
+                // Agora assina
+                return fetch(API + '/api/processos/assinar', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ sei_numero: seiNumero })
+                }).then(function(resp) { return resp.json(); });
+            } else {
+                throw new Error(data.erro || 'Senha incorreta');
+            }
+        })
+        .then(function(data) {
+            loading.classList.add('hidden');
+            if (data.sucesso) {
+                resultado.innerHTML = '<div class="status status-success">Documento <strong>' + escapeHtml(seiNumero) + '</strong> assinado com sucesso!</div>';
+            } else if (data.acao_necessaria === 'step_up') {
+                throw new Error('Step-up falhou. Tente novamente.');
+            } else {
+                throw new Error(data.erro || 'Falha na assinatura');
+            }
+            resultado.classList.remove('hidden');
+        })
+        .catch(function(e) {
+            loading.classList.add('hidden');
+            resultado.innerHTML = '<div class="status status-error">Erro: ' + e.message + '</div>';
+            resultado.classList.remove('hidden');
+            botoes.classList.remove('hidden');
+        });
+    } else {
+        // Tenta assinar direto (pode retornar pedido de step-up)
+        loading.classList.remove('hidden');
+        botoes.classList.add('hidden');
+
+        fetch(API + '/api/processos/assinar', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ sei_numero: seiNumero })
+        })
+        .then(function(resp) { return resp.json(); })
+        .then(function(data) {
+            loading.classList.add('hidden');
+            if (data.sucesso) {
+                resultado.innerHTML = '<div class="status status-success">Documento <strong>' + escapeHtml(seiNumero) + '</strong> assinado com sucesso!</div>';
+                resultado.classList.remove('hidden');
+            } else if (data.acao_necessaria === 'step_up') {
+                // Precisa step-up: mostra campo de senha
+                stepUpBox.classList.remove('hidden');
+                botoes.classList.remove('hidden');
+                document.getElementById('inputSenhaStepUp').focus();
+            } else {
+                throw new Error(data.erro || 'Falha na assinatura');
+            }
+        })
+        .catch(function(e) {
+            loading.classList.add('hidden');
+            resultado.innerHTML = '<div class="status status-error">Erro: ' + e.message + '</div>';
+            resultado.classList.remove('hidden');
+            botoes.classList.remove('hidden');
+        });
+    }
+}
 
     </script>
 </body>
