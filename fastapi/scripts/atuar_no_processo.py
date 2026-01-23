@@ -5,25 +5,21 @@ atuar_no_processo.py - Criação de Documentos SEI Multi-Diretoria
 
 VERSÃO 4.1 - PRODUÇÃO COMPLETA + CREDENCIAIS DIRETAS
 
-Melhorias v4.1:
-- Suporte a credenciais diretas (--usuario, --senha, --orgao)
-- Mantém compatibilidade com chat_id/sigla (Telegram)
-
 Recursos:
 - Login via sei_auth_multi (multi-diretoria)
+- Suporte a credenciais diretas (--usuario, --senha, --orgao)
 - Suporte a templates
 - Extração completa: SEI nº, Cabeçalho, Número do documento
 - Hash SHA256 como prova jurídica
 - Validação de conteúdo (overlap 60%)
-- Screenshot automático como prova
 - Envio opcional para Telegram
 - JSON rico de retorno
 
 Uso:
-    # NOVO - Credenciais diretas (Laravel/PlattArgus WEB)
+    # Credenciais diretas (Laravel/PlattArgus WEB)
     python atuar_no_processo.py "NUP" "Tipo" "Destinatário" "HTML" --usuario gilmar.moura --senha xxx --orgao 31
-    
-    # LEGADO - Telegram
+
+    # Telegram (legado)
     python atuar_no_processo.py "NUP" "Tipo" "Destinatário" "HTML" --chat-id "123"
     python atuar_no_processo.py "NUP" "Tipo" "Destinatário" "HTML" --sigla DRH
 
@@ -292,42 +288,51 @@ async def capturar_dados_completos_editor(page_editor) -> Dict[str, Optional[str
                     resultado["numero_doc"] = match_cab.group(3)
                     resultado["sigla_doc"] = match_cab.group(4).upper()
                     debug_print(f"Cabeçalho (HTML): {resultado['cabecalho_doc']}")
-        except Exception:
-            pass
+        except Exception as e:
+            debug_print(f"Erro HTML: {e}")
         
+        # Se encontrou tudo, retorna
         if resultado["sei_numero_editor"] and resultado["cabecalho_doc"]:
             return resultado
         
-        # Aguarda e tenta novamente
-        await page_editor.wait_for_timeout(1000)
+        # Espera um pouco antes de tentar novamente
+        await page_editor.wait_for_timeout(500)
     
-    debug_print("⚠ Não conseguiu extrair todos os dados do editor")
+    debug_print(f"Dados parciais extraídos: {resultado}")
     return resultado
 
 
 async def ler_cabecalho_no_viewer(page) -> Optional[str]:
-    """Lê o cabeçalho do documento no viewer."""
+    """Lê o cabeçalho do documento no viewer após salvar."""
+    debug_print("Lendo cabeçalho no viewer...")
+    
     padrao = re.compile(
         r"((Despacho|Memorando|Ofício|Termo)\s*n[ºo°]\s*\d+/\d{4}/CBMAC\s*-\s*[A-Z0-9]+)",
         re.IGNORECASE
     )
     
     try:
+        # Tenta no frame de visualização
         frame_pai = page.frame_locator(SELETOR_FRAME_CONTEUDO_PAI).first
         frame_viz = frame_pai.frame_locator(SELETOR_FRAME_VISUALIZACAO).first
         
         texto = await frame_viz.locator("body").inner_text(timeout=5000)
         match = padrao.search(texto)
+        
         if match:
-            return _norm_space(match.group(1))
+            cab = _norm_space(match.group(1))
+            debug_print(f"Cabeçalho encontrado no viewer: {cab}")
+            return cab
     except Exception as e:
-        debug_print(f"Erro ao ler cabeçalho viewer: {e}")
+        debug_print(f"Erro ao ler viewer: {e}")
     
     return None
 
 
 async def extrair_sei_do_viewer(page) -> Optional[str]:
     """Extrai SEI nº do viewer."""
+    debug_print("Buscando SEI nº no viewer...")
+    
     padrao = re.compile(r"SEI\s*n[ºo°]?\s*(\d{10,})", re.IGNORECASE)
     
     try:
@@ -336,57 +341,46 @@ async def extrair_sei_do_viewer(page) -> Optional[str]:
         
         texto = await frame_viz.locator("body").inner_text(timeout=5000)
         match = padrao.search(texto)
+        
         if match:
-            return match.group(1)
-    except Exception:
-        pass
+            sei = match.group(1)
+            debug_print(f"SEI nº no viewer: {sei}")
+            return sei
+    except Exception as e:
+        debug_print(f"Erro ao buscar SEI nº: {e}")
     
     return None
 
 
-async def extrair_ultimo_documento_arvore(page, tipo_esperado: str) -> Dict[str, Optional[str]]:
-    """Extrai último documento da árvore."""
+async def extrair_ultimo_documento_arvore(page, tipo_documento: str = "Despacho") -> Dict[str, Optional[str]]:
+    """Extrai o último documento da árvore do processo."""
+    debug_print("Extraindo último documento da árvore...")
+    
     resultado = {
         "ultimo_item_arvore_texto": None,
         "numero_arvore": None,
         "sei_numero_arvore": None,
     }
     
-    padrao_sei = re.compile(r"(\d{10,})")
-    padrao_num = re.compile(r"n[ºo°]\s*(\d+)", re.IGNORECASE)
+    # Padrão: "Despacho 86 (0018817133)"
+    padrao = re.compile(
+        rf"({tipo_documento})\s*(\d+)\s*\((\d{{10,}})\)",
+        re.IGNORECASE
+    )
     
     try:
-        frame_arvore = page.frame(name="ifrArvore")
-        if not frame_arvore:
-            return resultado
+        frame_arvore = page.frame_locator(SELETOR_FRAME_ARVORE).first
+        texto = await frame_arvore.locator("#divArvore").inner_text(timeout=5000)
         
-        # Busca links de documentos
-        links = frame_arvore.locator("#divArvore a")
-        total = await links.count()
+        # Encontra todas as ocorrências e pega a última
+        matches = list(padrao.finditer(texto))
         
-        # Percorre do último para o primeiro
-        for i in range(total - 1, -1, -1):
-            link = links.nth(i)
-            texto = await link.inner_text()
-            texto = _norm_space(texto)
-            
-            # Verifica se é do tipo esperado
-            if tipo_esperado.lower() in texto.lower():
-                resultado["ultimo_item_arvore_texto"] = texto
-                
-                # Extrai número
-                match_num = padrao_num.search(texto)
-                if match_num:
-                    resultado["numero_arvore"] = match_num.group(1)
-                
-                # Extrai SEI nº
-                href = await link.get_attribute("href") or ""
-                match_sei = padrao_sei.search(href)
-                if match_sei:
-                    resultado["sei_numero_arvore"] = match_sei.group(1)
-                
-                break
-    
+        if matches:
+            ultimo = matches[-1]
+            resultado["ultimo_item_arvore_texto"] = _norm_space(ultimo.group(0))
+            resultado["numero_arvore"] = ultimo.group(2)
+            resultado["sei_numero_arvore"] = ultimo.group(3)
+            debug_print(f"Árvore: {resultado['ultimo_item_arvore_texto']}")
     except Exception as e:
         debug_print(f"Erro ao ler árvore: {e}")
     
@@ -426,14 +420,13 @@ async def atuar_no_processo(
     corpo_html: str,
     chat_id: str = None,
     sigla: str = None,
-    # NOVO v4.1: Credenciais diretas
     usuario: str = None,
     senha: str = None,
     orgao_id: str = "31"
 ) -> Dict:
     """
     Cria um documento em um processo SEI.
-    
+
     Args:
         nup: Número do processo
         tipo_documento: Tipo de documento no SEI (ex: "Memorando", "Despacho")
@@ -441,9 +434,9 @@ async def atuar_no_processo(
         corpo_html: Conteúdo HTML do documento
         chat_id: Chat ID do Telegram (para identificar diretoria)
         sigla: Sigla da diretoria
-        usuario: Usuário SEI (credencial direta - NOVO v4.1)
-        senha: Senha SEI (credencial direta - NOVO v4.1)
-        orgao_id: ID do órgão (credencial direta - NOVO v4.1)
+        usuario: Usuário SEI (credencial direta)
+        senha: Senha SEI (credencial direta)
+        orgao_id: ID do órgão (credencial direta)
     
     Returns:
         Dict com resultado completo da operação
@@ -473,20 +466,16 @@ async def atuar_no_processo(
     }
     
     try:
-        # NOVO v4.1: Passa credenciais diretas para criar_sessao_sei
         async with criar_sessao_sei(
-            chat_id=chat_id, 
-            sigla=sigla,
-            usuario=usuario,
-            senha=senha,
-            orgao_id=orgao_id
+            chat_id=chat_id, sigla=sigla,
+            usuario=usuario, senha=senha, orgao_id=orgao_id
         ) as sessao:
             page = sessao['page']
             context = sessao['context']
             diretoria = sessao['diretoria']
             
             if diretoria:
-                output['diretoria'] = diretoria.get('sigla')
+                output['diretoria'] = diretoria['sigla']
             
             # =================================================================
             # 1. BUSCA O PROCESSO
@@ -502,153 +491,100 @@ async def atuar_no_processo(
             # =================================================================
             debug_print("Clicando em Incluir Documento...")
             frame_pai = page.frame_locator(SELETOR_FRAME_CONTEUDO_PAI).first
-            
-            botao = frame_pai.locator("a#btnIncluirDocumento, a[onclick*='incluir_documento']").first
-            await botao.wait_for(state="visible", timeout=15000)
-            await botao.click()
-            await page.wait_for_load_state("networkidle", timeout=30000)
+            btn_incluir = frame_pai.get_by_role("img", name="Incluir Documento", exact=True).first
+            await btn_incluir.wait_for(state="visible", timeout=15000)
+            await btn_incluir.click()
+            await page.wait_for_timeout(1500)
             
             # =================================================================
             # 3. SELECIONAR TIPO DE DOCUMENTO
             # =================================================================
             debug_print(f"Selecionando tipo: {tipo_documento}")
+            frame_selecao = frame_pai.frame_locator(SELETOR_FRAME_VISUALIZACAO).first
             
-            # Aguarda frame carregar
-            await page.wait_for_timeout(2000)
+            await frame_selecao.locator("#txtFiltro").click()
+            await frame_selecao.locator("#txtFiltro").fill(tipo_documento)
+            await page.wait_for_timeout(1000)
+            await frame_selecao.locator("#txtFiltro").press("Enter")
+            await page.wait_for_timeout(500)
             
-            # Tenta encontrar o campo de pesquisa
-            frame_conteudo = page.frame(name="ifrVisualizacao")
-            if not frame_conteudo:
-                frame_conteudo = page.frame(name="ifrConteudo")
-            
-            if frame_conteudo:
-                # Pesquisa pelo tipo
-                campo_pesq = frame_conteudo.locator("#txtFiltro, #txtPesquisaTipoDocumento, input[type='text']").first
-                if await campo_pesq.count():
-                    await campo_pesq.fill(tipo_documento)
-                    await campo_pesq.press("Enter")
-                    await page.wait_for_timeout(1000)
-                
-                # Clica no tipo
-                link_tipo = frame_conteudo.locator(f"a:has-text('{tipo_documento}')").first
-                await link_tipo.click(timeout=10000)
-            else:
-                # Fallback: tenta no frame pai
-                link_tipo = frame_pai.locator(f"a:has-text('{tipo_documento}')").first
-                await link_tipo.click(timeout=10000)
-            
-            await page.wait_for_load_state("networkidle", timeout=30000)
+            await frame_selecao.get_by_role("link", name=tipo_documento, exact=True).first.click()
             
             # =================================================================
-            # 4. FORMULÁRIO - DESTINATÁRIO
+            # 4. NÍVEL DE ACESSO: PÚBLICO
             # =================================================================
-            if destinatario:
-                debug_print(f"Preenchendo destinatário: {destinatario}")
-                
-                frame_form = page.frame(name="ifrVisualizacao") or page.frame(name="ifrConteudo")
-                if frame_form:
-                    campo_dest = frame_form.locator("#txtDestinatario, input[name='txtDestinatario']").first
-                    if await campo_dest.count():
-                        await campo_dest.fill(destinatario)
-            
-            # =================================================================
-            # 5. SALVAR FORMULÁRIO (CONTINUAR)
-            # =================================================================
-            debug_print("Salvando formulário...")
-            
-            frame_form = page.frame(name="ifrVisualizacao") or page.frame(name="ifrConteudo")
-            if frame_form:
-                botao_salvar = frame_form.locator("button#btnSalvar, input[type='submit'][value*='Salvar'], button:has-text('Salvar')").first
-                await botao_salvar.click(timeout=10000)
-            
-            await page.wait_for_load_state("networkidle", timeout=60000)
+            debug_print("Configurando nível de acesso...")
+            try:
+                await frame_selecao.locator("#divOptPublico").wait_for(state="visible", timeout=2000)
+                await frame_selecao.locator("#divOptPublico > .infraRadioDiv > .infraRadioLabel").click()
+                debug_print("Marcado como público")
+            except Exception:
+                debug_print("Opção público não encontrada (ok)")
             
             # =================================================================
-            # 6. AGUARDAR POPUP DO EDITOR
+            # 5. ABRIR EDITOR (NOVA JANELA)
             # =================================================================
-            debug_print("Aguardando popup do editor...")
-            
-            page_editor = None
-            
-            async with context.expect_page(timeout=30000) as page_info:
-                # O editor abre em nova aba/popup
-                pass
-            
-            page_editor = await page_info.value
-            await page_editor.wait_for_load_state("domcontentloaded", timeout=30000)
-            
-            debug_print(f"Editor aberto: {page_editor.url}")
-            
-            # =================================================================
-            # 7. ENCONTRAR IFRAME DO CORPO
-            # =================================================================
-            debug_print("Buscando iframe do corpo...")
-            
-            frame_corpo = None
-            
-            for tentativa in range(10):
-                # Tenta localizar o iframe do corpo
-                iframe = page_editor.frame_locator(SELETOR_IFRAME_CORPO_TEXTO).first
-                
+            debug_print("Abrindo editor...")
+            async with context.expect_page() as page_promise:
                 try:
-                    body = iframe.locator("body")
-                    await body.wait_for(state="attached", timeout=3000)
-                    frame_corpo = iframe
-                    debug_print("✓ Iframe do corpo encontrado!")
-                    break
+                    await frame_selecao.get_by_role("button", name="Confirmar Dados").first.click(timeout=5000, force=True)
                 except Exception:
-                    pass
-                
-                # Tenta por nome
-                for frame in page_editor.frames:
-                    if "corpo" in (frame.name or "").lower():
-                        frame_corpo = page_editor.frame_locator(f'iframe[name="{frame.name}"]').first
-                        debug_print(f"✓ Frame encontrado pelo nome: {frame.name}")
-                        break
-                
-                if frame_corpo:
-                    break
-                
-                await page_editor.wait_for_timeout(1000)
+                    try:
+                        await frame_selecao.get_by_role("button", name="Salvar").first.click(timeout=5000, force=True)
+                    except Exception:
+                        await frame_selecao.locator("#btnSalvar, #btnConfirmar, button[value='Salvar'], button[value='Confirmar Dados']").first.click(timeout=5000, force=True)
             
-            if not frame_corpo:
-                output["erro"] = "Não encontrou iframe do corpo do documento"
-                await page_editor.close()
-                return output
+            page_editor = await page_promise.value
+            await page_editor.wait_for_load_state("domcontentloaded")
+            debug_print("Editor aberto")
             
             # =================================================================
-            # 8. INJETAR CONTEÚDO HTML
+            # 6. ENDEREÇAMENTO (SE HOUVER)
             # =================================================================
-            debug_print("Injetando conteúdo HTML...")
+            if destinatario and destinatario.strip():
+                debug_print(f"Preenchendo destinatário: {destinatario}")
+                try:
+                    frame_end = page_editor.frame_locator(
+                        'iframe[title*="Endereçamento"], iframe[title*="Destinatário"]'
+                    ).first
+                    await frame_end.locator("body").evaluate(
+                        f"el => el.innerHTML = '{destinatario}'"
+                    )
+                except Exception:
+                    # Se não conseguir, adiciona no corpo
+                    corpo_html = f"<p><strong>AO SR(A). {destinatario}</strong></p><br>{corpo_html}"
             
-            await frame_corpo.locator("body").evaluate(
-                "el => el.innerHTML = arguments[0]",
-                corpo_html
-            )
+            # =================================================================
+            # 7. INJETAR CONTEÚDO
+            # =================================================================
+            debug_print("Injetando conteúdo...")
+            await page_editor.wait_for_selector(SELETOR_IFRAME_CORPO_TEXTO, timeout=30000)
+            frame_editor = page_editor.frame_locator(SELETOR_IFRAME_CORPO_TEXTO).first
             
-            await page_editor.wait_for_timeout(1000)
+            corpo_escapado = corpo_html.replace("`", "\\`")
+            await frame_editor.locator("body").evaluate(f"el => el.innerHTML = `{corpo_escapado}`")
+            debug_print("Conteúdo injetado")
             
-            # Coleta prova do que foi inserido
-            prova = await coletar_prova_editor(frame_corpo)
-            output["preview_texto_editor"] = prova.get("preview_texto_editor", "")[:2000]
-            output["hash_preview_editor"] = prova.get("hash_preview_editor")
-            output["primeiras_10_linhas"] = prova.get("primeiras_10_linhas", [])
+            # =================================================================
+            # 8. COLETAR PROVA ANTES DE SALVAR
+            # =================================================================
+            prova = await coletar_prova_editor(frame_editor)
+            output.update(prova)
             
-            # Validação de overlap (opcional)
-            texto_esperado = strip_tags(corpo_html)
-            texto_inserido = prova.get("preview_texto_editor", "")
+            # Validação de conteúdo
+            esperado_txt = strip_tags(corpo_html)
+            got_txt = _norm_space(output["preview_texto_editor"] or "")
             
-            if texto_esperado and texto_inserido:
-                # Verifica se pelo menos 60% do conteúdo foi inserido
-                palavras_esperadas = set(texto_esperado.lower().split())
-                palavras_inseridas = set(texto_inserido.lower().split())
+            if esperado_txt and esperado_txt not in got_txt:
+                exp_words = {w for w in re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ0-9]+", esperado_txt.lower()) if len(w) >= 3}
+                got_words = {w for w in re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ0-9]+", got_txt.lower()) if len(w) >= 3}
                 
-                if palavras_esperadas:
-                    overlap = len(palavras_esperadas & palavras_inseridas) / len(palavras_esperadas)
-                    debug_print(f"Overlap de conteúdo: {overlap:.1%}")
-                    
-                    if overlap < 0.6:
-                        debug_print("⚠ Overlap baixo, mas continuando...")
+                if exp_words:
+                    overlap = len(exp_words & got_words) / max(1, len(exp_words))
+                    if overlap < 0.60:
+                        output["erro"] = "Conteúdo no editor não corresponde ao esperado. Abortado."
+                        await page_editor.close()
+                        return output
             
             output["conteudo_injetado"] = True
             
@@ -781,17 +717,15 @@ async def main_async():
     parser.add_argument("corpo", help="HTML do corpo OU JSON com template_id")
     parser.add_argument("--chat-id", help="Chat ID do Telegram")
     parser.add_argument("--sigla", help="Sigla da diretoria")
-    # NOVO v4.1: Credenciais diretas
     parser.add_argument("--usuario", help="Usuário SEI (credencial direta)")
     parser.add_argument("--senha", help="Senha SEI (credencial direta)")
     parser.add_argument("--orgao", default="31", help="ID do órgão (default: 31)")
-    
+
     args = parser.parse_args()
-    
-    # Validação: precisa de credenciais diretas OU sigla/chat_id
+
     if not args.usuario and not args.chat_id and not args.sigla:
         parser.error("Informe --usuario + --senha OU --chat-id OU --sigla")
-    
+
     if args.usuario and not args.senha:
         parser.error("--senha é obrigatório quando usar --usuario")
     
