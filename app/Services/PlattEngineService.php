@@ -163,6 +163,7 @@ class PlattEngineService
                 'usuario' => $credencial['usuario'],
                 'senha' => $credencial['senha'],
                 'orgao_id' => $credencial['orgao_id'],
+                'nome' => $user->nome_completo,
                 'cargo' => $credencial['cargo'],
             ],
         ];
@@ -377,6 +378,16 @@ class PlattEngineService
 
             if ($response->successful()) {
                 $data = $response->json() ?? [];
+
+                // Se Runner parseou JSON do script, retorna diretamente
+                if (!empty($data['json_data']) && is_array($data['json_data'])) {
+                    $jsonData = $data['json_data'];
+                    if (!isset($jsonData['sucesso'])) {
+                        $jsonData['sucesso'] = $data['ok'] ?? false;
+                    }
+                    return $jsonData;
+                }
+
                 return array_merge(['sucesso' => $data['ok'] ?? false], $data);
             }
 

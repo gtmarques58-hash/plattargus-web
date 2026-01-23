@@ -24,6 +24,8 @@ class CredencialSEI(BaseModel):
     usuario: str
     senha: str
     orgao_id: str = "31"
+    nome: Optional[str] = None
+    cargo: Optional[str] = None
 
 class AnalisarProcessoRequest(BaseModel):
     nup: str
@@ -63,6 +65,13 @@ class InserirSEIRequest(BaseModel):
     html: str
     destinatario: Optional[str] = None
     credencial: CredencialSEI
+
+class AssinarSEIRequest(BaseModel):
+    sei_numero: str
+    credencial: CredencialSEI
+    job_id: Optional[str] = None
+    user_id: Optional[int] = None
+    modo: Optional[str] = "assinar"
 
 # ============================================================
 # FUNÃÃES AUXILIARES
@@ -927,7 +936,46 @@ def registrar_endpoints_laravel(app):
             return {"sucesso": False, "erro": "Não foi possível extrair resultado do script", "output": output[:1000]}
         except Exception as e:
             return {"sucesso": False, "erro": str(e)}
-    
+
+    @app.post("/v1/assinar")
+    async def assinar_sei_v1(req: AssinarSEIRequest, request: Request):
+        """Endpoint para assinar documento no SEI (step-up flow)"""
+        print(f"\U0001f525 /v1/assinar - SEI: {req.sei_numero}", file=sys.stderr)
+
+        try:
+            creds = {
+                "usuario": req.credencial.usuario,
+                "senha": req.credencial.senha,
+                "orgao_id": req.credencial.orgao_id,
+            }
+            if req.credencial.nome:
+                creds["nome"] = req.credencial.nome
+            if req.credencial.cargo:
+                creds["cargo"] = req.credencial.cargo
+
+            async with httpx.AsyncClient(timeout=180.0) as client:
+                response = await client.post(
+                    f"{SEI_RUNNER_URL}/run",
+                    json={
+                        "mode": "assinar",
+                        "sei_numero": req.sei_numero,
+                        "credentials": creds,
+                    }
+                )
+                data = response.json()
+
+            if not data.get("ok"):
+                return {"sucesso": False, "erro": data.get("error", "Erro ao assinar")}
+
+            json_data = data.get("json_data")
+            if json_data and isinstance(json_data, dict):
+                return json_data
+
+            output = data.get("output", "")
+            return {"sucesso": False, "erro": "Não foi possível extrair resultado do script", "output": output[:1000]}
+        except Exception as e:
+            return {"sucesso": False, "erro": str(e)}
+
     @app.post("/api/v2/testar-credencial")
     async def testar_credencial_v2(credencial: CredencialSEI):
         try:

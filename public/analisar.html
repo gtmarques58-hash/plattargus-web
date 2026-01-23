@@ -1540,7 +1540,7 @@
             var formData = new FormData();
             formData.append('arquivo', file);
             
-            fetch(API + '/api/upload-arquivo', { method: 'POST', body: formData })
+            fetch(API + '/api/upload-arquivo', { method: 'POST', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('plattargus_token') }, body: formData })
                 .then(function(resp) { return resp.json(); })
                 .then(function(data) {
                     if (data.sucesso) {
@@ -2289,7 +2289,7 @@ function enviarBuscarUnidades() {
             return;
         }
         enviarToken = data.token || null;
-        var unidades = data.unidades || [];
+        var unidades = data.choices || data.unidades || [];
         if (unidades.length === 0) {
             lista.innerHTML = '<div style="text-align:center;padding:15px;color:var(--text-muted)">Nenhuma unidade encontrada</div>';
             return;
