@@ -57,7 +57,7 @@ docker restart plattargus-app plattargus-api-1 plattargus-nginx
 cd plattargus-detalhar
 docker-compose up -d --build
 docker-compose logs -f
-curl http://localhost:8101/health
+curl http://localhost:8103/health
 ```
 
 ## Architecture
@@ -86,7 +86,8 @@ Internet → Nginx (SSL/443) → Laravel (8081) → FastAPI (8002) → SEI Runne
 | plattargus-api-1 | 8002 | FastAPI (AI/automation) |
 | plattargus-db | 5433 | PostgreSQL |
 | plattargus-redis | 6380 | Redis (cache, queues, step-up) |
-| detalhar-api | 8101 | Async job API |
+| plattargus-runner-1 | 8001 (interno) | Runner (Playwright/SEI automation) |
+| plattargus-detalhar-api | 8103 | Async job API (Detalhar) |
 
 ### Key Files
 
@@ -126,3 +127,25 @@ Uses `stancl/tenancy` for multi-tenant support. Tenant configuration in `config/
 ## Permissions
 
 Uses `spatie/laravel-permission`. Permission configuration in `config/permission.php`.
+
+## System Isolation (IMPORTANTE)
+
+Existem **dois sistemas completamente isolados** neste servidor. NUNCA misturar:
+
+### Sistema Web PlattArgus (`/opt/plattargus-web/`)
+- Este repositório
+- Container: `plattargus-detalhar-api` na porta **8103**
+- Redes Docker: `plattargus`
+- Todos os containers com prefixo `plattargus-*`
+
+### Sistema n8n/Telegram (ISOLADO - NÃO MEXER)
+- Localização: `/root/secretario-sei/` e `/root/detalhar-service/`
+- Container: `detalhar-api` na porta **8101**
+- Redes Docker: `detalhar-net`, `secretario-net`
+- Containers: `detalhar-*`, `secretario-sei-*`
+
+**Regras:**
+- NUNCA alterar arquivos em `/root/secretario-sei/` ou `/root/detalhar-service/`
+- NUNCA referenciar `detalhar-api:8101` no sistema web (usar `plattargus-detalhar-api:8103`)
+- NUNCA conectar containers do PlattArgus às redes `detalhar-net` ou `secretario-net`
+- Os dois sistemas compartilham apenas o Runner (volume `/root/secretario-sei/data` montado read-only)
