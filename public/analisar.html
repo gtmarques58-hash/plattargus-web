@@ -1689,6 +1689,14 @@ function carregarBloco() {
         alert('Digite o número do bloco');
         return;
     }
+    // Strip prefixes like "ver bloco", "bloco" and extract just the number
+    blocoId = blocoId.replace(/^(ver\s+)?bloco\s+/i, '').trim();
+    // If still contains non-numeric chars, try to extract the number
+    var numMatch = blocoId.match(/(\d{4,})/);
+    if (numMatch) {
+        blocoId = numMatch[1];
+    }
+    document.getElementById('inputBlocoNumero').value = blocoId;
     
     blocoAtual = blocoId;
     
@@ -2390,7 +2398,8 @@ function enviarCommit() {
         document.getElementById('enviarCommitLoading').classList.add('hidden');
         var resultado = document.getElementById('enviarResultado');
         if (data.sucesso) {
-            resultado.innerHTML = '<div class="status status-success">Processo enviado com sucesso!</div><div class="btn-group" style="justify-content:center;margin-top:10px"><button class="btn btn-secondary" onclick="fecharModalEnviar()">Fechar</button></div>';
+            var screenshotHtml = data.screenshot ? '<img src="data:image/png;base64,' + data.screenshot + '" alt="Evidência" style="max-width:100%;max-height:300px;border-radius:8px;margin:10px 0;border:1px solid var(--border-color)">' : '';
+            resultado.innerHTML = '<div class="status status-success">✅ Processo enviado com sucesso!</div>' + screenshotHtml + '<div class="btn-group" style="justify-content:center;margin-top:10px"><button class="btn btn-secondary" onclick="fecharModalEnviar()">Fechar</button></div>';
         } else {
             resultado.innerHTML = '<div class="status status-error">Erro: ' + (data.erro || 'Falha no envio') + '</div><div class="btn-group" style="justify-content:center;margin-top:10px"><button class="btn btn-secondary" onclick="enviarVoltarStage1();document.getElementById(\'enviarStage3\').classList.add(\'hidden\');document.getElementById(\'enviarStage1\').classList.remove(\'hidden\');">Tentar novamente</button></div>';
         }
@@ -2504,7 +2513,8 @@ function executarAssinaturaProcesso() {
         .then(function(data) {
             loading.classList.add('hidden');
             if (data.sucesso) {
-                resultado.innerHTML = '<div class="status status-success">Documento <strong>' + escapeHtml(seiNumero) + '</strong> assinado com sucesso!</div>';
+                var ssHtml = data.screenshot ? '<img src="data:image/png;base64,' + data.screenshot + '" alt="Evidência" style="max-width:100%;max-height:300px;border-radius:8px;margin:10px 0;border:1px solid var(--border-color)">' : '';
+                resultado.innerHTML = '<div class="status status-success">✅ Documento <strong>' + escapeHtml(seiNumero) + '</strong> assinado com sucesso!</div>' + ssHtml;
             } else if (data.acao_necessaria === 'step_up') {
                 throw new Error('Step-up falhou. Tente novamente.');
             } else {

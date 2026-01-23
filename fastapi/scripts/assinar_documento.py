@@ -628,6 +628,11 @@ async def assinar_documento(
                 await page.wait_for_timeout(2000)
                 foto_bytes = await capturar_evidencia(page)
 
+                # Base64 para retorno via API (web frontend)
+                if foto_bytes:
+                    import base64
+                    output["screenshot"] = base64.b64encode(foto_bytes).decode("utf-8")
+
                 # Opcional: salvar em disco (desligado por padrão)
                 if ARGUS_SAVE_SCREENSHOT and foto_bytes:
                     foto_nome = f"assinado_{sei_numero}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"

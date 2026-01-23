@@ -590,11 +590,14 @@ async def stage_commit(page: Page, frame_envio: Frame, nup: str, labels: List[st
     enviado = await wait_text_regex_any_frame(page, r"Processo aberto (somente na unidade|nas unidades)", timeout_ms=15000)
     unidade_final = await extract_unidade_pos_envio(page) if enviado else ""
 
-    # Envia foto direto para o Telegram
+    # Captura screenshot para evidência (web e/ou Telegram)
     foto_enviada = False
-    if chat_id:
-        try:
-            foto_bytes = await page.screenshot(full_page=True, type="png")
+    screenshot_b64_data = ""
+    try:
+        foto_bytes = await page.screenshot(full_page=True, type="png")
+        if foto_bytes:
+            screenshot_b64_data = base64.b64encode(foto_bytes).decode("utf-8")
+        if chat_id and foto_bytes:
             if enviado:
                 caption = (
                     f"✅ <b>ENVIADO!</b>\n\n📋 NUP: <code>{nup}</code>\n"
@@ -611,30 +614,32 @@ async def stage_commit(page: Page, frame_envio: Frame, nup: str, labels: List[st
                 photo_bytes=foto_bytes,
                 caption=caption
             )
-        except Exception as e:
-            debug_print(f"Erro ao capturar/enviar foto: {e}")
+    except Exception as e:
+        debug_print(f"Erro ao capturar/enviar foto: {e}")
 
     if enviado:
         return {
-            "ok": True, 
-            "stage": "commit", 
-            "enviado": True, 
-            "nup": nup, 
+            "ok": True,
+            "stage": "commit",
+            "enviado": True,
+            "nup": nup,
             "labels": labels,
-            "token": token_calc, 
+            "token": token_calc,
             "unidade_pos_envio": unidade_final,
             "foto_enviada": foto_enviada,
-            "skip_telegram": foto_enviada
+            "skip_telegram": foto_enviada,
+            "screenshot": screenshot_b64_data,
         }
     else:
         return {
-            "ok": False, 
-            "stage": "commit", 
-            "enviado": False, 
-            "nup": nup, 
+            "ok": False,
+            "stage": "commit",
+            "enviado": False,
+            "nup": nup,
             "labels": labels,
             "erro": "Não confirmou envio",
-            "foto_enviada": foto_enviada
+            "foto_enviada": foto_enviada,
+            "screenshot": screenshot_b64_data,
         }
 
 

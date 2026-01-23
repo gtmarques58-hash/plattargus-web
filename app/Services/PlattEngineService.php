@@ -635,6 +635,7 @@ class PlattEngineService
                 'usuario' => $credencial['usuario'],
                 'senha' => $credencial['senha'],
                 'orgao_id' => $credencial['orgao_id'] ?? '31',
+                'nome' => $user->nome_completo,
             ],
         ];
 
