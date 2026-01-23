@@ -150,20 +150,37 @@ def run_script(cmd: list, timeout: int = 300) -> dict:
         )
         
         output = result.stdout + result.stderr
-        
-        # Tenta parsear JSON da saída
+
+        # Tenta parsear JSON do stdout (onde os scripts imprimem o resultado)
         json_data = None
-        try:
-            import re
-            # Procura por JSON válido na saída
-            for match in re.finditer(r'\{[^{}]*"sucesso"[^{}]*\}|\{[\s\S]*?"sucesso"[\s\S]*?\}(?=\n|$)', output):
-                try:
-                    json_data = json.loads(match.group())
-                    break
-                except:
-                    continue
-        except:
-            pass
+
+        # 1. Tenta stdout inteiro como JSON
+        stdout_stripped = result.stdout.strip()
+        if stdout_stripped:
+            try:
+                json_data = json.loads(stdout_stripped)
+            except (json.JSONDecodeError, ValueError):
+                # 2. Procura último bloco JSON no stdout (scripts podem imprimir debug antes)
+                # Varre de trás pra frente procurando '{' que fecha com '}'
+                brace_depth = 0
+                json_end = -1
+                json_start = -1
+                for i in range(len(stdout_stripped) - 1, -1, -1):
+                    ch = stdout_stripped[i]
+                    if ch == '}':
+                        if json_end == -1:
+                            json_end = i
+                        brace_depth += 1
+                    elif ch == '{':
+                        brace_depth -= 1
+                        if brace_depth == 0 and json_end != -1:
+                            json_start = i
+                            break
+                if json_start != -1 and json_end != -1:
+                    try:
+                        json_data = json.loads(stdout_stripped[json_start:json_end + 1])
+                    except (json.JSONDecodeError, ValueError):
+                        pass
         
         return {
             "ok": result.returncode == 0,

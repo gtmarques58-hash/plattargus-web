@@ -916,16 +916,15 @@ def registrar_endpoints_laravel(app):
             
             if not data.get("ok"):
                 return {"sucesso": False, "erro": data.get("error", "Erro ao inserir")}
-            
+
+            # Usa json_data parseado pelo Runner (stdout do script)
+            json_data = data.get("json_data")
+            if json_data and isinstance(json_data, dict):
+                return json_data
+
+            # Fallback: retorna erro com output para diagnóstico
             output = data.get("output", "")
-            json_match = re.search(r'\{[\s\S]*"sucesso"[\s\S]*\}', output)
-            if json_match:
-                try:
-                    return json.loads(json_match.group())
-                except:
-                    pass
-            
-            return {"sucesso": True, "mensagem": "Documento inserido", "output": output[:1000]}
+            return {"sucesso": False, "erro": "Não foi possível extrair resultado do script", "output": output[:1000]}
         except Exception as e:
             return {"sucesso": False, "erro": str(e)}
     
