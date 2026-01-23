@@ -17,9 +17,11 @@ services:
     environment:
       - APP_ENV=${APP_ENV:-production}
       - APP_DEBUG=${APP_DEBUG:-false}
+      - PLATT_RUNNER_URL=http://runner:8001
     depends_on:
       - db
       - redis
+      - runner
     networks:
       - plattargus
 
@@ -160,6 +162,8 @@ services:
     container_name: plattargus-runner-1
     init: true
     restart: unless-stopped
+    ports:
+      - "8001:8001"
     environment:
       - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
       - PLAYWRIGHT_HEADLESS=true
