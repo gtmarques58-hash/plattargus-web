@@ -608,36 +608,29 @@ class PlattEngineService
      */
     public function listarDocsBloco(User $user, string $blocoId): array
     {
-        $usuarioSei = $user->usuario_sei ?? $user->getCredencialSei()['usuario'] ?? null;
-        
-        if (!$usuarioSei) {
+        $credencial = $user->getCredencialSei();
+
+        if (!$credencial) {
             return [
                 'sucesso' => false,
-                'erro' => 'Usuário SEI não encontrado',
+                'erro' => 'Usuário não possui credencial SEI cadastrada',
             ];
         }
 
-        // GET request com query params
-        try {
-            $url = $this->baseUrl . '/api/blocos/' . $blocoId . '?usuario_sei=' . urlencode($usuarioSei);
-            
-            $response = Http::timeout($this->timeout)->get($url);
+        $payload = [
+            'usuario_sei' => $credencial['usuario'],
+            'bloco_id' => $blocoId,
+            'credenciais' => [
+                'usuario' => $credencial['usuario'],
+                'senha' => $credencial['senha'],
+                'orgao_id' => $credencial['orgao_id'] ?? '31',
+            ],
+        ];
 
-            if ($response->successful()) {
-                return $response->json() ?? [];
-            }
+        $credencial['senha'] = str_repeat("\0", strlen($credencial['senha']));
+        unset($credencial);
 
-            return [
-                'sucesso' => false,
-                'erro' => 'Erro ao listar bloco: ' . $response->status(),
-            ];
-
-        } catch (\Exception $e) {
-            return [
-                'sucesso' => false,
-                'erro' => 'Falha na comunicação: ' . $e->getMessage(),
-            ];
-        }
+        return $this->post('/api/blocos/listar', $payload);
     }
 
     /**
@@ -649,19 +642,27 @@ class PlattEngineService
      */
     public function visualizarDocumento(User $user, string $documentoId): array
     {
-        $usuarioSei = $user->usuario_sei ?? $user->getCredencialSei()['usuario'] ?? null;
-        
-        if (!$usuarioSei) {
+        $credencial = $user->getCredencialSei();
+
+        if (!$credencial) {
             return [
                 'sucesso' => false,
-                'erro' => 'Usuário SEI não encontrado',
+                'erro' => 'Usuário não possui credencial SEI cadastrada',
             ];
         }
 
         $payload = [
-            'usuario_sei' => $usuarioSei,
+            'usuario_sei' => $credencial['usuario'],
             'documento_id' => $documentoId,
+            'credenciais' => [
+                'usuario' => $credencial['usuario'],
+                'senha' => $credencial['senha'],
+                'orgao_id' => $credencial['orgao_id'] ?? '31',
+            ],
         ];
+
+        $credencial['senha'] = str_repeat("\0", strlen($credencial['senha']));
+        unset($credencial);
 
         $response = $this->post('/api/documento/visualizar', $payload);
 
@@ -679,19 +680,29 @@ class PlattEngineService
      */
     public function assinarDocumentoBloco(User $user, string $documentoId): array
     {
-        $usuarioSei = $user->usuario_sei ?? $user->getCredencialSei()['usuario'] ?? null;
-        
-        if (!$usuarioSei) {
+        $credencial = $user->getCredencialSei();
+
+        if (!$credencial) {
             return [
                 'sucesso' => false,
-                'erro' => 'Usuário SEI não encontrado',
+                'erro' => 'Usuário não possui credencial SEI cadastrada',
             ];
         }
 
         $payload = [
-            'usuario_sei' => $usuarioSei,
+            'usuario_sei' => $credencial['usuario'],
             'documento_id' => $documentoId,
+            'credenciais' => [
+                'usuario' => $credencial['usuario'],
+                'senha' => $credencial['senha'],
+                'orgao_id' => $credencial['orgao_id'] ?? '31',
+                'nome' => $user->nome_completo,
+                'cargo' => $user->cargo,
+            ],
         ];
+
+        $credencial['senha'] = str_repeat("\0", strlen($credencial['senha']));
+        unset($credencial);
 
         $response = $this->post('/api/documento/assinar', $payload);
 
@@ -709,19 +720,29 @@ class PlattEngineService
      */
     public function assinarBloco(User $user, string $blocoId): array
     {
-        $usuarioSei = $user->usuario_sei ?? $user->getCredencialSei()['usuario'] ?? null;
-        
-        if (!$usuarioSei) {
+        $credencial = $user->getCredencialSei();
+
+        if (!$credencial) {
             return [
                 'sucesso' => false,
-                'erro' => 'Usuário SEI não encontrado',
+                'erro' => 'Usuário não possui credencial SEI cadastrada',
             ];
         }
 
         $payload = [
-            'usuario_sei' => $usuarioSei,
+            'usuario_sei' => $credencial['usuario'],
             'bloco_id' => $blocoId,
+            'credenciais' => [
+                'usuario' => $credencial['usuario'],
+                'senha' => $credencial['senha'],
+                'orgao_id' => $credencial['orgao_id'] ?? '31',
+                'nome' => $user->nome_completo,
+                'cargo' => $user->cargo,
+            ],
         ];
+
+        $credencial['senha'] = str_repeat("\0", strlen($credencial['senha']));
+        unset($credencial);
 
         $response = $this->post('/api/bloco/assinar', $payload);
 

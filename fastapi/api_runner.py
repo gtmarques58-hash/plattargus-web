@@ -358,6 +358,81 @@ def run_job(payload: RunPayload = Body(...)):
 
 
 # ==========================================
+# ENDPOINT BLOCOS (listar, visualizar, assinar)
+# ==========================================
+
+BLOCOS_SCRIPTS = {
+    "listar": "/app/scripts/listar_docs_bloco.py",
+    "visualizar": "/app/scripts/ler_para_assinar.py",
+    "assinar_doc": "/app/scripts/assinar_documento.py",
+    "assinar_bloco": "/app/scripts/assinar_bloco.py",
+}
+
+
+@app.post("/run-blocos")
+def run_blocos(payload: dict = Body(...)):
+    """
+    Endpoint para operações de blocos de assinatura.
+
+    Payload:
+        acao: listar | visualizar | assinar_doc | assinar_bloco
+        credentials: {usuario, senha, orgao_id, nome, cargo}
+        bloco_id: Número do bloco (listar, assinar_bloco)
+        documento_id: Número SEI do documento (visualizar, assinar_doc)
+    """
+    acao = payload.get("acao", "").lower().strip()
+    credentials = payload.get("credentials", {})
+    bloco_id = payload.get("bloco_id")
+    documento_id = payload.get("documento_id")
+
+    if acao not in BLOCOS_SCRIPTS:
+        return {"ok": False, "error": f"Ação desconhecida: {acao}. Ações: {list(BLOCOS_SCRIPTS.keys())}"}
+
+    script_path = BLOCOS_SCRIPTS[acao]
+
+    if not credentials or not credentials.get("usuario") or not credentials.get("senha"):
+        return {"ok": False, "error": "Campo 'credentials' com usuario/senha é obrigatório"}
+
+    # Auth args
+    auth_args = [
+        "--usuario", credentials["usuario"],
+        "--senha", credentials["senha"],
+        "--orgao", credentials.get("orgao_id", "31"),
+    ]
+    if credentials.get("nome"):
+        auth_args += ["--nome", credentials["nome"]]
+    if credentials.get("cargo"):
+        auth_args += ["--cargo", credentials["cargo"]]
+
+    # Build comando
+    cmd = [sys.executable, script_path]
+
+    if acao == "listar":
+        if not bloco_id:
+            return {"ok": False, "error": "Campo 'bloco_id' é obrigatório para listar"}
+        cmd += [str(bloco_id)] + auth_args
+
+    elif acao == "visualizar":
+        if not documento_id:
+            return {"ok": False, "error": "Campo 'documento_id' é obrigatório para visualizar"}
+        cmd += [str(documento_id)] + auth_args + ["--apenas-ler"]
+
+    elif acao == "assinar_doc":
+        if not documento_id:
+            return {"ok": False, "error": "Campo 'documento_id' é obrigatório para assinar_doc"}
+        cmd += [str(documento_id)] + auth_args
+
+    elif acao == "assinar_bloco":
+        if not bloco_id:
+            return {"ok": False, "error": "Campo 'bloco_id' é obrigatório para assinar_bloco"}
+        cmd += [str(bloco_id)] + auth_args
+
+    print(f"[Runner/Blocos] Ação: {acao}, Usuario: {credentials['usuario']}", file=sys.stderr)
+
+    return run_script(cmd, timeout=300)
+
+
+# ==========================================
 # ENDPOINTS AUXILIARES
 # ==========================================
 

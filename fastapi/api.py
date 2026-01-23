@@ -463,17 +463,27 @@ class ChatRequest(BaseModel):
     modelo_forcado: Optional[str] = None
     acao: str = "CHAT_LIVRE"
 
+class CredenciaisSEI(BaseModel):
+    usuario: str
+    senha: str
+    orgao_id: str = "31"
+    nome: Optional[str] = None
+    cargo: Optional[str] = None
+
 class VisualizarDocumentoRequest(BaseModel):
     usuario_sei: str
     documento_id: str
+    credenciais: Optional[CredenciaisSEI] = None
 
 class AssinarDocumentoRequest(BaseModel):
     usuario_sei: str
     documento_id: str
+    credenciais: Optional[CredenciaisSEI] = None
 
 class AssinarBlocoRequest(BaseModel):
     usuario_sei: str
     bloco_id: str
+    credenciais: Optional[CredenciaisSEI] = None
 
 # ============================================================================
 # FUNÇÕES AUXILIARES (v1.8)
@@ -1210,33 +1220,38 @@ async def get_auditoria(limite: int = 50):
 # FUNÇÃO AUXILIAR - CHAMAR RUNNER
 # ============================================================================
 
-async def chamar_blocos_runner(acao: str, usuario_sei: str, **kwargs) -> Dict:
+async def chamar_blocos_runner(acao: str, usuario_sei: str, credenciais: Optional[CredenciaisSEI] = None, **kwargs) -> Dict:
     """
     Chama o endpoint /run-blocos do Runner.
-    
+
     Args:
         acao: listar | visualizar | assinar_doc | assinar_bloco
         usuario_sei: Usuário SEI logado
+        credenciais: Credenciais SEI (usuario, senha, orgao_id)
         **kwargs: bloco_id, documento_id, etc.
-    
+
     Returns:
         Dict com resultado da operação
     """
     try:
-        # Busca sigla do usuário
-        from diretorias_db import DiretoriasDB
-        db = DiretoriasDB()
-        diretoria = db.buscar_por_usuario(usuario_sei)
-        
-        if not diretoria:
-            return {"sucesso": False, "erro": f"Usuário '{usuario_sei}' não encontrado"}
-        
-        sigla = diretoria.get("sigla")
-        
+        # Credenciais diretas do Laravel (preferencial)
+        if credenciais:
+            creds = {
+                "usuario": credenciais.usuario,
+                "senha": credenciais.senha,
+                "orgao_id": credenciais.orgao_id,
+            }
+            if credenciais.nome:
+                creds["nome"] = credenciais.nome
+            if credenciais.cargo:
+                creds["cargo"] = credenciais.cargo
+        else:
+            return {"sucesso": False, "erro": "Credenciais SEI são obrigatórias"}
+
         # Monta payload
         payload = {
             "acao": acao,
-            "sigla": sigla
+            "credentials": creds,
         }
         payload.update(kwargs)
         
@@ -1278,26 +1293,25 @@ async def chamar_blocos_runner(acao: str, usuario_sei: str, **kwargs) -> Dict:
 # ENDPOINTS
 # ============================================================================
 
-@app.get("/api/blocos/{bloco_id}")
-async def listar_docs_bloco(bloco_id: str, usuario_sei: str, request: Request):
+class ListarBlocoRequest(BaseModel):
+    usuario_sei: str
+    bloco_id: str
+    credenciais: Optional[CredenciaisSEI] = None
+
+@app.post("/api/blocos/listar")
+async def listar_docs_bloco_post(req: ListarBlocoRequest, request: Request):
     """
     Lista documentos de um bloco de assinatura.
-    
-    Retorna:
-        - Lista de documentos com status (pendente/assinado)
-        - Total de documentos
-        - Contagem de pendentes/assinados
     """
-    if not usuario_sei:
+    if not req.usuario_sei:
         raise HTTPException(400, "Usuário SEI obrigatório")
-    
-    if not bloco_id:
+    if not req.bloco_id:
         raise HTTPException(400, "ID do bloco obrigatório")
-    
+
     ip = request.client.host if request.client else "unknown"
-    registrar_auditoria(usuario_sei, "LISTAR_BLOCO", f"Bloco: {bloco_id}", ip)
-    
-    result = await chamar_blocos_runner("listar", usuario_sei, bloco_id=bloco_id)
+    registrar_auditoria(req.usuario_sei, "LISTAR_BLOCO", f"Bloco: {req.bloco_id}", ip)
+
+    result = await chamar_blocos_runner("listar", req.usuario_sei, credenciais=req.credenciais, bloco_id=req.bloco_id)
     return result
 
 
@@ -1321,10 +1335,10 @@ async def visualizar_documento(req: VisualizarDocumentoRequest, request: Request
     registrar_auditoria(req.usuario_sei, "VISUALIZAR_DOC", f"Doc: {req.documento_id}", ip)
     
     result = await chamar_blocos_runner(
-        "visualizar", 
-        req.usuario_sei, 
+        "visualizar",
+        req.usuario_sei,
+        credenciais=req.credenciais,
         documento_id=req.documento_id,
-        apenas_ler=True
     )
     
     # Se tem foto, converte para base64
@@ -1361,9 +1375,10 @@ async def assinar_documento_endpoint(req: AssinarDocumentoRequest, request: Requ
     registrar_auditoria(req.usuario_sei, "ASSINAR_DOC", f"Doc: {req.documento_id}", ip)
     
     result = await chamar_blocos_runner(
-        "assinar_doc", 
-        req.usuario_sei, 
-        documento_id=req.documento_id
+        "assinar_doc",
+        req.usuario_sei,
+        credenciais=req.credenciais,
+        documento_id=req.documento_id,
     )
     
     # Se tem foto, converte para base64
@@ -1400,9 +1415,10 @@ async def assinar_bloco_endpoint(req: AssinarBlocoRequest, request: Request):
     registrar_auditoria(req.usuario_sei, "ASSINAR_BLOCO", f"Bloco: {req.bloco_id}", ip)
     
     result = await chamar_blocos_runner(
-        "assinar_bloco", 
-        req.usuario_sei, 
-        bloco_id=req.bloco_id
+        "assinar_bloco",
+        req.usuario_sei,
+        credenciais=req.credenciais,
+        bloco_id=req.bloco_id,
     )
     
     # Se tem foto_path, converte para base64
