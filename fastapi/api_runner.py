@@ -346,10 +346,24 @@ def run_job(payload: RunPayload = Body(...)):
             return {"ok": False, "error": "Campo 'nup' é obrigatório para atribuir"}
         if not payload.apelido:
             return {"ok": False, "error": "Campo 'apelido' é obrigatório para atribuir"}
-        
+
         cmd += [payload.nup, payload.apelido]
         cmd += auth_args
-        
+
+        # Busca sigla do usuário (necessária para o script buscar servidor)
+        sigla = payload.sigla
+        if not sigla and payload.credentials:
+            try:
+                from diretorias_db import DiretoriasDB
+                db = DiretoriasDB()
+                diretoria = db.buscar_por_usuario(payload.credentials.get("usuario", ""))
+                if diretoria:
+                    sigla = diretoria.get("sigla")
+            except Exception:
+                pass
+        if sigla:
+            cmd += ["--sigla", sigla]
+
         if payload.debug:
             cmd += ["--debug"]
     
