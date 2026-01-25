@@ -1561,31 +1561,171 @@
             document.getElementById('modalDoc').classList.add('hidden');
         }
 
+        // URL da API de Documentos Inteligente (mesmo servidor, porta 8105)
+        var API_DOC_INTELIGENTE = window.location.protocol + '//' + window.location.hostname + ':8105';
+
         function gerarDocumento() {
             if (!analiseAtual || !nupAtual) {
                 alert('Primeiro analise um processo');
                 return;
             }
+
             var tipoSei = document.getElementById('tipoDocumento').value;
-                                var templateId = window.templateSelecionado || 'DESPACHO_SIMPLES';
-                                var status = document.getElementById('statusDocumento');
-                                var destinatariosData = destinatariosSelecionados.map(function(d) {
-                                        var autoridade = todasAutoridades.find(function(a) { return a.sigla === d.sigla; });
-                                        return {
-                                                   sigla: d.sigla,
-                                                   nome: autoridade ? autoridade.nome : d.nome,
-                                                   posto_grad: autoridade ? autoridade.posto_grad : '',
-                                                   cargo: autoridade ? autoridade.cargo : '',
-                                                   unidade: autoridade ? autoridade.unidade : '',
-                                                   sigla_sei: autoridade ? autoridade.sigla_sei : ''
-                                     };
-                             });
-            
+            var templateId = window.templateSelecionado || 'DESPACHO_SIMPLES';
+            var status = document.getElementById('statusDocumento');
+            var instrucao = window.instrucaoVoz || '';
+
+            // Monta dados do remetente
+            var remetenteData = (function() {
+                var siglaUsuario = usuarioAtual.unidade || usuarioAtual.sigla || 'DRH';
+                var autoridadeRemetente = todasAutoridades.find(function(a) {
+                    return a.sigla === siglaUsuario;
+                });
+                if (autoridadeRemetente) {
+                    return {
+                        nome: autoridadeRemetente.nome,
+                        posto_grad: autoridadeRemetente.posto_grad,
+                        cargo: autoridadeRemetente.cargo,
+                        unidade: autoridadeRemetente.unidade,
+                        sigla_sei: autoridadeRemetente.sigla_sei,
+                        portaria: autoridadeRemetente.portaria,
+                        matricula: usuarioAtual.matricula || ''
+                    };
+                }
+                return {
+                    nome: usuarioAtual.nome_completo,
+                    posto_grad: usuarioAtual.posto_grad,
+                    cargo: usuarioAtual.cargo,
+                    unidade: usuarioAtual.unidade,
+                    matricula: usuarioAtual.matricula || ''
+                };
+            })();
+
             status.className = 'status status-loading';
             status.innerHTML = '<span class="spinner"></span> Gerando documento...';
             status.classList.remove('hidden');
 
-            console.log('📤 Enviando instrucao_voz:', window.instrucaoVoz);
+            // Se tem instrução de voz, usa IA direto (texto livre)
+            if (instrucao && instrucao.trim()) {
+                console.log('📝 Instrução detectada, usando IA para texto livre');
+                gerarDocumentoComIA(tipoSei, templateId, remetenteData, instrucao);
+                return;
+            }
+
+            // Tenta classificar com API de Documentos Inteligente
+            console.log('🤖 Tentando API de Documentos Inteligente...');
+            status.innerHTML = '<span class="spinner"></span> Classificando documento...';
+
+            fetch(API_DOC_INTELIGENTE + '/documento/classificar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    mensagem: tipoSei,
+                    sigla: remetenteData.unidade || usuarioAtual.unidade || 'DRH',
+                    remetente: {
+                        nome: remetenteData.nome,
+                        posto: remetenteData.posto_grad,
+                        cargo: remetenteData.cargo,
+                        matricula: remetenteData.matricula
+                    }
+                })
+            })
+            .then(function(resp) {
+                if (!resp.ok) throw new Error('API indisponível');
+                return resp.json();
+            })
+            .then(function(classif) {
+                console.log('📊 Classificação:', classif);
+
+                // Se precisa de texto livre ou não tem template, usa IA
+                if (!classif.usar_template || classif.texto_livre) {
+                    console.log('📝 Template requer texto livre, usando IA');
+                    gerarDocumentoComIA(tipoSei, templateId, remetenteData, instrucao);
+                    return;
+                }
+
+                // Usa template direto (mais rápido!)
+                console.log('⚡ Usando template: ' + classif.template_id + ' (confiança: ' + Math.round(classif.confianca * 100) + '%)');
+                status.innerHTML = '<span class="spinner"></span> Preenchendo template...';
+
+                // Monta campos para o template
+                var campos = classif.campos || {};
+                campos.NOME_RESPONSAVEL = remetenteData.nome;
+                campos.NOME_REMETENTE = remetenteData.nome;
+                campos.POSTO_GRAD_RESPONSAVEL = remetenteData.posto_grad;
+                campos.POSTO_GRAD_REMETENTE = remetenteData.posto_grad;
+                campos.CARGO_RESPONSAVEL = remetenteData.cargo;
+                campos.CARGO_REMETENTE = remetenteData.cargo;
+                campos.MATRICULA = remetenteData.matricula;
+                campos.SIGLA_UNIDADE = remetenteData.unidade || usuarioAtual.unidade;
+                campos.NUMERO_PORTARIA = remetenteData.portaria || '';
+
+                // Cria documento via API inteligente (preview, sem executar no SEI)
+                fetch(API_DOC_INTELIGENTE + '/documento/criar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mensagem: tipoSei,
+                        nup: nupAtual,
+                        sigla: remetenteData.unidade || usuarioAtual.unidade || 'DRH',
+                        remetente: {
+                            nome: remetenteData.nome,
+                            posto: remetenteData.posto_grad,
+                            cargo: remetenteData.cargo,
+                            matricula: remetenteData.matricula
+                        },
+                        campos_extras: campos,
+                        executar_sei: false  // Apenas preview
+                    })
+                })
+                .then(function(resp) { return resp.json(); })
+                .then(function(data) {
+                    if (data.sucesso && data.preview_html) {
+                        // Adiciona bloco de NUP/Tipo para visualização
+                        var headerHtml = '<p>• NUP: ' + nupAtual + '<br>• Tipo de documento: ' + (data.tipo_sei || tipoSei) + '</p>\n\n';
+                        document.getElementById('previewDocumento').innerHTML = headerHtml + data.preview_html;
+                        document.getElementById('editorContainer').classList.remove('hidden');
+                        status.className = 'status status-success';
+                        status.innerHTML = '⚡ Documento gerado via template! <small>(' + data.tempo_ms + 'ms)</small>';
+                    } else if (data.requer_argus) {
+                        // Fallback para IA
+                        console.log('📝 Template incompleto, usando IA');
+                        gerarDocumentoComIA(tipoSei, templateId, remetenteData, instrucao);
+                    } else {
+                        status.className = 'status status-error';
+                        status.textContent = 'Erro: ' + (data.erro || 'Falha ao gerar');
+                    }
+                })
+                .catch(function(e) {
+                    console.log('⚠️ Erro no template, usando IA:', e.message);
+                    gerarDocumentoComIA(tipoSei, templateId, remetenteData, instrucao);
+                });
+            })
+            .catch(function(e) {
+                // API de templates indisponível, usa IA
+                console.log('⚠️ API de templates indisponível, usando IA:', e.message);
+                gerarDocumentoComIA(tipoSei, templateId, remetenteData, instrucao);
+            });
+        }
+
+        // Função para gerar documento com IA (texto livre)
+        function gerarDocumentoComIA(tipoSei, templateId, remetenteData, instrucao) {
+            var status = document.getElementById('statusDocumento');
+            status.innerHTML = '<span class="spinner"></span> Gerando com IA...';
+
+            var destinatariosData = destinatariosSelecionados.map(function(d) {
+                var autoridade = todasAutoridades.find(function(a) { return a.sigla === d.sigla; });
+                return {
+                    sigla: d.sigla,
+                    nome: autoridade ? autoridade.nome : d.nome,
+                    posto_grad: autoridade ? autoridade.posto_grad : '',
+                    cargo: autoridade ? autoridade.cargo : '',
+                    unidade: autoridade ? autoridade.unidade : '',
+                    sigla_sei: autoridade ? autoridade.sigla_sei : ''
+                };
+            });
+
+            console.log('📤 Enviando para IA, instrucao_voz:', instrucao);
 
             fetch(API + '/api/processos/gerar-documento', {
                 method: 'POST',
@@ -1593,35 +1733,12 @@
                 body: JSON.stringify({
                     nup: nupAtual,
                     tipo_documento: tipoSei,
-                                                     template_id: templateId,
+                    template_id: templateId,
                     destinatarios: destinatariosData,
                     analise: analiseAtual,
                     usuario_sei: usuarioAtual.usuario_sei,
-                    remetente: (function() {
-                        // Busca dados do remetente na tabela de autoridades
-                        var siglaUsuario = usuarioAtual.unidade || usuarioAtual.sigla || 'DRH';
-                        var autoridadeRemetente = todasAutoridades.find(function(a) { 
-                            return a.sigla === siglaUsuario; 
-                        });
-                        if (autoridadeRemetente) {
-                            return {
-                                nome: autoridadeRemetente.nome,
-                                posto_grad: autoridadeRemetente.posto_grad,
-                                cargo: autoridadeRemetente.cargo,
-                                unidade: autoridadeRemetente.unidade,
-                                sigla_sei: autoridadeRemetente.sigla_sei,
-                                portaria: autoridadeRemetente.portaria
-                            };
-                        }
-                        // Fallback para dados do usuário
-                        return {
-                            nome: usuarioAtual.nome_completo,
-                            posto_grad: usuarioAtual.posto_grad,
-                            cargo: usuarioAtual.cargo,
-                            unidade: usuarioAtual.unidade
-                        };
-                    })(),
-                    instrucao_voz: window.instrucaoVoz || ''
+                    remetente: remetenteData,
+                    instrucao_voz: instrucao || ''
                 })
             })
             .then(function(resp) { return resp.json(); })
@@ -1630,10 +1747,10 @@
                     document.getElementById('previewDocumento').innerHTML = data.documento || data.html || '';
                     document.getElementById('editorContainer').classList.remove('hidden');
                     status.className = 'status status-success';
-                    status.textContent = 'Documento gerado! Revise e insira no SEI.';
+                    status.textContent = 'Documento gerado com IA! Revise e insira no SEI.';
                 } else {
                     status.className = 'status status-error';
-                                                     status.textContent = 'Erro: ' + (data.erro || 'Falha ao gerar');
+                    status.textContent = 'Erro: ' + (data.erro || 'Falha ao gerar');
                 }
             })
             .catch(function(e) {
