@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-laravel_integration.py v3.1 - COM ANÃLISE IA + JSON COMPLETO
+laravel_integration.py v3.1 - COM ANíLISE IA + JSON COMPLETO
 Fluxo: detalhar_processo (--full) -> Agente IA -> JSON estruturado com documentos
 """
 import os, sys, json, re
@@ -79,7 +79,7 @@ class AssinarSEIRequest(BaseModel):
     modo: Optional[str] = "assinar"
 
 # ============================================================
-# FUNÃÃES AUXILIARES
+# FUNííES AUXILIARES
 # ============================================================
 
 
@@ -121,6 +121,9 @@ def limpar_html_para_sei(html: str) -> str:
         re.IGNORECASE
     )
     html = padrao_linha_tipo.sub('', html)
+
+    # Remove <hr> separador que fica após o bloco NUP/Tipo
+    html = re.sub(r'<hr[^>]*>\s*', '', html)
 
     # Remove parágrafos vazios que sobraram
     html = re.sub(r'<p[^>]*>\s*</p>', '', html)
@@ -237,24 +240,24 @@ async def chamar_sei_reader_fallback(nup: str, credencial: CredencialSEI) -> Dic
 
 
 
-# SISTEMA INTELIGENTE DE CONSULTA DE LEGISLAÃÃO
+# SISTEMA INTELIGENTE DE CONSULTA DE LEGISLAííO
 # Adaptado do n8n para FastAPI
 # ============================================================
 
 def detectar_intent_e_topic(pergunta: str) -> dict:
     """
-    Detecta a intenÃ§Ã£o (ANUAL, ININTERRUPTO, LIMITE, GERAL) 
-    e o tÃ³pico (FERIAS, DISPENSA_RECOMPENSA, LICENCA, etc.)
+    Detecta a intenção (ANUAL, ININTERRUPTO, LIMITE, GERAL) 
+    e o tí³pico (FERIAS, DISPENSA_RECOMPENSA, LICENCA, etc.)
     """
     s = pergunta.lower()
     
     # --- TOPIC (assunto) ---
     has_dispensa = "dispensa" in s
     has_recompensa = "recompensa" in s
-    has_ferias = "fÃ©rias" in s or "ferias" in s
-    has_promocao = "promoÃ§Ã£o" in s or "promocao" in s
-    has_licenca = "licenÃ§a" in s or "licenca" in s
-    has_disciplinar = "disciplinar" in s or "puniÃ§Ã£o" in s or "punicao" in s or "transgress" in s
+    has_ferias = "férias" in s or "ferias" in s
+    has_promocao = "promoção" in s or "promocao" in s
+    has_licenca = "licença" in s or "licenca" in s
+    has_disciplinar = "disciplinar" in s or "punição" in s or "punicao" in s or "transgress" in s
     
     topic = "GERAL"
     if has_dispensa and has_recompensa:
@@ -273,8 +276,8 @@ def detectar_intent_e_topic(pergunta: str) -> dict:
     # --- INTENT (tipo de pergunta) ---
     import re
     is_anual = bool(re.search(r'\b(ano|anual|anuais|por ano|no ano|ao ano)\b', s))
-    is_inint = bool(re.search(r'\b(ininterrupt|consecutiv|seguid|cont[iÃ­]nu)\b', s))
-    is_limite = bool(re.search(r'\b(quantos?\s+dias|limite|teto|m[aÃ¡]ximo|n[aÃ£]o\s+exceder|ultrapass)\b', s))
+    is_inint = bool(re.search(r'\b(ininterrupt|consecutiv|seguid|cont[ií]nu)\b', s))
+    is_limite = bool(re.search(r'\b(quantos?\s+dias|limite|teto|m[aá]ximo|n[aã]o\s+exceder|ultrapass)\b', s))
     
     intent = "GERAL"
     if is_anual:
@@ -294,44 +297,44 @@ def reescrever_query(pergunta: str, topic: str, intent: str) -> tuple:
     """
     if topic == "DISPENSA_RECOMPENSA":
         if intent == "ANUAL":
-            return (f"dispensa recompensa CBMAC limite anual por ano teto mÃ¡ximo nÃ£o exceder {pergunta}", 18)
+            return (f"dispensa recompensa CBMAC limite anual por ano teto máximo não exceder {pergunta}", 18)
         elif intent == "ININTERRUPTO":
-            return (f"dispensa recompensa CBMAC dias ininterruptos consecutivos seguidos contÃ­nuos nÃ£o poderÃ¡ ser concedido mais de {pergunta}", 14)
+            return (f"dispensa recompensa CBMAC dias ininterruptos consecutivos seguidos contínuos não poderá ser concedido mais de {pergunta}", 14)
         elif intent == "LIMITE":
-            return (f"dispensa recompensa CBMAC limite mÃ¡ximo nÃ£o exceder dias {pergunta}", 12)
+            return (f"dispensa recompensa CBMAC limite máximo não exceder dias {pergunta}", 12)
         else:
             return (f"dispensa recompensa CBMAC {pergunta}", 10)
     
     elif topic == "FERIAS":
         if intent == "ANUAL" or intent == "LIMITE":
-            return (f"fÃ©rias CBMAC regra anual perÃ­odo gozo 30 dias alteraÃ§Ã£o fruiÃ§Ã£o {pergunta}", 16)
+            return (f"férias CBMAC regra anual período gozo 30 dias alteração fruição {pergunta}", 16)
         else:
-            return (f"fÃ©rias CBMAC {pergunta}", 12)
+            return (f"férias CBMAC {pergunta}", 12)
     
     elif topic == "LICENCA":
-        return (f"licenÃ§a CBMAC afastamento {pergunta}", 10)
+        return (f"licença CBMAC afastamento {pergunta}", 10)
     
     elif topic == "PROMOCAO":
-        return (f"promoÃ§Ã£o militar CBMAC requisitos {pergunta}", 10)
+        return (f"promoção militar CBMAC requisitos {pergunta}", 10)
     
     elif topic == "DISCIPLINAR":
-        return (f"disciplinar CBMAC regulamento puniÃ§Ã£o {pergunta}", 10)
+        return (f"disciplinar CBMAC regulamento punição {pergunta}", 10)
     
     else:
         # GERAL
         if intent == "ANUAL":
-            return (f"CBMAC limite anual por ano teto mÃ¡ximo nÃ£o exceder {pergunta}", 14)
+            return (f"CBMAC limite anual por ano teto máximo não exceder {pergunta}", 14)
         elif intent == "ININTERRUPTO":
-            return (f"CBMAC consecutivos seguidos contÃ­nuos ininterruptos limite mÃ¡ximo {pergunta}", 12)
+            return (f"CBMAC consecutivos seguidos contínuos ininterruptos limite máximo {pergunta}", 12)
         elif intent == "LIMITE":
-            return (f"CBMAC limite mÃ¡ximo teto nÃ£o exceder {pergunta}", 12)
+            return (f"CBMAC limite máximo teto não exceder {pergunta}", 12)
         else:
             return (f"CBMAC {pergunta}", 8)
 
 
 def calcular_score(resultado: dict, topic: str, intent: str) -> int:
     """
-    Calcula pontuaÃ§Ã£o de relevÃ¢ncia para um resultado
+    Calcula pontuação de releví¢ncia para um resultado
     """
     meta = resultado.get("metadata", {})
     lei = (meta.get("lei", "") or "").lower()
@@ -339,7 +342,7 @@ def calcular_score(resultado: dict, topic: str, intent: str) -> int:
     
     score = 0
     
-    # --- Ãncoras por tÃ³pico ---
+    # --- íncoras por tí³pico ---
     if topic == "DISPENSA_RECOMPENSA":
         if "dispensa recompensa" in lei:
             score += 22
@@ -351,11 +354,11 @@ def calcular_score(resultado: dict, topic: str, intent: str) -> int:
             score += 8
     
     elif topic == "FERIAS":
-        if "fÃ©rias" in lei or "ferias" in lei:
+        if "férias" in lei or "ferias" in lei:
             score += 18
-        if "fÃ©rias" in text or "ferias" in text:
+        if "férias" in text or "ferias" in text:
             score += 8
-        if "gozo" in text or "perÃ­odo" in text or "periodo" in text:
+        if "gozo" in text or "período" in text or "periodo" in text:
             score += 5
     
     elif topic == "DISCIPLINAR":
@@ -368,40 +371,40 @@ def calcular_score(resultado: dict, topic: str, intent: str) -> int:
         if "cbmac" in text:
             score += 2
     
-    # --- Sinais gerais Ãºteis ---
+    # --- Sinais gerais úteis ---
     if "dias" in text:
         score += 4
     
-    # --- IntenÃ§Ã£o ---
+    # --- Intenção ---
     if intent == "ANUAL":
         if "ano" in text or "anual" in text or "por ano" in text:
             score += 10
-        if any(x in text for x in ["limite", "mÃ¡ximo", "teto", "nÃ£o poderÃ¡", "nÃ£o exceder", "ultrapass"]):
+        if any(x in text for x in ["limite", "máximo", "teto", "não poderá", "não exceder", "ultrapass"]):
             score += 10
     
     elif intent == "ININTERRUPTO":
-        if any(x in text for x in ["ininterrupt", "consecut", "seguid", "contÃ­nuo", "continuo"]):
+        if any(x in text for x in ["ininterrupt", "consecut", "seguid", "contínuo", "continuo"]):
             score += 12
     
     elif intent == "LIMITE":
-        if any(x in text for x in ["limite", "mÃ¡ximo", "teto", "nÃ£o exceder"]):
+        if any(x in text for x in ["limite", "máximo", "teto", "não exceder"]):
             score += 8
     
-    # --- NÃºmeros (dias/limites) ---
+    # --- Números (dias/limites) ---
     import re
     if re.search(r'\b\d{1,2}\b', text):
         score += 3
     
-    # --- PenalizaÃ§Ãµes ---
+    # --- Penalizações ---
     if topic != "GERAL":
-        # ConstituiÃ§Ã£o/orÃ§amento costuma ser ruÃ­do
-        if "constitui" in lei and "dispensa" not in text and "fÃ©rias" not in text and "ferias" not in text:
+        # Constituição/orçamento costuma ser ruído
+        if "constitui" in lei and "dispensa" not in text and "férias" not in text and "ferias" not in text:
             score -= 15
-        if "orÃ§ament" in lei or "ministÃ©rio pÃºblico" in text:
+        if "orçament" in lei or "ministério público" in text:
             score -= 12
         
-        # SÃ³ penaliza fÃ©rias se nÃ£o for o tÃ³pico
-        if topic != "FERIAS" and ("fÃ©rias" in lei or "ferias" in lei) and "dispensa" not in text:
+        # Sí³ penaliza férias se não for o tí³pico
+        if topic != "FERIAS" and ("férias" in lei or "ferias" in lei) and "dispensa" not in text:
             score -= 10
     
     # Textos curtos demais
@@ -413,17 +416,17 @@ def calcular_score(resultado: dict, topic: str, intent: str) -> int:
 
 def filtrar_titulo_estrutural(meta: dict, text: str) -> bool:
     """
-    Retorna True se for apenas um tÃ­tulo estrutural (sem conteÃºdo Ãºtil)
+    Retorna True se for apenas um título estrutural (sem conteúdo útil)
     """
     artigo = (meta.get("artigo", "") or "").upper()
     texto_upper = (text or "").upper()
     
     is_cap_sec_tit = any([
-        artigo.startswith("CAPÃTULO"),
+        artigo.startswith("CAPíTULO"),
         artigo.startswith("CAPITULO"),
-        artigo.startswith("SEÃÃO"),
+        artigo.startswith("SEííO"),
         artigo.startswith("SECAO"),
-        artigo.startswith("TÃTULO"),
+        artigo.startswith("TíTULO"),
         artigo.startswith("TITULO")
     ])
     
@@ -444,7 +447,7 @@ def processar_resultados_rag(resultados: list, topic: str, intent: str) -> list:
         if len(text) < 40:
             continue
         
-        # Filtra tÃ­tulos estruturais
+        # Filtra títulos estruturais
         if filtrar_titulo_estrutural(meta, text):
             continue
         
@@ -504,7 +507,7 @@ async def consultar_legislacao_via_n8n(pergunta: str) -> dict:
 
 async def consultar_legislacao_rag_inteligente(tema: str, n_results: int = 5) -> list:
     """
-    Consulta a base de legislaÃ§Ã£o com Intent Detection + Query Rewrite + Scoring
+    Consulta a base de legislação com Intent Detection + Query Rewrite + Scoring
     """
     try:
         # 1. Detecta intent e topic
@@ -515,7 +518,7 @@ async def consultar_legislacao_rag_inteligente(tema: str, n_results: int = 5) ->
         # 2. Reescreve a query
         query_expandida, n_results_ajustado = reescrever_query(tema, topic, intent)
         
-        print(f"ð Consulta legislaÃ§Ã£o: topic={topic}, intent={intent}", file=sys.stderr)
+        print(f"ð Consulta legislação: topic={topic}, intent={intent}", file=sys.stderr)
         print(f"   Query expandida: {query_expandida[:80]}...", file=sys.stderr)
         
         # 3. Consulta o RAG
@@ -536,7 +539,7 @@ async def consultar_legislacao_rag_inteligente(tema: str, n_results: int = 5) ->
         # 4. Processa resultados com scoring inteligente
         resultados_processados = processar_resultados_rag(data["results"], topic, intent)
         
-        # 5. Formata saÃ­da
+        # 5. Formata saída
         leis = []
         for r in resultados_processados:
             leis.append({
@@ -551,22 +554,22 @@ async def consultar_legislacao_rag_inteligente(tema: str, n_results: int = 5) ->
         return leis
         
     except Exception as e:
-        print(f"â ï¸ Erro ao consultar legislaÃ§Ã£o: {e}", file=sys.stderr)
+        print(f"â ï¸ Erro ao consultar legislação: {e}", file=sys.stderr)
         return []
 
 
 async def analisar_com_ia(nup: str, conteudo_processo: str, documentos: list = None) -> Dict:
     """
     Chama a IA para analisar o processo e retornar JSON estruturado.
-    Esta Ã© a etapa que faltava!
+    Esta é a etapa que faltava!
     """
     if not conteudo_processo or len(conteudo_processo.strip()) < 50:
         return {
-            "tipo_demanda": "Processo sem conteÃºdo extraÃ­do",
-            "resumo_executivo": "NÃ£o foi possÃ­vel extrair conteÃºdo do processo para anÃ¡lise.",
+            "tipo_demanda": "Processo sem conteúdo extraído",
+            "resumo_executivo": "Não foi possível extrair conteúdo do processo para análise.",
             "interessado": {"nome": "-", "matricula": "-", "cargo": "-"},
             "pedido_original": {"descricao": "-"},
-            "alertas": ["ConteÃºdo do processo nÃ£o disponÃ­vel para anÃ¡lise"],
+            "alertas": ["Conteúdo do processo não disponível para análise"],
             "tipo_documento_sugerido": "Despacho",
             "destinatario_sugerido": "",
             "legislacao_aplicavel": []
@@ -575,34 +578,34 @@ async def analisar_com_ia(nup: str, conteudo_processo: str, documentos: list = N
     try:
         import openai
         
-        # Carrega o prompt de anÃ¡lise
+        # Carrega o prompt de análise
         prompt_template = carregar_prompt("analise_processo")
         
         if not prompt_template:
-            # Prompt fallback se nÃ£o encontrar o arquivo
-            prompt_template = """Analise este processo administrativo e retorne APENAS JSON vÃ¡lido.
+            # Prompt fallback se não encontrar o arquivo
+            prompt_template = """Analise este processo administrativo e retorne APENAS JSON válido.
 
 PROCESSO (NUP: {nup}):
 {conteudo}
 
 RETORNE EXATAMENTE ESTE JSON (sem texto adicional):
 {{
-  "tipo_demanda": "descriÃ§Ã£o clara do tipo de demanda",
+  "tipo_demanda": "descrição clara do tipo de demanda",
   "resumo_executivo": "resumo em 2-3 linhas do processo",
   "interessado": {{
     "nome": "nome do interessado",
-    "matricula": "matrÃ­cula ou -",
+    "matricula": "matrícula ou -",
     "cargo": "cargo/posto"
   }},
   "pedido_original": {{
     "descricao": "o que foi solicitado",
-    "periodo": "perÃ­odo se houver"
+    "periodo": "período se houver"
   }},
   "unidades": {{
     "demandante": "unidade de origem",
     "resposta": "unidade que deve responder"
   }},
-  "alertas": ["pontos de atenÃ§Ã£o"],
+  "alertas": ["pontos de atenção"],
   "tipo_documento_sugerido": "Memorando ou Despacho",
   "destinatario_sugerido": "sigla da unidade destino",
   "legislacao_aplicavel": ["leis/artigos relevantes"]
@@ -610,25 +613,25 @@ RETORNE EXATAMENTE ESTE JSON (sem texto adicional):
         
         # Monta o prompt final
         prompt = prompt_template.replace("{nup}", nup).replace("{conteudo}", conteudo_processo[:6000])
-        # Consulta legislaÃ§Ã£o relevante no RAG
+        # Consulta legislação relevante no RAG
         tipo_demanda_hint = ""
-        if "fÃ©rias" in conteudo_processo.lower() or "ferias" in conteudo_processo.lower():
-            tipo_demanda_hint = "fÃ©rias gozo concessÃ£o perÃ­odo"
-        elif "licenÃ§a" in conteudo_processo.lower() or "licenca" in conteudo_processo.lower():
-            tipo_demanda_hint = "licenÃ§a afastamento"
+        if "férias" in conteudo_processo.lower() or "ferias" in conteudo_processo.lower():
+            tipo_demanda_hint = "férias gozo concessão período"
+        elif "licença" in conteudo_processo.lower() or "licenca" in conteudo_processo.lower():
+            tipo_demanda_hint = "licença afastamento"
         elif "dispensa" in conteudo_processo.lower():
             tipo_demanda_hint = "dispensa recompensa"
-        elif "promoÃ§Ã£o" in conteudo_processo.lower() or "promocao" in conteudo_processo.lower():
-            tipo_demanda_hint = "promoÃ§Ã£o militar"
+        elif "promoção" in conteudo_processo.lower() or "promocao" in conteudo_processo.lower():
+            tipo_demanda_hint = "promoção militar"
         else:
-            # Extrai palavras-chave do conteÃºdo
+            # Extrai palavras-chave do conteúdo
             tipo_demanda_hint = conteudo_processo[:500]
         
         leis_encontradas = await consultar_legislacao_via_n8n(tipo_demanda_hint)
         
         legislacao_texto = ""
         if leis_encontradas.get("sucesso") and leis_encontradas.get("contexto"):
-            legislacao_texto = "\n\nLEGISLAÃÃO APLICÃVEL ENCONTRADA:\n" + leis_encontradas["contexto"]
+            legislacao_texto = "\n\nLEGISLAííO APLICíVEL ENCONTRADA:\n" + leis_encontradas["contexto"]
         
         prompt = prompt.replace("{legislacao}", legislacao_texto)
         
@@ -638,7 +641,7 @@ RETORNE EXATAMENTE ESTE JSON (sem texto adicional):
             messages=[
                 {
                     "role": "system", 
-                    "content": "VocÃª Ã© um assistente jurÃ­dico-administrativo do CBMAC. Analise processos e retorne APENAS JSON vÃ¡lido, sem texto adicional."
+                    "content": "Você é um assistente jurídico-administrativo do CBMAC. Analise processos e retorne APENAS JSON válido, sem texto adicional."
                 },
                 {"role": "user", "content": prompt}
             ],
@@ -665,9 +668,9 @@ RETORNE EXATAMENTE ESTE JSON (sem texto adicional):
                 except:
                     pass
             
-            # Se nÃ£o conseguir, retorna estrutura bÃ¡sica com o resumo
+            # Se não conseguir, retorna estrutura básica com o resumo
             return {
-                "tipo_demanda": "AnÃ¡lise do processo",
+                "tipo_demanda": "Análise do processo",
                 "resumo_executivo": resposta_texto[:500],
                 "interessado": {"nome": "-", "matricula": "-", "cargo": "-"},
                 "pedido_original": {"descricao": "-"},
@@ -678,9 +681,9 @@ RETORNE EXATAMENTE ESTE JSON (sem texto adicional):
             }
             
     except Exception as e:
-        print(f"â Erro na anÃ¡lise IA: {e}", file=sys.stderr)
+        print(f"â Erro na análise IA: {e}", file=sys.stderr)
         return {
-            "tipo_demanda": "Erro na anÃ¡lise",
+            "tipo_demanda": "Erro na análise",
             "resumo_executivo": f"Erro ao processar com IA: {str(e)}",
             "interessado": {"nome": "-", "matricula": "-", "cargo": "-"},
             "pedido_original": {"descricao": "-"},
@@ -705,19 +708,19 @@ async def gerar_documento_com_ia(
     try:
         import openai
         
-        # Monta contexto da anÃ¡lise
+        # Monta contexto da análise
         resumo = analise.get("resumo_executivo", "") or analise.get("resumo_processo", "") or ""
         interessado = analise.get("interessado", {})
         pedido = analise.get("pedido_original", {}) or analise.get("pedido", {})
         sugestao = analise.get("sugestao", {})
         
-        # Monta bloco de destinatÃ¡rio(s)
+        # Monta bloco de destinatário(s)
         bloco_destinatario = ""
         vocativo = "Senhor(a)"
         
         if destinatarios and len(destinatarios) > 0:
             if len(destinatarios) == 1:
-                # Um destinatÃ¡rio
+                # Um destinatário
                 d = destinatarios[0]
                 nome_dest = d.get('nome', '')
                 posto_dest = d.get('posto_grad', '')
@@ -725,7 +728,7 @@ async def gerar_documento_com_ia(
                 sigla_dest = d.get('sigla', '')
                 sigla_sei = d.get('sigla_sei', f'CBMAC-{sigla_dest}')
                 
-                bloco_destinatario = f"Ao(Ã) Sr(a). {posto_dest} {nome_dest}\n{cargo_dest} - {sigla_sei}"
+                bloco_destinatario = f"Ao(à) Sr(a). {posto_dest} {nome_dest}\n{cargo_dest} - {sigla_sei}"
                 
                 # Define vocativo baseado no cargo
                 if 'Comandante' in cargo_dest:
@@ -737,7 +740,7 @@ async def gerar_documento_com_ia(
                 else:
                     vocativo = "Senhor(a)"
             else:
-                # MÃºltiplos destinatÃ¡rios (circular)
+                # Múltiplos destinatários (circular)
                 nomes = []
                 siglas = []
                 for d in destinatarios:
@@ -759,8 +762,30 @@ async def gerar_documento_com_ia(
                 bloco_destinatario = f"Aos Senhores:\n" + "\n".join([f"- {n}" for n in nomes])
                 bloco_destinatario += f"\n\n{', '.join(siglas)}"
         elif destinatario:
-            # Fallback: destinatÃ¡rio como string simples
-            bloco_destinatario = f"Ao(Ã) Sr(a). {destinatario}"
+            # Fallback: destinatário como string simples
+            bloco_destinatario = f"Ao(à) Sr(a). {destinatario}"
+        elif interessado and interessado.get('nome'):
+            # Fallback: usa dados do interessado da análise
+            nome_int = interessado.get('nome', '')
+            cargo_int = interessado.get('cargo', '')
+            posto_int = interessado.get('posto_grad', '')
+
+            if posto_int:
+                bloco_destinatario = f"Ao(à) Sr(a). {posto_int} {nome_int}"
+            else:
+                bloco_destinatario = f"Ao(à) Sr(a). {nome_int}"
+            if cargo_int:
+                bloco_destinatario += f"\n{cargo_int}"
+
+            # Define vocativo baseado no cargo do interessado
+            if cargo_int and 'Comandante' in cargo_int:
+                vocativo = "Senhor Comandante"
+            elif cargo_int and 'Diretor' in cargo_int:
+                vocativo = "Senhor Diretor"
+            elif cargo_int and 'Chefe' in cargo_int:
+                vocativo = "Senhor Chefe"
+            else:
+                vocativo = "Senhor(a)"
         else:
             bloco_destinatario = ""
         
@@ -776,7 +801,7 @@ async def gerar_documento_com_ia(
             if portaria:
                 bloco_remetente += f"\n{portaria}"
         
-        # Extrai assunto da anÃ¡lise
+        # Extrai assunto da análise
         assunto = analise.get('assunto', '') or pedido.get('descricao', '') or analise.get('tipo_demanda', '')
 
         # Monta bloco de instrução do usuário (comando de voz)
@@ -793,12 +818,12 @@ RESUMO: {resumo}
 INTERESSADO: {interessado.get('nome', '-')} - {interessado.get('cargo', '-')}
 PEDIDO: {pedido.get('descricao', '-')}
 
-SUGESTÃO DE AÃÃO: {sugestao.get('acao', '-') if isinstance(sugestao, dict) else '-'}
-FUNDAMENTAÃÃO: {sugestao.get('fundamentacao', '-') if isinstance(sugestao, dict) else '-'}
+SUGESTíO DE AííO: {sugestao.get('acao', '-') if isinstance(sugestao, dict) else '-'}
+FUNDAMENTAííO: {sugestao.get('fundamentacao', '-') if isinstance(sugestao, dict) else '-'}
 {bloco_instrucao}
 """
         
-        # Carrega prompt de geraÃ§Ã£o
+        # Carrega prompt de geração
         prompt_template = carregar_prompt("gerar_documento")
         
         if prompt_template:
@@ -824,23 +849,23 @@ Assunto: {assunto}
 
 {vocativo},
 
-[GERE O CORPO DO DOCUMENTO AQUI - Use parÃ¡grafos numerados se apropriado]
+[GERE O CORPO DO DOCUMENTO AQUI - Use parágrafos numerados se apropriado]
 
 Atenciosamente,
 
 {bloco_remetente}
 
-=== INSTRUÃÃES ===
+=== INSTRUííES ===
 - Use linguagem formal e objetiva
-- Siga o padrÃ£o de documentos oficiais do CBMAC
-- O cabeÃ§alho acima (destinatÃ¡rio, assunto, vocativo) jÃ¡ estÃ¡ definido - use exatamente como estÃ¡
+- Siga o padrão de documentos oficiais do CBMAC
+- O cabeçalho acima (destinatário, assunto, vocativo) já está definido - use exatamente como está
 - Gere apenas o corpo do documento (texto principal)
 - Finalize com "Atenciosamente," e os dados do remetente
 - Baseie-se apenas no contexto fornecido
 
 Gere o documento em HTML simples (use <p>, <br>, <strong>).
-Use style inline para formataÃ§Ã£o:
-- ParÃ¡grafos: text-align: justify; text-indent: 1.5cm
+Use style inline para formatação:
+- Parágrafos: text-align: justify; text-indent: 1.5cm
 - Assinatura: text-align: center
 """
         
@@ -848,7 +873,7 @@ Use style inline para formataÃ§Ã£o:
         response = client.chat.completions.create(
             model="gpt-4.1-mini",
             messages=[
-                {"role": "system", "content": "VocÃª gera documentos oficiais do CBMAC em HTML. Mantenha o formato estruturado com destinatÃ¡rio, assunto, vocativo, corpo e assinatura."},
+                {"role": "system", "content": "Você gera documentos oficiais do CBMAC em HTML. Mantenha o formato estruturado com destinatário, assunto, vocativo, corpo e assinatura."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=2000,
@@ -859,7 +884,18 @@ Use style inline para formataÃ§Ã£o:
         # Limpa markdown se houver
         html = re.sub(r'```html\s*', '', html)
         html = re.sub(r'```\s*', '', html)
-        
+
+        # Remove NUP/Tipo que o LLM possa ter gerado (evita duplicação)
+        html = re.sub(r'<p[^>]*>\s*[•\-]?\s*NUP\s*:\s*[\d\.\-/]+.*?</p>\s*', '', html, flags=re.IGNORECASE | re.DOTALL)
+        html = re.sub(r'[•\-]?\s*NUP\s*:\s*[\d\.\-/]+\s*<br\s*/?>', '', html, flags=re.IGNORECASE)
+        html = re.sub(r'[•\-]?\s*Tipo\s*(de\s*)?documento\s*:\s*[^<]+<br\s*/?>', '', html, flags=re.IGNORECASE)
+        html = re.sub(r'<p[^>]*>\s*</p>', '', html)  # Remove parágrafos vazios
+        html = html.strip()
+
+        # Adiciona cabeçalho padronizado com NUP e Tipo no início do documento
+        cabecalho_nup_tipo = f'<p style="text-align: left; font-size: 10pt; color: #555;">• NUP: {nup}<br>• Tipo de documento: {tipo}</p><hr style="margin: 10px 0;">'
+        html = cabecalho_nup_tipo + html
+
         return {"sucesso": True, "documento": html, "tipo": tipo, "nup": nup}
     except Exception as e:
         return {"sucesso": False, "erro": str(e)}
@@ -1003,7 +1039,7 @@ def registrar_endpoints_laravel(app):
     @app.post("/api/v2/analisar-processo")
     async def analisar_processo_v2(req: AnalisarProcessoRequest, request: Request):
         """
-        Endpoint principal de anÃ¡lise - AGORA COM IA!
+        Endpoint principal de análise - AGORA COM IA!
         
         Fluxo:
         1. Chama SEI Runner (detalhar_processo.py) para extrair texto
@@ -1023,19 +1059,19 @@ def registrar_endpoints_laravel(app):
                 "nup": req.nup
             }
         
-        # Extrai o conteÃºdo para anÃ¡lise
+        # Extrai o conteúdo para análise
         conteudo_bruto = dados_sei.get("resumo_processo", "") or dados_sei.get("output_bruto", "")
         documentos = dados_sei.get("documentos", [])
         
-        print(f"   â SEI extraÃ­do: {len(conteudo_bruto)} chars, {len(documentos)} docs", file=sys.stderr)
+        print(f"   â SEI extraído: {len(conteudo_bruto)} chars, {len(documentos)} docs", file=sys.stderr)
         
         # ETAPA 2: Chama IA para analisar
         print(f"   â³ Analisando com IA...", file=sys.stderr)
         analise_ia = await analisar_com_ia(req.nup, conteudo_bruto, documentos)
-        print(f"   â AnÃ¡lise IA concluÃ­da", file=sys.stderr)
+        print(f"   â Análise IA concluída", file=sys.stderr)
         
         # ETAPA 3: Monta resposta completa
-        # Documentos vÃªm com conteÃºdo completo quando full=True
+        # Documentos vêm com conteúdo completo quando full=True
         documentos_completos = dados_sei.get("documentos", [])
         
         return {
@@ -1043,7 +1079,7 @@ def registrar_endpoints_laravel(app):
             "nup": req.nup,
             "analise": analise_ia,
             "resumo_processo": conteudo_bruto[:3000],
-            "documentos": documentos_completos,  # Com conteÃºdo completo!
+            "documentos": documentos_completos,  # Com conteúdo completo!
             "conteudo_bruto": conteudo_bruto[:5000],
             # Campos extras do detalhar
             "modo": dados_sei.get("modo", ""),
@@ -1207,28 +1243,28 @@ def registrar_endpoints_laravel(app):
             texto = data.get("texto", "")
             
             if not texto:
-                return {"sucesso": False, "erro": "Texto nÃ£o fornecido"}
+                return {"sucesso": False, "erro": "Texto não fornecido"}
             
             import openai
             
-            prompt = f"""VocÃª Ã© um revisor de documentos oficiais do CBMAC.
+            prompt = f"""Você é um revisor de documentos oficiais do CBMAC.
 
 Melhore o texto abaixo, corrigindo:
-- Erros gramaticais e ortogrÃ¡ficos
-- ConcordÃ¢ncia verbal e nominal
+- Erros gramaticais e ortográficos
+- Concordí¢ncia verbal e nominal
 - Clareza e objetividade
 - Formalidade adequada
 
 Texto original:
 {texto}
 
-Retorne APENAS o texto melhorado em HTML (use <p>, <br>, <strong>), sem explicaÃ§Ãµes."""
+Retorne APENAS o texto melhorado em HTML (use <p>, <br>, <strong>), sem explicações."""
 
             client = openai.OpenAI(api_key=OPENAI_API_KEY)
             response = client.chat.completions.create(
                 model="gpt-4.1-mini",
                 messages=[
-                    {"role": "system", "content": "VocÃª melhora textos oficiais mantendo formalidade."},
+                    {"role": "system", "content": "Você melhora textos oficiais mantendo formalidade."},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=2000,
@@ -1250,14 +1286,14 @@ Retorne APENAS o texto melhorado em HTML (use <p>, <br>, <strong>), sem explica�
 
     @app.post("/api/consultar-lei")
     async def consultar_lei_endpoint(request: Request):
-        """Endpoint para consultar legislaÃ§Ã£o via RAG"""
+        """Endpoint para consultar legislação via RAG"""
         try:
             data = await request.json()
             consulta = data.get("consulta", "")
             n_results = data.get("n_results", 5)
             
             if not consulta:
-                return {"sucesso": False, "erro": "Consulta nÃ£o informada", "resultados": []}
+                return {"sucesso": False, "erro": "Consulta não informada", "resultados": []}
             
             # Consulta o RAG via webhook n8n
             resultado_n8n = await consultar_legislacao_via_n8n(consulta)
@@ -1277,13 +1313,13 @@ Retorne APENAS o texto melhorado em HTML (use <p>, <br>, <strong>), sem explica�
                 "total": 0
             }
         except Exception as e:
-            print(f"â Erro ao consultar legislaÃ§Ã£o: {e}", file=sys.stderr)
+            print(f"â Erro ao consultar legislação: {e}", file=sys.stderr)
             return {"sucesso": False, "erro": str(e), "resultados": []}
 
 
     @app.post("/api/chat")
     async def chat_analitico_endpoint(request: Request):
-        """Endpoint para chat analÃ­tico com contexto do processo"""
+        """Endpoint para chat analítico com contexto do processo"""
         try:
             data = await request.json()
             mensagem = data.get("mensagem", "")
@@ -1292,16 +1328,16 @@ Retorne APENAS o texto melhorado em HTML (use <p>, <br>, <strong>), sem explica�
             user_id = data.get("user_id", "")
             
             if not mensagem:
-                return {"sucesso": False, "erro": "Mensagem nÃ£o informada"}
+                return {"sucesso": False, "erro": "Mensagem não informada"}
             
             import openai
             
-            # Consulta legislaÃ§Ã£o relevante baseada na mensagem
+            # Consulta legislação relevante baseada na mensagem
             leis_context = ""
             try:
                 resultado_leis = await consultar_legislacao_via_n8n(mensagem)
                 if resultado_leis.get("sucesso") and resultado_leis.get("contexto"):
-                    leis_context = "\n\nLEGISLAÃÃO RELEVANTE ENCONTRADA:\n" + resultado_leis["contexto"]
+                    leis_context = "\n\nLEGISLAííO RELEVANTE ENCONTRADA:\n" + resultado_leis["contexto"]
             except:
                 pass
             
@@ -1310,16 +1346,16 @@ Retorne APENAS o texto melhorado em HTML (use <p>, <br>, <strong>), sem explica�
             if texto_processo:
                 contexto = f"\n\nCONTEXTO DO PROCESSO:\n{texto_processo[:4000]}"
             
-            system_prompt = f"""VocÃª Ã© o ARGUS, assistente inteligente do CBMAC (Corpo de Bombeiros Militar do Acre).
+            system_prompt = f"""Você é o ARGUS, assistente inteligente do CBMAC (Corpo de Bombeiros Militar do Acre).
 
-Sua funÃ§Ã£o Ã© auxiliar na anÃ¡lise de processos administrativos, responder dÃºvidas sobre legislaÃ§Ã£o e ajudar na redaÃ§Ã£o de documentos.
+Sua função é auxiliar na análise de processos administrativos, responder dúvidas sobre legislação e ajudar na redação de documentos.
 
 REGRAS:
 - Use linguagem formal administrativa
-- Cite a legislaÃ§Ã£o quando relevante
+- Cite a legislação quando relevante
 - Seja objetivo e claro
-- Se nÃ£o souber, diga que nÃ£o sabe
-- Use HTML para formataÃ§Ã£o: <b>, <i>, <p>, <br>, <ul>, <li>
+- Se não souber, diga que não sabe
+- Use HTML para formatação: <b>, <i>, <p>, <br>, <ul>, <li>
 {leis_context}
 {contexto}"""
 
@@ -1346,7 +1382,7 @@ REGRAS:
             print(f"â Erro no chat: {e}", file=sys.stderr)
             return {"sucesso": False, "erro": str(e)}
 
-    print("â Endpoints Laravel v3.1 registrados (ANÃLISE IA + JSON COMPLETO!)")
+    print("â Endpoints Laravel v3.1 registrados (ANíLISE IA + JSON COMPLETO!)")
 
     
     # ============================================================
@@ -1391,7 +1427,7 @@ REGRAS:
             usuario_sei = data.get("usuario_sei")
             
             if not nup or not usuario_sei:
-                return {"sucesso": False, "erro": "NUP e usuario_sei sÃ£o obrigatÃ³rios"}
+                return {"sucesso": False, "erro": "NUP e usuario_sei são obrigatí³rios"}
             
             # Conecta no PostgreSQL
             conn = psycopg2.connect(
@@ -1414,12 +1450,12 @@ REGRAS:
             conn.close()
             
             if not row:
-                return {"sucesso": False, "erro": f"Credenciais nÃ£o encontradas para {usuario_sei}"}
+                return {"sucesso": False, "erro": f"Credenciais não encontradas para {usuario_sei}"}
             
             cipher, iv, tag, orgao_id, cargo = row
             
             if not cipher or not iv or not tag:
-                return {"sucesso": False, "erro": "Senha SEI nÃ£o configurada. Vincule suas credenciais."}
+                return {"sucesso": False, "erro": "Senha SEI não configurada. Vincule suas credenciais."}
             
             # Descriptografa senha
             try:
@@ -1428,7 +1464,7 @@ REGRAS:
                 print(f"â Erro ao descriptografar: {e}", file=sys.stderr)
                 return {"sucesso": False, "erro": "Erro ao descriptografar credenciais"}
             
-            # Chama a anÃ¡lise com credenciais
+            # Chama a análise com credenciais
             credencial = CredencialSEI(
                 usuario=usuario_sei,
                 senha=senha,

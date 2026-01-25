@@ -226,6 +226,9 @@ def limpar_html_para_sei(html: str) -> str:
     )
     html = padrao_linha_tipo.sub('', html)
 
+    # Remove <hr> separador que fica após o bloco NUP/Tipo
+    html = re.sub(r'<hr[^>]*>\s*', '', html)
+
     # Remove parágrafos vazios que sobraram
     html = re.sub(r'<p[^>]*>\s*</p>', '', html)
 
