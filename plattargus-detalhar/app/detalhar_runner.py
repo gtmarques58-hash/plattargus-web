@@ -12,8 +12,12 @@ async def run_detalhar(
     *,
     nup: str,
     job_id: str,
-    chat_id: Optional[str],
-    sigla: Optional[str],
+    chat_id: Optional[str] = None,
+    sigla: Optional[str] = None,
+    # Credenciais diretas (para integração web)
+    usuario: Optional[str] = None,
+    senha: Optional[str] = None,
+    orgao_id: str = "31",
     only_ids: Optional[List[str]] = None,
     prefer_ocr: bool = True,
     debug: bool = False,
@@ -21,6 +25,10 @@ async def run_detalhar(
     """
     Executa o detalhar_processo e retorna o JSON LEVE.
     O JSON COMPLETO é salvo em /data/detalhar/raw/{job_id}.json (IMUTÁVEL).
+
+    Suporta dois modos de autenticação:
+    1. sigla/chat_id: busca credenciais no banco (Telegram)
+    2. usuario/senha: credenciais diretas (Web)
     """
     # ========== NOVA ARQUITETURA: salvar em raw/ ==========
     out_json = f"/data/detalhar/raw/{job_id}.json"
@@ -30,6 +38,9 @@ async def run_detalhar(
         nup=nup,
         chat_id=chat_id,
         sigla=sigla,
+        usuario=usuario,
+        senha=senha,
+        orgao_id=orgao_id,
         out_json=out_json,
         out_jsonl=None,
         only_ids=only_ids,

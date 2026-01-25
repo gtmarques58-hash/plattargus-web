@@ -23,9 +23,11 @@ except ImportError as e:
     print(f"[INIT] Pipeline v2 nao disponivel: {e}", file=sys.stderr)
 
 SEI_RUNNER_URL = os.getenv("SEI_RUNNER_URL", "http://runner:8001")
+DETALHAR_WORKER_URL = os.getenv("DETALHAR_WORKER_URL", "http://plattargus-detalhar-worker:8102")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 PROMPTS_DIR = Path("/app/prompts")
 USAR_PIPELINE_V2 = os.getenv("USAR_PIPELINE_V2", "true").lower() == "true"
+USAR_DETALHAR_WORKER = os.getenv("USAR_DETALHAR_WORKER", "true").lower() == "true"
 
 # API de Efetivo
 EFETIVO_API_URL = os.getenv("EFETIVO_API_URL", "https://efetivo.gt2m58.cloud")
@@ -153,30 +155,77 @@ def carregar_prompt(nome: str) -> str:
 
 async def chamar_sei_reader_com_credencial(nup: str, credencial: CredencialSEI) -> Dict:
     """
-    Chama o SEI Runner para extrair dados do processo.
+    Extrai e analisa processo do SEI.
 
-    NOTA: O serviço plattargus-detalhar foi projetado para o bot Telegram
-    que usa 'sigla' (código da diretoria) para buscar credenciais de um banco local.
-    Para requisições web com credenciais diretas, usamos o runner diretamente.
+    Fluxo:
+    1. Tenta usar o Worker /process-now (Pipeline v2 integrado)
+    2. Se falhar, usa SEI Runner + Pipeline v2 local (fallback)
     """
-    print(f"   📖 Extraindo processo {nup} via SEI Runner...", file=sys.stderr)
+    t0 = time.time()
+
+    # Tenta usar o Worker com /process-now (já tem Pipeline v2 integrado)
+    if USAR_DETALHAR_WORKER:
+        try:
+            print(f"   📖 Usando Detalhar Worker /process-now...", file=sys.stderr)
+            async with httpx.AsyncClient(timeout=600.0) as client:
+                response = await client.post(
+                    f"{DETALHAR_WORKER_URL}/process-now",
+                    json={
+                        "nup": nup,
+                        "usuario": credencial.usuario,
+                        "senha": credencial.senha,
+                        "orgao_id": credencial.orgao_id
+                    }
+                )
+                data = response.json()
+
+            if data.get("status") == "ok":
+                duracao = time.time() - t0
+                print(f"   ✓ Worker OK em {duracao:.1f}s", file=sys.stderr)
+
+                # Montar resultado no formato esperado
+                return {
+                    "sucesso": True,
+                    "nup": nup,
+                    "pipeline_v2": True,
+                    "fonte": "detalhar-worker",
+                    "job_id": data.get("job_id"),
+                    "resumo_processo": data.get("resumo_texto", ""),
+                    "resumo_executivo": data.get("resumo_texto", ""),
+                    "interessado": data.get("interessado") or {},
+                    "pedido": data.get("pedido") or {},
+                    "situacao": data.get("situacao") or {},
+                    "analise": {
+                        "interessado": data.get("interessado") or {},
+                        "pedido": data.get("pedido") or {},
+                        "situacao": data.get("situacao") or {},
+                        "confianca": data.get("confianca", 0),
+                        "resumo_executivo": data.get("resumo_texto", "")
+                    },
+                    "metricas_pipeline": data.get("metricas") or {},
+                    "duracao_total": duracao
+                }
+            else:
+                print(f"   ⚠ Worker erro: {data.get('erro')}, tentando fallback...", file=sys.stderr)
+
+        except Exception as e:
+            print(f"   ⚠ Worker indisponivel: {e}, tentando fallback...", file=sys.stderr)
+
+    # Fallback: SEI Runner + Pipeline v2 local
     return await chamar_sei_reader_fallback(nup, credencial)
 
 
 async def chamar_sei_reader_fallback(nup: str, credencial: CredencialSEI) -> Dict:
     """
-    Chama o SEI Runner para extrair documentos e processa com Pipeline v2.
+    Fallback: SEI Runner + Pipeline v2 local.
 
-    Fluxo:
-    1. SEI Runner extrai documentos do processo
-    2. Pipeline v2 analisa (heuristica + LLM)
-    3. Retorna analise estruturada
+    Usado quando o Worker /process-now não está disponível.
     """
     t0 = time.time()
 
     try:
         # 1. EXTRACAO via SEI Runner
-        print(f"   [1/2] Extraindo documentos do SEI...", file=sys.stderr)
+        print(f"   [1/2] Extraindo via SEI Runner (fallback)...", file=sys.stderr)
         async with httpx.AsyncClient(timeout=300.0) as client:
             response = await client.post(
                 f"{SEI_RUNNER_URL}/run",
@@ -213,6 +262,7 @@ async def chamar_sei_reader_fallback(nup: str, credencial: CredencialSEI) -> Dic
             return {"sucesso": True, "nup": nup, "resumo_processo": data.get("output", "")[:8000]}
 
         resultado["nup"] = nup
+        resultado["fonte"] = "sei-runner"
         documentos = resultado.get("documentos", [])
 
         duracao_extracao = time.time() - t0
@@ -220,12 +270,11 @@ async def chamar_sei_reader_fallback(nup: str, credencial: CredencialSEI) -> Dic
 
         # 2. PIPELINE v2 (se disponivel e ativado)
         if PIPELINE_V2_DISPONIVEL and USAR_PIPELINE_V2 and documentos:
-            print(f"   [2/2] Analisando com Pipeline v2...", file=sys.stderr)
+            print(f"   [2/2] Analisando com Pipeline v2 local...", file=sys.stderr)
             try:
                 analise = processar_pipeline_v2(nup, documentos, usar_llm=True)
 
                 if analise.get("sucesso"):
-                    # Mesclar resultado da extracao com analise do pipeline
                     resultado["pipeline_v2"] = True
                     resultado["analise"] = analise.get("analise", {})
                     resultado["interessado"] = analise.get("interessado", {})
@@ -236,8 +285,6 @@ async def chamar_sei_reader_fallback(nup: str, credencial: CredencialSEI) -> Dic
                     resultado["sugestao"] = analise.get("sugestao", "")
                     resultado["resumo_executivo"] = analise.get("resumo_executivo", "")
                     resultado["metricas_pipeline"] = analise.get("metricas", {})
-
-                    # Formatar resumo do processo com dados da analise
                     resultado["resumo_processo"] = formatar_analise_para_contexto(analise)
 
                     custo = analise.get("metricas", {}).get("custo_total_usd", 0)
@@ -251,22 +298,15 @@ async def chamar_sei_reader_fallback(nup: str, credencial: CredencialSEI) -> Dic
                 resultado["pipeline_v2"] = False
                 resultado["pipeline_erro"] = str(e)
         else:
-            if not PIPELINE_V2_DISPONIVEL:
-                print(f"   ⚠ Pipeline v2 nao disponivel", file=sys.stderr)
-            elif not USAR_PIPELINE_V2:
-                print(f"   ⚠ Pipeline v2 desativado (USAR_PIPELINE_V2=false)", file=sys.stderr)
-            elif not documentos:
-                print(f"   ⚠ Sem documentos para Pipeline v2", file=sys.stderr)
             resultado["pipeline_v2"] = False
 
-        duracao_total = time.time() - t0
-        resultado["duracao_total"] = duracao_total
-        print(f"   ✓ Processamento completo em {duracao_total:.1f}s", file=sys.stderr)
+        resultado["duracao_total"] = time.time() - t0
+        print(f"   ✓ Fallback completo em {resultado['duracao_total']:.1f}s", file=sys.stderr)
 
         return resultado
 
     except Exception as e:
-        print(f"   ✗ Erro: {e}", file=sys.stderr)
+        print(f"   ✗ Erro fallback: {e}", file=sys.stderr)
         return {"sucesso": False, "erro": str(e), "nup": nup}
 
 

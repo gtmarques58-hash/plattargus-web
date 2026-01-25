@@ -281,13 +281,20 @@ async def estagio_extracao(job: dict, job_id: str, update_db: bool = True) -> di
     nup = job.get("nup", "")
     sigla = job.get("sigla")
     chat_id = job.get("chat_id")
-    
+    # Credenciais diretas (integração web)
+    usuario = job.get("usuario")
+    senha = job.get("senha")
+    orgao_id = job.get("orgao_id", "31")
+
     raw_path = DIR_RAW / f"{job_id}.json"
-    
+
     result = await run_detalhar(
         nup=nup,
         sigla=sigla,
         chat_id=chat_id,
+        usuario=usuario,
+        senha=senha,
+        orgao_id=orgao_id,
         job_id=job_id,
         prefer_ocr=True
     )
@@ -517,6 +524,10 @@ class ProcessRequest(BaseModel):
     nup: str
     sigla: str | None = None
     chat_id: str | None = None
+    # Credenciais diretas (para integração web)
+    usuario: str | None = None
+    senha: str | None = None
+    orgao_id: str = "31"
 
 @http_app.get("/health")
 async def health():
@@ -525,10 +536,19 @@ async def health():
 @http_app.post("/process-now")
 async def process_now(req: ProcessRequest):
     job_id = str(uuid.uuid4())
-    print(f"[DIRETO] {req.nup} ({job_id})", file=sys.stderr)
-    
+    modo = "WEB" if req.usuario else "SIGLA"
+    print(f"[DIRETO-{modo}] {req.nup} ({job_id})", file=sys.stderr)
+
     try:
-        result = await processar_job({"nup": req.nup, "sigla": req.sigla, "chat_id": req.chat_id}, job_id, update_db=False)
+        job_data = {
+            "nup": req.nup,
+            "sigla": req.sigla,
+            "chat_id": req.chat_id,
+            "usuario": req.usuario,
+            "senha": req.senha,
+            "orgao_id": req.orgao_id
+        }
+        result = await processar_job(job_data, job_id, update_db=False)
         p = result.get("pipeline", {})
         return {
             "status": "ok" if result.get("sucesso") else "erro",
