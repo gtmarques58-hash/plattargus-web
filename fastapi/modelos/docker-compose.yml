@@ -48,7 +48,7 @@ services:
       # Logs
       - ./logs:/app/logs
     networks:
-      - plattargus
+      - plattargus-web_plattargus
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8105/health"]
       interval: 30s
@@ -62,5 +62,5 @@ services:
         max-file: "3"
 
 networks:
-  plattargus:
+  plattargus-web_plattargus:
     external: true
