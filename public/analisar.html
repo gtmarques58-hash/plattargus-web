@@ -1556,7 +1556,9 @@
             status.className = 'status status-loading';
             status.innerHTML = '<span class="spinner"></span> Gerando documento...';
             status.classList.remove('hidden');
-            
+
+            console.log('📤 Enviando instrucao_voz:', window.instrucaoVoz);
+
             fetch(API + '/api/processos/gerar-documento', {
                 method: 'POST',
                 headers: getAuthHeaders(),
@@ -1592,8 +1594,7 @@
                         };
                     })(),
                     instrucao_voz: window.instrucaoVoz || ''
-                });
-            console.log('📤 Enviando instrucao_voz:', window.instrucaoVoz);
+                })
             })
             .then(function(resp) { return resp.json(); })
             .then(function(data) {
