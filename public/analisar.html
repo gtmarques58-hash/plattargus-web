@@ -822,6 +822,7 @@
                 }
             }
             window.instrucaoVoz = inputOriginal;
+            console.log('🎤 instrucaoVoz definida:', window.instrucaoVoz);
             if (tipoDetectado || destDetectado) setTimeout(function() { gerarDocumento(); }, 300);
         }
 
@@ -1591,7 +1592,8 @@
                         };
                     })(),
                     instrucao_voz: window.instrucaoVoz || ''
-                })
+                });
+            console.log('📤 Enviando instrucao_voz:', window.instrucaoVoz);
             })
             .then(function(resp) { return resp.json(); })
             .then(function(data) {
