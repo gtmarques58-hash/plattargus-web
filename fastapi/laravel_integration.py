@@ -3,18 +3,29 @@
 laravel_integration.py v3.1 - COM ANíLISE IA + JSON COMPLETO
 Fluxo: detalhar_processo (--full) -> Agente IA -> JSON estruturado com documentos
 """
-import os, sys, json, re
+import os, sys, json, re, time
 from typing import Optional, Dict, List
 from pathlib import Path
 from pydantic import BaseModel
 import httpx
-from detalhar_client import get_detalhar_client
 from typing import List
 
 sys.path.insert(0, '/app/scripts')
+sys.path.insert(0, '/app')
+
+# Pipeline v2 integrado
+try:
+    from pipeline_v2.orquestrador import processar_pipeline_v2, formatar_analise_para_contexto
+    PIPELINE_V2_DISPONIVEL = True
+    print("[INIT] Pipeline v2 carregado com sucesso", file=sys.stderr)
+except ImportError as e:
+    PIPELINE_V2_DISPONIVEL = False
+    print(f"[INIT] Pipeline v2 nao disponivel: {e}", file=sys.stderr)
+
 SEI_RUNNER_URL = os.getenv("SEI_RUNNER_URL", "http://runner:8001")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 PROMPTS_DIR = Path("/app/prompts")
+USAR_PIPELINE_V2 = os.getenv("USAR_PIPELINE_V2", "true").lower() == "true"
 
 # API de Efetivo
 EFETIVO_API_URL = os.getenv("EFETIVO_API_URL", "https://efetivo.gt2m58.cloud")
@@ -141,64 +152,31 @@ def carregar_prompt(nome: str) -> str:
     return ""
 
 async def chamar_sei_reader_com_credencial(nup: str, credencial: CredencialSEI) -> Dict:
-    """Chama o serviço plattargus-detalhar para extrair dados do processo."""
-    try:
-        client = get_detalhar_client()
-        
-        if await client.is_online():
-            print(f"   ?? Usando detalhar-service para {nup}", file=sys.stderr)
-            
-            result = await client.detalhar_sync(
-                nup=nup,
-                credenciais={
-                    "sigla": credencial.usuario,
-                    "usuario": credencial.usuario,
-                    "senha": credencial.senha,
-                    "orgao_id": credencial.orgao_id
-                },
-                user_id=credencial.usuario,
-                timeout=720
-            )
-            
-            if result.sucesso:
-                resultado = result.resultado or {}
-                resumo = resultado.get("resumo_processo") or resultado.get("resumo") or ""
-                if isinstance(resumo, dict):
-                    resumo = resumo.get("texto") or json.dumps(resumo)
-                
-                cache_info = " (CACHE)" if result.from_cache else ""
-                print(f"   ? Detalhar OK{cache_info}: {len(str(resumo))} chars", file=sys.stderr)
-                
-                return {
-                    "sucesso": True,
-                    "nup": nup,
-                    "resumo_processo": resumo,
-                    "documentos": resultado.get("documentos", []),
-                    "from_cache": result.from_cache,
-                    "duracao_segundos": result.duracao_segundos,
-                    "modo": resultado.get("modo", "detalhar"),
-                    "pastas_total": resultado.get("pastas_total", 0),
-                    "documentos_total": resultado.get("documentos_total", 0),
-                    "extraidos_ok": resultado.get("extraidos_ok", 0),
-                    "docs_escaneados": resultado.get("docs_escaneados", 0),
-                    "ressalvas": resultado.get("ressalvas", []),
-                    "mensagem": resultado.get("mensagem", "Processo extraído com sucesso")
-                }
-            else:
-                print(f"   ?? Detalhar erro: {result.erro}", file=sys.stderr)
-                return await chamar_sei_reader_fallback(nup, credencial)
-        else:
-            print(f"   ?? Detalhar-service offline, usando runner...", file=sys.stderr)
-            return await chamar_sei_reader_fallback(nup, credencial)
-            
-    except Exception as e:
-        print(f"   ? Erro detalhar-client: {e}, tentando fallback...", file=sys.stderr)
-        return await chamar_sei_reader_fallback(nup, credencial)
+    """
+    Chama o SEI Runner para extrair dados do processo.
+
+    NOTA: O serviço plattargus-detalhar foi projetado para o bot Telegram
+    que usa 'sigla' (código da diretoria) para buscar credenciais de um banco local.
+    Para requisições web com credenciais diretas, usamos o runner diretamente.
+    """
+    print(f"   📖 Extraindo processo {nup} via SEI Runner...", file=sys.stderr)
+    return await chamar_sei_reader_fallback(nup, credencial)
 
 
 async def chamar_sei_reader_fallback(nup: str, credencial: CredencialSEI) -> Dict:
-    """Fallback: chama o SEI Runner diretamente (modo antigo)."""
+    """
+    Chama o SEI Runner para extrair documentos e processa com Pipeline v2.
+
+    Fluxo:
+    1. SEI Runner extrai documentos do processo
+    2. Pipeline v2 analisa (heuristica + LLM)
+    3. Retorna analise estruturada
+    """
+    t0 = time.time()
+
     try:
+        # 1. EXTRACAO via SEI Runner
+        print(f"   [1/2] Extraindo documentos do SEI...", file=sys.stderr)
         async with httpx.AsyncClient(timeout=300.0) as client:
             response = await client.post(
                 f"{SEI_RUNNER_URL}/run",
@@ -214,28 +192,81 @@ async def chamar_sei_reader_fallback(nup: str, credencial: CredencialSEI) -> Dic
                 }
             )
             data = response.json()
-        
+
         if not data.get("ok"):
             return {"sucesso": False, "erro": data.get("error", "Erro desconhecido"), "nup": nup}
-        
+
+        # Extrair resultado do runner
+        resultado = None
         if data.get("json_data"):
             resultado = data["json_data"]
-            resultado["nup"] = nup
-            return resultado
-        
-        output = data.get("output", "")
-        json_match = re.search(r'\{[\s\S]*"sucesso"[\s\S]*\}', output)
-        if json_match:
+        else:
+            output = data.get("output", "")
+            json_match = re.search(r'\{[\s\S]*"sucesso"[\s\S]*\}', output)
+            if json_match:
+                try:
+                    resultado = json.loads(json_match.group())
+                except:
+                    pass
+
+        if not resultado:
+            return {"sucesso": True, "nup": nup, "resumo_processo": data.get("output", "")[:8000]}
+
+        resultado["nup"] = nup
+        documentos = resultado.get("documentos", [])
+
+        duracao_extracao = time.time() - t0
+        print(f"   ✓ SEI extraido: {len(str(resultado))} chars, {len(documentos)} docs ({duracao_extracao:.1f}s)", file=sys.stderr)
+
+        # 2. PIPELINE v2 (se disponivel e ativado)
+        if PIPELINE_V2_DISPONIVEL and USAR_PIPELINE_V2 and documentos:
+            print(f"   [2/2] Analisando com Pipeline v2...", file=sys.stderr)
             try:
-                resultado = json.loads(json_match.group())
-                resultado["nup"] = nup
-                return resultado
-            except:
-                pass
-        
-        return {"sucesso": True, "nup": nup, "resumo_processo": output[:8000]}
-        
+                analise = processar_pipeline_v2(nup, documentos, usar_llm=True)
+
+                if analise.get("sucesso"):
+                    # Mesclar resultado da extracao com analise do pipeline
+                    resultado["pipeline_v2"] = True
+                    resultado["analise"] = analise.get("analise", {})
+                    resultado["interessado"] = analise.get("interessado", {})
+                    resultado["pedido"] = analise.get("pedido", {})
+                    resultado["situacao"] = analise.get("situacao", {})
+                    resultado["fluxo"] = analise.get("fluxo", {})
+                    resultado["alertas"] = analise.get("alertas", [])
+                    resultado["sugestao"] = analise.get("sugestao", "")
+                    resultado["resumo_executivo"] = analise.get("resumo_executivo", "")
+                    resultado["metricas_pipeline"] = analise.get("metricas", {})
+
+                    # Formatar resumo do processo com dados da analise
+                    resultado["resumo_processo"] = formatar_analise_para_contexto(analise)
+
+                    custo = analise.get("metricas", {}).get("custo_total_usd", 0)
+                    print(f"   ✓ Pipeline v2 OK! Custo: ${custo:.4f}", file=sys.stderr)
+                else:
+                    print(f"   ⚠ Pipeline v2 falhou: {analise.get('erro')}", file=sys.stderr)
+                    resultado["pipeline_v2"] = False
+                    resultado["pipeline_erro"] = analise.get("erro")
+            except Exception as e:
+                print(f"   ⚠ Erro no Pipeline v2: {e}", file=sys.stderr)
+                resultado["pipeline_v2"] = False
+                resultado["pipeline_erro"] = str(e)
+        else:
+            if not PIPELINE_V2_DISPONIVEL:
+                print(f"   ⚠ Pipeline v2 nao disponivel", file=sys.stderr)
+            elif not USAR_PIPELINE_V2:
+                print(f"   ⚠ Pipeline v2 desativado (USAR_PIPELINE_V2=false)", file=sys.stderr)
+            elif not documentos:
+                print(f"   ⚠ Sem documentos para Pipeline v2", file=sys.stderr)
+            resultado["pipeline_v2"] = False
+
+        duracao_total = time.time() - t0
+        resultado["duracao_total"] = duracao_total
+        print(f"   ✓ Processamento completo em {duracao_total:.1f}s", file=sys.stderr)
+
+        return resultado
+
     except Exception as e:
+        print(f"   ✗ Erro: {e}", file=sys.stderr)
         return {"sucesso": False, "erro": str(e), "nup": nup}
 
 
@@ -743,27 +774,49 @@ def preencher_template(
     pedido = analise.get("pedido_original", {}) or analise.get("pedido", {})
     sugestao = analise.get("sugestao", {})
 
-    # Monta dados do destinatário
+    # Monta dados do(s) destinatário(s) - suporta múltiplos
     nome_dest = ""
     posto_dest = ""
     cargo_dest = ""
     sigla_dest = ""
     vocativo = "Senhor(a)"
+    bloco_destinatario_completo = ""
 
     if destinatarios and len(destinatarios) > 0:
-        d = destinatarios[0]
-        nome_dest = d.get('nome', '')
-        posto_dest = d.get('posto_grad', '')
-        cargo_dest = d.get('cargo', '')
-        sigla_dest = d.get('sigla_sei', '') or d.get('sigla', '')
+        if len(destinatarios) == 1:
+            # Um destinatário
+            d = destinatarios[0]
+            nome_dest = d.get('nome', '')
+            posto_dest = d.get('posto_grad', '')
+            cargo_dest = d.get('cargo', '')
+            sigla_dest = d.get('sigla_sei', '') or d.get('sigla', '')
 
-        # Define vocativo
-        if 'Comandante' in cargo_dest:
-            vocativo = "Senhor Comandante"
-        elif 'Diretor' in cargo_dest:
-            vocativo = "Senhor Diretor"
-        elif 'Chefe' in cargo_dest:
-            vocativo = "Senhor Chefe"
+            # Define vocativo
+            if 'Comandante' in cargo_dest:
+                vocativo = "Senhor Comandante"
+            elif 'Diretor' in cargo_dest:
+                vocativo = "Senhor Diretor"
+            elif 'Chefe' in cargo_dest:
+                vocativo = "Senhor Chefe"
+        else:
+            # Múltiplos destinatários
+            linhas = []
+            siglas = []
+            for d in destinatarios:
+                nome = d.get('nome', '')
+                posto = d.get('posto_grad', '')
+                cargo = d.get('cargo', '')
+                sigla = d.get('sigla_sei', '') or d.get('sigla', '')
+                linhas.append(f"{posto} {nome} - {cargo}".strip())
+                siglas.append(sigla)
+
+            # Formata como lista
+            nome_dest = "\\n".join([f"- {l}" for l in linhas])
+            sigla_dest = ", ".join(siglas)
+            vocativo = "Senhores"
+            # Marca para usar formato especial
+            bloco_destinatario_completo = f"Aos Senhores:\\n" + "\\n".join([f"- {l}" for l in linhas]) + f"\\n{sigla_dest}"
+
     elif destinatario:
         nome_dest = destinatario
     elif interessado:
@@ -862,10 +915,13 @@ async def gerar_documento_com_ia(
     """
 
     # =========================================================
-    # TENTATIVA 1: Usar template se template_id foi fornecido
+    # TENTATIVA 1: Usar template SOMENTE se houver instrução explícita
+    # Se não houver instrução, usar LLM para gerar conteúdo contextualizado
     # =========================================================
-    if template_id:
-        print(f"[TEMPLATE] Tentando usar template: {template_id}", file=sys.stderr)
+    tem_instrucao = instrucao_voz and instrucao_voz.strip() and len(instrucao_voz.strip()) > 2
+
+    if template_id and tem_instrucao:
+        print(f"[TEMPLATE] Tentando usar template: {template_id} (instrução: {instrucao_voz[:50]}...)", file=sys.stderr)
         conteudo, meta = carregar_template(template_id)
 
         if conteudo:
@@ -897,9 +953,11 @@ async def gerar_documento_com_ia(
                 print(f"[TEMPLATE] Erro ao preencher template {template_id}: {e}, usando LLM como fallback", file=sys.stderr)
         else:
             print(f"[TEMPLATE] Template {template_id} não encontrado, usando LLM como fallback", file=sys.stderr)
+    elif template_id and not tem_instrucao:
+        print(f"[LLM] Sem instrução explícita, usando LLM para gerar conteúdo contextualizado", file=sys.stderr)
 
     # =========================================================
-    # TENTATIVA 2: Usar LLM (OpenAI) como fallback
+    # TENTATIVA 2: Usar LLM (OpenAI) para gerar conteúdo
     # =========================================================
     try:
         import openai

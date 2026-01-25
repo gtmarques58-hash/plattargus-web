@@ -206,6 +206,12 @@
 .quick-commands{display:flex;flex-wrap:wrap;gap:6px}
 .quick-cmd{padding:6px 12px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-muted);font-size:0.8rem;cursor:pointer;transition:all 0.2s;font-family:var(--font-display)}
 .quick-cmd:hover{border-color:var(--warning);color:var(--warning);background:rgba(245,158,11,0.1)}
+.comando-feedback{margin-top:12px;padding:10px;background:rgba(16,185,129,0.1);border:1px solid var(--success);border-radius:8px}
+.feedback-items{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.feedback-item{padding:4px 10px;border-radius:6px;font-size:0.8rem;font-weight:500}
+.feedback-item.tipo{background:rgba(59,130,246,0.2);color:#60a5fa}
+.feedback-item.dest{background:rgba(245,158,11,0.2);color:#fbbf24}
+.feedback-item.instr{background:rgba(139,92,246,0.2);color:#a78bfa;font-style:italic}
 .voice-overlay{position:fixed;inset:0;background:rgba(10,14,20,0.95);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:2000}
 .voice-overlay.active{display:flex}
 .voice-circle{width:150px;height:150px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#b91c1c);display:flex;align-items:center;justify-content:center;font-size:60px;animation:voicePulse 1.5s infinite;box-shadow:0 0 60px var(--accent-glow)}
@@ -285,7 +291,7 @@
         <div class="panel">
             <h2>📄 Gerar Documento</h2>
             <!-- ===== PAINEL DE VOZ v1.0 ===== -->
-            <div id="voiceCommandSection" class="voice-command-section hidden">
+            <div id="voiceCommandSection" class="voice-command-section">
                 <div class="voice-command-label">🎙️ Comando por Voz ou Texto <span class="new-badge">v1.0</span></div>
                 <div class="voice-input-wrapper">
                     <textarea id="voiceInput" class="voice-text-input" placeholder="Fale ou digite seu comando...&#10;&#10;Ex: &quot;memorando para COC informando que o pedido foi deferido&quot;&#10;Ex: &quot;despacho para DLPF encaminhando para providências&quot;"></textarea>
@@ -307,26 +313,9 @@
                     </div>
                 </div>
             </div>
-            <div id="configBox" class="config-box hidden">
-                <h3>⚙️ Configuração</h3>
-                <div class="config-row">
-                    <div class="autocomplete-wrapper">
-                        <label>Tipo de Documento</label>
-                        <input type="text" id="tipoDocumentoInput" class="form-input" placeholder="Digite: DES, MEM, OFI..." autocomplete="off">
-                        <input type="hidden" id="tipoDocumento" value="Despacho">
-                        <div id="tipoDocumentoList" class="autocomplete-list hidden"></div>
-                    </div>
-                    <div class="autocomplete-wrapper">
-                        <label>Destinatário(s)</label>
-                        <div class="tags-container" id="tagsContainer" onclick="document.getElementById('destinatarioInput').focus()">
-                            <input type="text" id="destinatarioInput" class="tag-input" placeholder="Digite sigla: DRH, CMDGER..." autocomplete="off">
-                        </div>
-                        <input type="hidden" id="destinatario" value="">
-                        <div id="destinatarioList" class="autocomplete-list hidden"></div>
-                    </div>
-                    <button class="btn btn-primary" onclick="gerarDocumento()" style="margin-top:22px">✨ Gerar</button>
-                </div>
-            </div>
+            <!-- Inputs hidden para compatibilidade -->
+            <input type="hidden" id="tipoDocumento" value="Despacho">
+            <input type="hidden" id="destinatario" value="">
 
             <div id="statusDocumento" class="status hidden"></div>
             <div id="editorContainer" class="editor-box hidden">
@@ -720,23 +709,49 @@
         var isVoiceListening = false;
         var voiceRecognition = null;
         var unidadesMap = {
+            // Comandos Operacionais
             'coc': { sigla: 'COC', nome: 'Comando Operacional da Capital' },
             'coi': { sigla: 'COI', nome: 'Comando Operacional do Interior' },
+            // Comando e Subcomando
             'cmdger': { sigla: 'CMDGER', nome: 'Comando Geral' },
+            'comando geral': { sigla: 'CMDGER', nome: 'Comando Geral' },
             'subcmd': { sigla: 'SUBCMD', nome: 'Subcomando Geral' },
+            'subcomando': { sigla: 'SUBCMD', nome: 'Subcomando Geral' },
+            // Diretorias
             'drh': { sigla: 'DRH', nome: 'Diretoria de Recursos Humanos' },
+            'recursos humanos': { sigla: 'DRH', nome: 'Diretoria de Recursos Humanos' },
             'dlpf': { sigla: 'DLPF', nome: 'Diretoria de Logística, Finanças e Patrimônio' },
+            'dplan': { sigla: 'DPLAN', nome: 'Diretoria de Planejamento' },
             'dei': { sigla: 'DEI', nome: 'Diretoria de Ensino e Instrução' },
+            'ensino': { sigla: 'DEI', nome: 'Diretoria de Ensino e Instrução' },
+            // Assessorias
             'ajger': { sigla: 'AJGER', nome: 'Ajudância Geral' },
-            'assjur': { sigla: 'ASSJUR', nome: 'Assessoria Jurídica' }
+            'ajudancia': { sigla: 'AJGER', nome: 'Ajudância Geral' },
+            'assjur': { sigla: 'ASSJUR', nome: 'Assessoria Jurídica' },
+            'juridico': { sigla: 'ASSJUR', nome: 'Assessoria Jurídica' },
+            'gabcmd': { sigla: 'GABCMD', nome: 'Gabinete do Comandante' },
+            'gabinete': { sigla: 'GABCMD', nome: 'Gabinete do Comandante' }
         };
         var comandosMap = {
+            // Memorandos
             'memorando': { tipo: 'Memorando', template: 'MEMO_GENERICO' },
             'memo': { tipo: 'Memorando', template: 'MEMO_GENERICO' },
+            'encaminhar': { tipo: 'Memorando', template: 'MEMO_ENCAMINHAMENTO' },
+            // Despachos
             'despacho': { tipo: 'Despacho', template: 'DESPACHO_SIMPLES' },
             'deferir': { tipo: 'Despacho', template: 'DESPACHO_DEFERIMENTO' },
+            'deferido': { tipo: 'Despacho', template: 'DESPACHO_DEFERIMENTO' },
             'indeferir': { tipo: 'Despacho', template: 'DESPACHO_INDEFERIMENTO' },
-            'voltar': { tipo: 'Despacho', template: 'DESPACHO_ENCAMINHAMENTO' }
+            'indeferido': { tipo: 'Despacho', template: 'DESPACHO_INDEFERIMENTO' },
+            'voltar': { tipo: 'Despacho', template: 'DESPACHO_ENCAMINHAMENTO' },
+            'devolver': { tipo: 'Despacho', template: 'DESPACHO_ENCAMINHAMENTO' },
+            // Ofícios
+            'oficio': { tipo: 'Ofício', template: 'OFICIO_EXTERNO' },
+            'ofício': { tipo: 'Ofício', template: 'OFICIO_EXTERNO' },
+            // Informação
+            'informacao': { tipo: 'Informação', template: 'DESPACHO_SIMPLES' },
+            'informação': { tipo: 'Informação', template: 'DESPACHO_SIMPLES' },
+            'informar': { tipo: 'Informação', template: 'DESPACHO_SIMPLES' }
         };
 
         var voiceTranscriptAccumulated = '';
@@ -823,35 +838,106 @@
             var inputOriginal = document.getElementById('voiceInput').value.trim();
             var input = inputOriginal.toLowerCase();
             if (!input) return;
-            var tipoDetectado = null, templateDetectado = 'DESPACHO_SIMPLES', destDetectado = null;
+
+            var tipoDetectado = null;
+            var templateDetectado = 'DESPACHO_SIMPLES';
+            var destinatariosDetectados = [];
+            var palavrasRemover = [];
+
+            // 1. Detecta tipo de documento
             Object.keys(comandosMap).forEach(function(key) {
-                if (input.indexOf(key) >= 0) { tipoDetectado = comandosMap[key].tipo; templateDetectado = comandosMap[key].template; }
+                if (input.indexOf(key) >= 0) {
+                    tipoDetectado = comandosMap[key].tipo;
+                    templateDetectado = comandosMap[key].template;
+                    palavrasRemover.push(key);
+                }
             });
+
+            // 2. Detecta MÚLTIPLOS destinatários (ex: "coc, coi e drh" ou "coc coi drh")
             Object.keys(unidadesMap).forEach(function(key) {
-                if (input.indexOf(key) >= 0) { destDetectado = unidadesMap[key]; }
+                if (input.indexOf(key) >= 0) {
+                    var unidade = unidadesMap[key];
+                    var autoridade = todasAutoridades.find(function(a) {
+                        return (a.sigla || '').toUpperCase() === unidade.sigla;
+                    });
+                    if (autoridade) {
+                        destinatariosDetectados.push({
+                            sigla: autoridade.sigla,
+                            nome: autoridade.nome || unidade.nome,
+                            cargo: autoridade.cargo,
+                            posto_grad: autoridade.posto_grad
+                        });
+                    } else {
+                        destinatariosDetectados.push({ sigla: unidade.sigla, nome: unidade.nome });
+                    }
+                    palavrasRemover.push(key);
+                }
             });
+
+            // 3. Extrai instrução real (remove tipo, destinos e palavras de ligação)
+            var instrucaoLimpa = input;
+            palavrasRemover.forEach(function(p) {
+                instrucaoLimpa = instrucaoLimpa.replace(new RegExp(p, 'gi'), '');
+            });
+            // Remove palavras de ligação comuns
+            instrucaoLimpa = instrucaoLimpa
+                .replace(/\b(para|e|,|sobre|informando|solicitando|encaminhando|que|o|a|os|as)\b/gi, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            // 4. Atualiza variáveis globais
             if (tipoDetectado) {
                 document.getElementById('tipoDocumento').value = tipoDetectado;
-                document.getElementById('tipoDocumentoInput').value = tipoDetectado;
                 window.templateSelecionado = templateDetectado;
             }
-            if (destDetectado) {
-                destinatariosSelecionados = [];
-                document.querySelectorAll('.tag-item').forEach(function(el) { el.remove(); });
-                var autoridade = todasAutoridades.find(function(a) { return (a.sigla || '').toUpperCase() === destDetectado.sigla; });
-                if (autoridade) {
-                    destinatariosSelecionados.push({ sigla: autoridade.sigla, nome: autoridade.nome || destDetectado.nome });
-                    var tagsContainer = document.getElementById('tagsContainer');
-                    var tagInput = document.getElementById('destinatarioInput');
-                    var tagEl = document.createElement('span');
-                    tagEl.className = 'tag-item';
-                    tagEl.innerHTML = autoridade.sigla + ' <button class="tag-remove" onclick="removerDestinatario(this, \'' + autoridade.sigla + '\')">×</button>';
-                    tagsContainer.insertBefore(tagEl, tagInput);
-                }
+
+            if (destinatariosDetectados.length > 0) {
+                destinatariosSelecionados = destinatariosDetectados;
             }
-            window.instrucaoVoz = inputOriginal;
-            console.log('🎤 instrucaoVoz definida:', window.instrucaoVoz);
-            if (tipoDetectado || destDetectado) setTimeout(function() { gerarDocumento(); }, 300);
+
+            // 5. Define instrução limpa (só o conteúdo real, não os comandos)
+            window.instrucaoVoz = instrucaoLimpa || '';
+            console.log('🎤 Comando processado:', {
+                tipo: tipoDetectado,
+                template: templateDetectado,
+                destinatarios: destinatariosDetectados.map(function(d) { return d.sigla; }),
+                instrucao: window.instrucaoVoz
+            });
+
+            // 6. Mostra feedback visual
+            mostrarFeedbackComando(tipoDetectado, templateDetectado, destinatariosDetectados, window.instrucaoVoz);
+
+            // 7. Gera documento se detectou tipo ou destino
+            if (tipoDetectado || destinatariosDetectados.length > 0) {
+                setTimeout(function() { gerarDocumento(); }, 500);
+            }
+        }
+
+        function mostrarFeedbackComando(tipo, template, destinatarios, instrucao) {
+            var feedbackEl = document.getElementById('comandoFeedback');
+            if (!feedbackEl) {
+                feedbackEl = document.createElement('div');
+                feedbackEl.id = 'comandoFeedback';
+                feedbackEl.className = 'comando-feedback';
+                var voiceSection = document.getElementById('voiceCommandSection');
+                voiceSection.appendChild(feedbackEl);
+            }
+
+            var html = '<div class="feedback-items">';
+            if (tipo) {
+                html += '<span class="feedback-item tipo">📄 ' + tipo + '</span>';
+            }
+            if (destinatarios && destinatarios.length > 0) {
+                var destStr = destinatarios.map(function(d) { return d.sigla; }).join(', ');
+                html += '<span class="feedback-item dest">📬 ' + destStr + '</span>';
+            }
+            if (instrucao) {
+                html += '<span class="feedback-item instr">📝 "' + instrucao + '"</span>';
+            }
+            html += '</div>';
+
+            feedbackEl.innerHTML = html;
+            feedbackEl.classList.remove('hidden');
         }
 
         window.addEventListener('load', function() { initVoiceRecognition(); });
@@ -917,28 +1003,16 @@
 
         // ========== AUTOCOMPLETE ==========
         function configurarAutocomplete() {
-            var tipoInput = document.getElementById('tipoDocumentoInput');
-            var destInput = document.getElementById('destinatarioInput');
-
-            tipoInput.addEventListener('input', filtrarTipos);
-            tipoInput.addEventListener('focus', filtrarTipos);
-            tipoInput.addEventListener('keydown', function(e) { navegarAutocomplete(e, 'tipoDocumentoList'); });
-
-            destInput.addEventListener('input', filtrarDestinatarios);
-            destInput.addEventListener('focus', filtrarDestinatarios);
-            destInput.addEventListener('keydown', function(e) { navegarAutocomplete(e, 'destinatarioList'); });
-
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('.autocomplete-wrapper')) {
-                    document.getElementById('tipoDocumentoList').classList.add('hidden');
-                    document.getElementById('destinatarioList').classList.add('hidden');
-                }
-            });
+            // Autocomplete desabilitado - usar painel de voz/texto
+            return;
         }
 
         function filtrarTipos() {
+            // Função desabilitada - usar painel de voz/texto
+            return;
             var input = document.getElementById('tipoDocumentoInput');
             var list = document.getElementById('tipoDocumentoList');
+            if (!input || !list) return;
             var termo = input.value.toLowerCase().trim();
 
             var filtrados = tiposDocumento;
@@ -995,8 +1069,11 @@
         }
 
         function filtrarDestinatarios() {
+            // Função desabilitada - usar painel de voz/texto
+            return;
             var input = document.getElementById('destinatarioInput');
             var list = document.getElementById('destinatarioList');
+            if (!input || !list) return;
             var termo = input.value.toLowerCase().trim();
             
             var filtrados = todasAutoridades;
@@ -1046,19 +1123,23 @@
         }
 
         function selecionarDestinatario(el) {
+            // Função desabilitada - usar painel de voz/texto
+            return;
             var sigla = el.getAttribute('data-sigla');
             var nome = el.getAttribute('data-nome');
-            
+
             // Verifica se já foi adicionado
             if (destinatariosSelecionados.some(function(d) { return d.sigla === sigla; })) {
-                document.getElementById('destinatarioList').classList.add('hidden');
-                document.getElementById('destinatarioInput').value = '';
+                var list = document.getElementById('destinatarioList');
+                var input = document.getElementById('destinatarioInput');
+                if (list) list.classList.add('hidden');
+                if (input) input.value = '';
                 return;
             }
-            
+
             // Adiciona à lista
             destinatariosSelecionados.push({ sigla: sigla, nome: nome });
-            
+
             // Renderiza as tags
             renderizarTags();
             
@@ -1071,20 +1152,8 @@
         }
 
         function renderizarTags() {
-            var container = document.getElementById('tagsContainer');
-            var input = document.getElementById('destinatarioInput');
-            
-            // Remove tags existentes (mantém só o input)
-            var tags = container.querySelectorAll('.tag-item');
-            tags.forEach(function(tag) { tag.remove(); });
-            
-            // Adiciona as tags antes do input
-            destinatariosSelecionados.forEach(function(d, idx) {
-                var tag = document.createElement('span');
-                tag.className = 'tag-item';
-                tag.innerHTML = '[' + d.sigla + '] ' + d.nome + ' <button class="tag-remove" onclick="removerDestinatario(' + idx + ', event)">×</button>';
-                container.insertBefore(tag, input);
-            });
+            // Função desabilitada - usar painel de voz/texto
+            return;
         }
 
         function removerDestinatario(idx, event) {
@@ -1186,8 +1255,9 @@
             var status = document.getElementById('statusLeitura');
             var btn = document.getElementById('btnLer');
             
-            ['resumoBox', 'infoGrid', 'alertasBox', 'docsProcessoBox', 'sugestaoBox', 'configBox', 'editorContainer', 'validacoesBox', 'chatSection', 'acoesProcessoBox', 'voiceCommandSection'].forEach(function(id) {
-                document.getElementById(id).classList.add('hidden');
+            ['resumoBox', 'infoGrid', 'alertasBox', 'docsProcessoBox', 'sugestaoBox', 'editorContainer', 'validacoesBox', 'chatSection', 'acoesProcessoBox', 'voiceCommandSection'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
             });
             
             // Feedback inicial - Processo localizado
@@ -1230,16 +1300,20 @@
                     exibirAnalise(analiseAtual, data);
                     exibirDocumentosProcesso(docsProcesso);
                     
-                    document.getElementById('configBox').classList.remove('hidden');
                     document.getElementById('voiceCommandSection').classList.remove('hidden');
                     document.getElementById('chatSection').classList.remove('hidden');
                     document.getElementById('acoesProcessoBox').classList.remove('hidden');
-                    
+
+                    // Define tipo sugerido
                     if (analiseAtual.tipo_documento_sugerido) {
                         document.getElementById('tipoDocumento').value = analiseAtual.tipo_documento_sugerido;
-                    }
-                    if (analiseAtual.destinatario_sugerido) {
-                        document.getElementById('destinatario').value = analiseAtual.destinatario_sugerido;
+                        // Atualiza template baseado no tipo sugerido
+                        var tipoLower = analiseAtual.tipo_documento_sugerido.toLowerCase();
+                        if (tipoLower.indexOf('memorando') >= 0) {
+                            window.templateSelecionado = 'MEMO_GENERICO';
+                        } else if (tipoLower.indexOf('despacho') >= 0) {
+                            window.templateSelecionado = 'DESPACHO_SIMPLES';
+                        }
                     }
                     
                     // Mensagem de sucesso com detalhes
@@ -1747,7 +1821,8 @@
                     document.getElementById('previewDocumento').innerHTML = data.documento || data.html || '';
                     document.getElementById('editorContainer').classList.remove('hidden');
                     status.className = 'status status-success';
-                    status.textContent = 'Documento gerado com IA! Revise e insira no SEI.';
+                    var fonte = data.fonte === 'template' ? '📄 Template' : '🤖 IA';
+                    status.textContent = 'Documento gerado via ' + fonte + '! Revise e insira no SEI.';
                 } else {
                     status.className = 'status status-error';
                     status.textContent = 'Erro: ' + (data.erro || 'Falha ao gerar');
@@ -2523,7 +2598,6 @@ function carregarAnaliseHistorico(id) {
 
         exibirAnalise(analiseAtual, {});
         exibirDocumentosProcesso(docsProcesso);
-        document.getElementById('configBox').classList.remove('hidden');
         document.getElementById('voiceCommandSection').classList.remove('hidden');
         document.getElementById('chatSection').classList.remove('hidden');
         document.getElementById('acoesProcessoBox').classList.remove('hidden');
