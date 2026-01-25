@@ -19,6 +19,18 @@ DADOS DO REMETENTE (USE EXATAMENTE COMO FORNECIDO!)
 {legislacao}
 
 ======================================================================
+INSTRUÇÃO DO USUÁRIO (PRIORIDADE MÁXIMA!)
+======================================================================
+Se houver INSTRUÇÃO DO USUÁRIO na análise, siga EXATAMENTE o que foi
+solicitado para elaborar o conteúdo do documento. Exemplos de instruções:
+- "memorando para COC informando que o pedido foi deferido" → Gere um memorando DEFERINDO o pedido
+- "despacho encaminhando para providências" → Gere despacho de ENCAMINHAMENTO
+- "indeferir por falta de documentação" → Gere documento INDEFERINDO com essa justificativa
+- "deferir conforme análise" → Gere documento DEFERINDO baseado na análise
+
+A instrução do usuário DEVE guiar o TEOR/CONTEÚDO do documento.
+
+======================================================================
 ESTRUTURA OBRIGATÓRIA DO DOCUMENTO
 ======================================================================
 

@@ -54,10 +54,11 @@ class GerarDocumentoRequest(BaseModel):
     tipo_documento: str
     template_id: Optional[str] = None
     analise: Optional[dict] = None
-    destinatario: Optional[str] = None  # MantÃ©m compatibilidade
-    destinatarios: Optional[List[DestinatarioData]] = None  # Novo: lista de destinatÃ¡rios
+    destinatario: Optional[str] = None  # Mantém compatibilidade
+    destinatarios: Optional[List[DestinatarioData]] = None  # Novo: lista de destinatários
     remetente: Optional[RemetenteData] = None  # Novo: dados do remetente
     usuario_sei: Optional[str] = None
+    instrucao_voz: Optional[str] = None  # Instrução do usuário via comando de voz/texto
 
 class InserirSEIRequest(BaseModel):
     nup: str
@@ -639,13 +640,14 @@ RETORNE EXATAMENTE ESTE JSON (sem texto adicional):
 
 
 async def gerar_documento_com_ia(
-    tipo: str, 
-    nup: str, 
-    analise: dict, 
+    tipo: str,
+    nup: str,
+    analise: dict,
     destinatario: str = None,
     destinatarios: list = None,
     remetente: dict = None,
-    template_id: str = None
+    template_id: str = None,
+    instrucao_voz: str = None
 ) -> Dict:
     """Gera documento usando OpenAI GPT-4"""
     try:
@@ -724,7 +726,12 @@ async def gerar_documento_com_ia(
         
         # Extrai assunto da anÃ¡lise
         assunto = analise.get('assunto', '') or pedido.get('descricao', '') or analise.get('tipo_demanda', '')
-        
+
+        # Monta bloco de instrução do usuário (comando de voz)
+        bloco_instrucao = ""
+        if instrucao_voz and instrucao_voz.strip():
+            bloco_instrucao = f"INSTRUÇÃO DO USUÁRIO: {instrucao_voz.strip()}"
+
         contexto = f"""
 NUP: {nup}
 TIPO DE DOCUMENTO: {tipo}
@@ -736,6 +743,7 @@ PEDIDO: {pedido.get('descricao', '-')}
 
 SUGESTÃO DE AÃÃO: {sugestao.get('acao', '-') if isinstance(sugestao, dict) else '-'}
 FUNDAMENTAÃÃO: {sugestao.get('fundamentacao', '-') if isinstance(sugestao, dict) else '-'}
+{bloco_instrucao}
 """
         
         # Carrega prompt de geraÃ§Ã£o
@@ -750,6 +758,7 @@ FUNDAMENTAÃÃO: {sugestao.get('fundamentacao', '-') if isinstance(sugestao,
             prompt = prompt.replace("{vocativo}", vocativo)
             prompt = prompt.replace("{assunto}", assunto)
             prompt = prompt.replace("{legislacao}", "")
+            prompt = prompt.replace("{instrucao_voz}", instrucao_voz.strip() if instrucao_voz else "")
         else:
             prompt = f"""Gere um {tipo} formal para o processo {nup}.
 
@@ -889,7 +898,8 @@ def registrar_endpoints_laravel(app):
             destinatario=req.destinatario,
             destinatarios=destinatarios_dict,
             remetente=remetente_dict,
-            template_id=req.template_id
+            template_id=req.template_id,
+            instrucao_voz=req.instrucao_voz
         )
         
         return resultado

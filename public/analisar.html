@@ -1588,7 +1588,8 @@
                             cargo: usuarioAtual.cargo,
                             unidade: usuarioAtual.unidade
                         };
-                    })()
+                    })(),
+                    instrucao_voz: window.instrucaoVoz || ''
                 })
             })
             .then(function(resp) { return resp.json(); })

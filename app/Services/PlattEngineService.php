@@ -94,14 +94,15 @@ class PlattEngineService
      * @return array
      */
     public function gerarDocumento(
-        User $user, 
-        string $nup, 
-        string $tipoDocumento, 
+        User $user,
+        string $nup,
+        string $tipoDocumento,
         array $analise,
         ?string $destinatario = null,
         ?array $destinatarios = null,
         ?array $remetente = null,
-        ?string $templateId = null
+        ?string $templateId = null,
+        ?string $instrucaoVoz = null
     ): array {
         $payload = [
             'job_id' => 'job_' . Str::ulid(),
@@ -120,6 +121,7 @@ class PlattEngineService
                 'unidade' => $user->unidade,
             ],
             'usuario_sei' => $user->usuario_sei,
+            'instrucao_voz' => $instrucaoVoz,
         ];
 
         $response = $this->post('/v1/gerar-documento', $payload);

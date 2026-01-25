@@ -89,6 +89,7 @@ class ProcessoController extends Controller
             'destinatarios.*.cargo' => 'nullable|string',
             'remetente' => 'nullable|array',
             'template_id' => 'nullable|string|max:50',
+            'instrucao_voz' => 'nullable|string|max:500',
         ]);
 
         $user = $request->user();
@@ -101,7 +102,8 @@ class ProcessoController extends Controller
             destinatario: $request->destinatario,
             destinatarios: $request->destinatarios,
             remetente: $request->remetente,
-            templateId: $request->template_id
+            templateId: $request->template_id,
+            instrucaoVoz: $request->instrucao_voz
         );
 
         // Se sucesso, salva documento gerado
