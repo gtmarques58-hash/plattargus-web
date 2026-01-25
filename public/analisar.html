@@ -1635,8 +1635,8 @@
             document.getElementById('modalDoc').classList.add('hidden');
         }
 
-        // URL da API de Documentos Inteligente (mesmo servidor, porta 8105)
-        var API_DOC_INTELIGENTE = window.location.protocol + '//' + window.location.hostname + ':8105';
+        // URL da API de Documentos Inteligente (via proxy nginx)
+        var API_DOC_INTELIGENTE = '';
 
         function gerarDocumento() {
             if (!analiseAtual || !nupAtual) {

@@ -541,6 +541,7 @@ async def atuar_no_processo(
             # =================================================================
             # 6. ENDEREÇAMENTO (SE HOUVER)
             # =================================================================
+            enderecamento_preenchido = False
             if destinatario and destinatario.strip():
                 debug_print(f"Preenchendo destinatário: {destinatario}")
                 try:
@@ -560,11 +561,27 @@ async def atuar_no_processo(
                     await frame_end.locator("body").evaluate(
                         f"el => el.innerHTML = `{dest_escapado}`"
                     )
-                    debug_print(f"Destinatário injetado: {dest_html[:100]}...")
+                    debug_print(f"Destinatário injetado no iframe: {dest_html[:100]}...")
+                    enderecamento_preenchido = True
                 except Exception as e:
-                    # Se não conseguir, adiciona no corpo
-                    debug_print(f"Erro ao preencher endereçamento: {e}")
-                    corpo_html = f"<p><strong>AO SR(A). {destinatario}</strong></p><br>{corpo_html}"
+                    # Iframe não encontrado (ex: Ofício não tem iframe de Endereçamento)
+                    debug_print(f"Iframe de endereçamento não encontrado: {e}")
+                    enderecamento_preenchido = False
+
+            # =================================================================
+            # 6.1 ADICIONA DESTINATÁRIO NO CORPO (Para Ofício e similares)
+            # =================================================================
+            # Se não preencheu iframe de endereçamento, adiciona destinatário no início do corpo
+            if destinatario and not enderecamento_preenchido:
+                debug_print("Adicionando destinatário no início do corpo...")
+
+                # Formata destinatário como HTML (já vem formatado: "Ao Sr. NOME\nCARGO")
+                dest_html = destinatario.strip().replace("\n", "<br>")
+                dest_bloco = f'<p style="text-align: left;"><strong>{dest_html}</strong></p><br>'
+
+                # Adiciona no início do corpo
+                corpo_html = dest_bloco + corpo_html
+                debug_print(f"Destinatário adicionado ao corpo: {dest_html[:50]}...")
             
             # =================================================================
             # 7. INJETAR CONTEÚDO
