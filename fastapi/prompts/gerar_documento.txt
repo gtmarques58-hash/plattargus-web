@@ -3,9 +3,6 @@ Gere o CORPO de um {tipo_documento} formal para o CBMAC.
 ANÁLISE DO PROCESSO:
 {analise}
 
-NUP: {nup}
-TIPO DE DOCUMENTO: {tipo_documento}
-
 ======================================================================
 DADOS DO DESTINATÁRIO (USE EXATAMENTE COMO FORNECIDO!)
 ======================================================================
@@ -44,11 +41,14 @@ IGNORE informações da análise que não sejam relevantes para a instrução.
 ESTRUTURA OBRIGATÓRIA DO DOCUMENTO
 ======================================================================
 
-1. SEMPRE INICIE COM:
+1. CABEÇALHO DE IDENTIFICAÇÃO (para visualização na minuta):
 <p>• NUP: {nup}<br>
-- Tipo de documento: {tipo_documento}</p>
+• Tipo de documento: {tipo_documento}</p>
 
-2. DESTINATÁRIO(S) - COPIE EXATAMENTE OS DADOS FORNECIDOS ACIMA:
+   ⚠️ NOTA: Este bloco será removido automaticamente antes de enviar ao SEI.
+   Serve apenas para o usuário conferir os dados na prévia.
+
+2. DESTINATÁRIO(S) - COPIE EXATAMENTE OS DADOS FORNECIDOS:
 
    Para CADA destinatário listado acima, use este formato:
    <p style="text-align: left;">Ao(À) Sr(a). <b>[POSTO] [NOME]</b><br>
@@ -82,6 +82,12 @@ ESTRUTURA OBRIGATÓRIA DO DOCUMENTO
 REGRAS OBRIGATÓRIAS
 ======================================================================
 
+O QUE NÃO INCLUIR:
+- NÃO inclua NUP no corpo do documento (é metadado do SEI)
+- NÃO inclua "Tipo de documento" no corpo (é metadado do SEI)
+- NÃO use variáveis como @interessados_virgula_espaco@ ou similares
+- NÃO coloque [PREENCHER] ou placeholders - use os dados fornecidos!
+
 ESTILO DE ESCRITA:
 - Linguagem DIRETA e OBJETIVA - vá direto ao ponto
 - EVITE citações de leis/decretos a menos que sejam essenciais
@@ -95,7 +101,6 @@ FORMATAÇÃO HTML:
 - Texto do corpo DEVE ser justificado (text-align: justify)
 - Assinatura DEVE ser centralizada (text-align: center)
 - NÃO use apenas <br><br> para separar parágrafos
-- NÃO coloque [PREENCHER] ou [Cargo do Destinatário] - use os dados fornecidos!
 - NÃO invente nomes ou cargos - use APENAS os dados fornecidos acima
 - O título do documento (DESPACHO, MEMORANDO) NÃO vai no corpo - o SEI adiciona
 
@@ -104,14 +109,14 @@ EXEMPLO COM 1 DESTINATÁRIO
 ======================================================================
 
 <p>• NUP: 0609.012043.00323/2025-11<br>
-- Tipo de documento: Despacho</p>
+• Tipo de documento: Despacho</p>
 
 <p style="text-align: left;">Ao(À) Sr(a). <b>MAJ QOBMEC GILMAR TORRES MARQUES MOURA</b><br>
 Diretor de Recursos Humanos - CBMAC-DRH</p>
 
 <p style="text-align: left; text-indent: 1.5cm;">Senhor Diretor,</p>
 
-<p style="text-align: justify; text-indent: 1.5cm;">[Corpo do documento...]</p>
+<p style="text-align: justify; text-indent: 1.5cm;">Encaminho os presentes autos para conhecimento e providências cabíveis.</p>
 
 <p style="text-align: left; text-indent: 1.5cm;">Atenciosamente,</p>
 
@@ -124,7 +129,7 @@ EXEMPLO COM 2+ DESTINATÁRIOS (CIRCULAR)
 ======================================================================
 
 <p>• NUP: 0609.012043.00323/2025-11<br>
-- Tipo de documento: Memorando-Circular</p>
+• Tipo de documento: Memorando-Circular</p>
 
 <p style="text-align: left;">Ao(À) Sr(a). <b>MAJ QOBMEC RUANA DA CONCEIÇÃO XAVIER CASAS</b><br>
 Diretora de Planejamento - CBMAC-DPLAN</p>
@@ -134,7 +139,7 @@ Diretor de Saúde - CBMAC-DSAU</p>
 
 <p style="text-align: left; text-indent: 1.5cm;">Senhores Diretores,</p>
 
-<p style="text-align: justify; text-indent: 1.5cm;">[Corpo do documento...]</p>
+<p style="text-align: justify; text-indent: 1.5cm;">Solicito informar os dados dos militares lotados nessa Diretoria para fins de atualização cadastral.</p>
 
 <p style="text-align: left; text-indent: 1.5cm;">Atenciosamente,</p>
 

@@ -1,0 +1,66 @@
+version: '3.8'
+
+# =============================================================================
+# API DE DOCUMENTOS INTELIGENTE - PlattArgus Web
+# =============================================================================
+#
+# Serviço otimizado para criação de documentos SEI com classificação automática.
+#
+# GANHOS:
+# - 80% das requisições sem LLM → resposta em <500ms
+# - 88% redução de custo
+# - 100% determinístico para templates
+#
+# PORTAS:
+# - 8105: API de Documentos Inteligente
+#
+# DEPLOY:
+#   cd /opt/plattargus-web/fastapi/modelos
+#   docker-compose up -d
+#
+# =============================================================================
+
+services:
+  documento-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: plattargus-documento-inteligente
+    restart: always
+    ports:
+      - "8105:8105"
+    environment:
+      - PORT=8105
+      - SCRIPTS_DIR=/app/scripts
+      - MODELOS_DIR=/app/modelos
+      - TZ=America/Rio_Branco
+      - PYTHONUNBUFFERED=1
+      # API de Efetivo para buscar dados de servidores
+      - EFETIVO_API_URL=https://efetivo.gt2m58.cloud
+      - EFETIVO_API_KEY=gw_PlattArgusWeb2025_CBMAC
+    volumes:
+      # Scripts do PlattArgus (classificador, atuar_no_processo, etc.)
+      - /opt/plattargus-web/fastapi/scripts:/app/scripts:ro
+      # Modelos de documentos (.txt templates)
+      - /opt/plattargus-web/fastapi/modelos:/app/modelos:ro
+      # Sessões do SEI (compartilhado com runner)
+      - /opt/plattargus-web/data/sessions:/data/sessions
+      # Logs
+      - ./logs:/app/logs
+    networks:
+      - plattargus
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8105/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  plattargus:
+    external: true

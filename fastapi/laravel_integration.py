@@ -78,6 +78,54 @@ class AssinarSEIRequest(BaseModel):
 # FUNÃÃES AUXILIARES
 # ============================================================
 
+
+def limpar_html_para_sei(html: str) -> str:
+    """
+    Remove o bloco de NUP e Tipo de Documento do corpo HTML antes de enviar ao SEI.
+    O SEI já possui esses dados como metadados, então não devem aparecer no corpo.
+    """
+    # Padrão 1: Bloco completo com NUP e Tipo em um <p>
+    padrao_bloco = re.compile(
+        r'<p[^>]*>\s*[•\-]?\s*NUP\s*:\s*[\d\.\-/]+.*?</p>\s*',
+        re.IGNORECASE | re.DOTALL
+    )
+    html = padrao_bloco.sub('', html)
+
+    # Padrão 2: Linha separada só com NUP
+    padrao_nup = re.compile(
+        r'<p[^>]*>\s*[•\-]?\s*NUP\s*:\s*[\d\.\-/]+\s*</p>\s*',
+        re.IGNORECASE
+    )
+    html = padrao_nup.sub('', html)
+
+    # Padrão 3: Linha separada só com Tipo de documento
+    padrao_tipo = re.compile(
+        r'<p[^>]*>\s*[•\-]?\s*Tipo\s*(de\s*)?documento\s*:\s*[^<]+</p>\s*',
+        re.IGNORECASE
+    )
+    html = padrao_tipo.sub('', html)
+
+    # Padrão 4: Dentro de um <p> com <br>, remove só as linhas de NUP/Tipo
+    padrao_linha_nup = re.compile(
+        r'[•\-]?\s*NUP\s*:\s*[\d\.\-/]+\s*<br\s*/?>',
+        re.IGNORECASE
+    )
+    html = padrao_linha_nup.sub('', html)
+
+    padrao_linha_tipo = re.compile(
+        r'[•\-]?\s*Tipo\s*(de\s*)?documento\s*:\s*[^<]+<br\s*/?>',
+        re.IGNORECASE
+    )
+    html = padrao_linha_tipo.sub('', html)
+
+    # Remove parágrafos vazios que sobraram
+    html = re.sub(r'<p[^>]*>\s*</p>', '', html)
+
+    # Remove espaços em branco extras no início
+    html = html.lstrip()
+
+    return html
+
 def carregar_prompt(nome: str) -> str:
     """Carrega prompt do arquivo"""
     path = PROMPTS_DIR / f"{nome}.txt"
@@ -924,7 +972,7 @@ def registrar_endpoints_laravel(app):
                         "nup": req.nup,
                         "tipo_documento": req.tipo_documento,
                         "destinatario": req.destinatario or "",
-                        "texto_despacho": req.html,
+                        "texto_despacho": limpar_html_para_sei(req.html) if req.html else "",
                         "credentials": {
                             "usuario": req.credencial.usuario,
                             "senha": req.credencial.senha,
