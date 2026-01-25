@@ -38,6 +38,10 @@ from pydantic import BaseModel, Field
 SCRIPTS_DIR = os.environ.get("SCRIPTS_DIR", "/app/scripts")
 sys.path.insert(0, SCRIPTS_DIR)
 
+# Adiciona o diretório de modelos ao path (para templates_meta.py)
+MODELOS_DIR = os.environ.get("MODELOS_DIR", "/app/modelos")
+sys.path.insert(0, MODELOS_DIR)
+
 # Importa o classificador
 from classificador_documentos import (
     classificar_documento,
