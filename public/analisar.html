@@ -792,7 +792,8 @@
         }
 
         function processVoiceCommand() {
-            var input = document.getElementById('voiceInput').value.trim().toLowerCase();
+            var inputOriginal = document.getElementById('voiceInput').value.trim();
+            var input = inputOriginal.toLowerCase();
             if (!input) return;
             var tipoDetectado = null, templateDetectado = 'DESPACHO_SIMPLES', destDetectado = null;
             Object.keys(comandosMap).forEach(function(key) {
@@ -820,7 +821,7 @@
                     tagsContainer.insertBefore(tagEl, tagInput);
                 }
             }
-            window.instrucaoVoz = input;
+            window.instrucaoVoz = inputOriginal;
             if (tipoDetectado || destDetectado) setTimeout(function() { gerarDocumento(); }, 300);
         }
 

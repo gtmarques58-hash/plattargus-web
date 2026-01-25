@@ -881,6 +881,7 @@ def registrar_endpoints_laravel(app):
         print(f"ð¥ /v1/gerar-documento - NUP: {req.nup}, Tipo: {req.tipo_documento}", file=sys.stderr)
         print(f"   ð¦ destinatarios: {req.destinatarios}", file=sys.stderr)
         print(f"   ð¦ remetente: {req.remetente}", file=sys.stderr)
+        print(f"   🎤 instrucao_voz: {req.instrucao_voz}", file=sys.stderr)
         
         # Converte destinatarios de Pydantic para dict
         destinatarios_dict = None

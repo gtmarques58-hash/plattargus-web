@@ -6,7 +6,32 @@
       "Bash(php:*)",
       "Bash(git init:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(docker ps:*)",
+      "Bash(curl:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker exec plattargus-api-1 curl -s http://runner:8001/health)",
+      "Bash(docker exec:*)",
+      "Bash(git push:*)",
+      "Bash(ss:*)",
+      "Bash(kill:*)",
+      "Bash(ls:*)",
+      "Bash(python3:*)",
+      "Bash(docker stop:*)",
+      "Bash(docker rm:*)",
+      "Bash(fuser:*)",
+      "Bash(systemctl list-units:*)",
+      "Bash(docker restart:*)",
+      "Bash(docker cp:*)",
+      "Bash(git -C /opt/plattargus-web status)",
+      "Bash(git -C /opt/plattargus-web diff)",
+      "Bash(git -C /opt/plattargus-web log --oneline -5)",
+      "Bash(git -C /opt/plattargus-web add app/Services/PlattEngineService.php fastapi/scripts/assinar_documento.py fastapi/scripts/enviar_processo.py public/analisar.html)",
+      "Bash(git -C /opt/plattargus-web commit -m \"$\\(cat <<''EOF''\nFix listar bloco prefix issue and add screenshot evidence to assinar/enviar\n\n- Frontend: strip \"ver bloco\" prefix from bloco input field before sending\n- PHP: add nome to credenciais in listarDocsBloco for signature verification\n- assinar_documento.py: include base64 screenshot in JSON output\n- enviar_processo.py: include base64 screenshot in commit stage output\n- Frontend: display screenshot evidence on assinar and enviar success\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git -C /opt/plattargus-web push)",
+      "Bash(xxd:*)"
     ]
   }
 }
