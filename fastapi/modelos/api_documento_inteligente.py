@@ -30,7 +30,8 @@ import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+import httpx
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -41,6 +42,10 @@ sys.path.insert(0, SCRIPTS_DIR)
 # Adiciona o diretório de modelos ao path (para templates_meta.py)
 MODELOS_DIR = os.environ.get("MODELOS_DIR", "/app/modelos")
 sys.path.insert(0, MODELOS_DIR)
+
+# Configuração da API de Efetivo
+EFETIVO_API_URL = os.environ.get("EFETIVO_API_URL", "https://efetivo.gt2m58.cloud")
+EFETIVO_API_KEY = os.environ.get("EFETIVO_API_KEY", "gw_PlattArgusWeb2025_CBMAC")
 
 # Importa o classificador
 from classificador_documentos import (
@@ -300,6 +305,122 @@ def consultar_lista_contatos(sigla: str) -> Optional[Dict[str, str]]:
 
 
 # =============================================================================
+# CLIENTE API DE EFETIVO
+# =============================================================================
+
+class MilitarResponse(BaseModel):
+    """Dados de um militar retornado pela API de Efetivo."""
+    matricula: str
+    matricula_completa: str
+    nome: str
+    posto_grad: str
+    lotacao: Optional[str] = None
+    cargo: Optional[str] = None
+    formatado: str  # Ex: "MAJ QOBMEC Mat. 9268863-3 GILMAR TORRES MARQUES MOURA"
+
+
+async def buscar_militar_efetivo(query: str, limit: int = 10) -> List[Dict]:
+    """
+    Busca militar na API de Efetivo por nome ou matricula.
+    Retorna lista de registros encontrados.
+    """
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            response = await client.get(
+                f"{EFETIVO_API_URL}/efetivo/search",
+                params={"q": query, "limit": limit},
+                headers={"X-API-Key": EFETIVO_API_KEY}
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data.get("records", [])
+        except httpx.TimeoutException:
+            logger.warning(f"Timeout ao buscar militar: {query}")
+            return []
+        except Exception as e:
+            logger.warning(f"Erro ao buscar militar '{query}': {e}")
+            return []
+
+
+async def buscar_militar_por_matricula(matricula: str) -> Optional[Dict]:
+    """
+    Busca militar por matricula exata na API de Efetivo.
+    Retorna dados completos do militar ou None se nao encontrado.
+    """
+    # A API de Efetivo aceita matricula completa (com hifen) ou busca por aproximacao
+    mat_busca = matricula.strip()
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            response = await client.get(
+                f"{EFETIVO_API_URL}/efetivo/{mat_busca}",
+                headers={"X-API-Key": EFETIVO_API_KEY}
+            )
+            if response.status_code == 404:
+                return None
+            response.raise_for_status()
+            return response.json()
+        except httpx.TimeoutException:
+            logger.warning(f"Timeout ao buscar matricula: {matricula}")
+            return None
+        except Exception as e:
+            logger.warning(f"Erro ao buscar matricula '{matricula}': {e}")
+            return None
+
+
+def formatar_militar(record: Dict) -> MilitarResponse:
+    """Formata registro da API de Efetivo no padrao do sistema."""
+    matricula = record.get("matricula", "")
+    nome = record.get("nome", "")
+    posto_grad = record.get("posto_grad", "")
+    lotacao = record.get("lotacao", "")
+    cargo = record.get("funcao", "") or ""
+
+    # Formato padrao: "MAJ QOBMEC Mat. 9268863-3 GILMAR TORRES MARQUES MOURA"
+    formatado = f"{posto_grad} Mat. {matricula} {nome}".strip()
+
+    # Extrai matricula base (sem digito verificador)
+    mat_base = matricula.split("-")[0] if "-" in matricula else matricula
+
+    return MilitarResponse(
+        matricula=mat_base,
+        matricula_completa=matricula,
+        nome=nome,
+        posto_grad=posto_grad,
+        lotacao=lotacao,
+        cargo=cargo,
+        formatado=formatado
+    )
+
+
+async def completar_dados_remetente(remetente: Dict) -> Dict:
+    """
+    Completa dados do remetente buscando na API de Efetivo.
+    Se tiver matricula, busca dados atualizados.
+    """
+    matricula = remetente.get("matricula", "")
+
+    if not matricula:
+        return remetente
+
+    # Busca na API de Efetivo
+    dados_efetivo = await buscar_militar_por_matricula(matricula)
+
+    if dados_efetivo:
+        # Atualiza dados do remetente com dados do Efetivo
+        # Mantem dados informados pelo usuario se existirem
+        return {
+            "nome": remetente.get("nome") or dados_efetivo.get("nome", ""),
+            "posto": remetente.get("posto") or dados_efetivo.get("posto_grad", ""),
+            "cargo": remetente.get("cargo") or dados_efetivo.get("funcao", ""),
+            "matricula": dados_efetivo.get("matricula", matricula),
+            "lotacao": dados_efetivo.get("lotacao", ""),
+        }
+
+    return remetente
+
+
+# =============================================================================
 # ENDPOINTS
 # =============================================================================
 
@@ -334,6 +455,81 @@ async def listar_templates():
         "texto_livre_sempre": TEXTO_LIVRE_SEMPRE,
     }
 
+
+# =============================================================================
+# ENDPOINTS DE BUSCA DE MILITAR (API EFETIVO)
+# =============================================================================
+
+@app.get("/militar/buscar")
+async def buscar_militar(
+    q: str = Query(..., min_length=2, description="Termo de busca (nome ou matricula)"),
+    limit: int = Query(10, ge=1, le=50, description="Limite de resultados")
+):
+    """
+    Busca militares na API de Efetivo.
+    Usado para autocomplete no frontend.
+
+    Exemplo de uso:
+        GET /militar/buscar?q=gilmar&limit=5
+
+    Retorna lista de militares formatados:
+        - matricula: "9268863"
+        - matricula_completa: "9268863-3"
+        - nome: "GILMAR TORRES MARQUES MOURA"
+        - posto_grad: "MAJ QOBMEC"
+        - lotacao: "COMANDO GERAL"
+        - formatado: "MAJ QOBMEC Mat. 9268863-3 GILMAR TORRES MARQUES MOURA"
+    """
+    inicio = time.time()
+
+    # Busca na API de Efetivo
+    records = await buscar_militar_efetivo(q, limit)
+
+    # Formata resultados
+    militares = [formatar_militar(r).dict() for r in records]
+
+    tempo_ms = int((time.time() - inicio) * 1000)
+
+    return {
+        "query": q,
+        "total": len(militares),
+        "militares": militares,
+        "tempo_ms": tempo_ms,
+        "fonte": "efetivo-api"
+    }
+
+
+@app.get("/militar/{matricula}")
+async def obter_militar(matricula: str):
+    """
+    Obtem dados completos de um militar por matricula.
+
+    Exemplo de uso:
+        GET /militar/9268863
+        GET /militar/9268863-3
+
+    Retorna dados completos do militar ou 404 se nao encontrado.
+    """
+    dados = await buscar_militar_por_matricula(matricula)
+
+    if not dados:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Militar com matricula '{matricula}' nao encontrado"
+        )
+
+    militar = formatar_militar(dados)
+
+    return {
+        "sucesso": True,
+        "militar": militar.dict(),
+        "fonte": "efetivo-api"
+    }
+
+
+# =============================================================================
+# ENDPOINTS DE DOCUMENTO
+# =============================================================================
 
 @app.post("/documento/classificar", response_model=Dict[str, Any])
 async def classificar_apenas(request: ClassificarRequest):
@@ -384,21 +580,31 @@ async def criar_documento(request: CriarDocumentoRequest):
     inicio = time.time()
     
     logger.info(f"[CRIAR] NUP={request.nup} | Mensagem='{request.mensagem}' | Sigla={request.sigla}")
-    
+
     # =========================================================================
-    # 1. MONTA CONTEXTO
+    # 1. MONTA CONTEXTO (com dados do Efetivo se disponivel)
     # =========================================================================
+    remetente_dados = {
+        "nome": request.remetente.nome,
+        "posto": request.remetente.posto,
+        "cargo": request.remetente.cargo,
+        "matricula": request.remetente.matricula,
+    }
+
+    # Tenta completar dados do remetente via API de Efetivo
+    if request.remetente.matricula:
+        try:
+            remetente_dados = await completar_dados_remetente(remetente_dados)
+            logger.info(f"[EFETIVO] Dados do remetente completados: {remetente_dados.get('nome')}")
+        except Exception as e:
+            logger.warning(f"[EFETIVO] Erro ao completar dados: {e}")
+
     contexto = {
         "sigla": request.sigla,
         "nup": request.nup,
-        "remetente": {
-            "nome": request.remetente.nome,
-            "posto": request.remetente.posto,
-            "cargo": request.remetente.cargo,
-            "matricula": request.remetente.matricula,
-        }
+        "remetente": remetente_dados
     }
-    
+
     # =========================================================================
     # 2. CLASSIFICA
     # =========================================================================

@@ -16,6 +16,10 @@ SEI_RUNNER_URL = os.getenv("SEI_RUNNER_URL", "http://runner:8001")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 PROMPTS_DIR = Path("/app/prompts")
 
+# API de Efetivo
+EFETIVO_API_URL = os.getenv("EFETIVO_API_URL", "https://efetivo.gt2m58.cloud")
+EFETIVO_API_KEY = os.getenv("EFETIVO_API_KEY", "gw_PlattArgusWeb2025_CBMAC")
+
 # ============================================================
 # MODELOS
 # ============================================================
@@ -861,12 +865,141 @@ Use style inline para formataÃ§Ã£o:
         return {"sucesso": False, "erro": str(e)}
 
 # ============================================================
+# CLIENTE API DE EFETIVO
+# ============================================================
+
+async def buscar_militar_efetivo(query: str, limit: int = 10) -> List[Dict]:
+    """
+    Busca militar na API de Efetivo por nome ou matricula.
+    Retorna lista de registros encontrados.
+    """
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            response = await client.get(
+                f"{EFETIVO_API_URL}/efetivo/search",
+                params={"q": query, "limit": limit},
+                headers={"X-API-Key": EFETIVO_API_KEY}
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data.get("records", [])
+        except httpx.TimeoutException:
+            print(f"[EFETIVO] Timeout ao buscar: {query}", file=sys.stderr)
+            return []
+        except Exception as e:
+            print(f"[EFETIVO] Erro ao buscar '{query}': {e}", file=sys.stderr)
+            return []
+
+
+async def buscar_militar_por_matricula(matricula: str) -> Optional[Dict]:
+    """
+    Busca militar por matricula exata na API de Efetivo.
+    """
+    # A API de Efetivo aceita matricula completa (com hifen)
+    mat_busca = matricula.strip()
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            response = await client.get(
+                f"{EFETIVO_API_URL}/efetivo/{mat_busca}",
+                headers={"X-API-Key": EFETIVO_API_KEY}
+            )
+            if response.status_code == 404:
+                return None
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"[EFETIVO] Erro ao buscar matricula '{matricula}': {e}", file=sys.stderr)
+            return None
+
+
+def formatar_militar(record: Dict) -> Dict:
+    """Formata registro da API de Efetivo no padrao do sistema."""
+    matricula = record.get("matricula", "")
+    nome = record.get("nome", "")
+    posto_grad = record.get("posto_grad", "")
+    lotacao = record.get("lotacao", "")
+    cargo = record.get("funcao", "") or ""
+
+    # Formato padrao: "MAJ QOBMEC Mat. 9268863-3 GILMAR TORRES MARQUES MOURA"
+    formatado = f"{posto_grad} Mat. {matricula} {nome}".strip()
+    mat_base = matricula.split("-")[0] if "-" in matricula else matricula
+
+    return {
+        "matricula": mat_base,
+        "matricula_completa": matricula,
+        "nome": nome,
+        "posto_grad": posto_grad,
+        "lotacao": lotacao,
+        "cargo": cargo,
+        "formatado": formatado
+    }
+
+
+# ============================================================
 # REGISTRO DOS ENDPOINTS
 # ============================================================
 
 def registrar_endpoints_laravel(app):
-    from fastapi import Request
-    
+    from fastapi import Request, Query
+
+    # ==========================================================
+    # ENDPOINTS DE BUSCA DE MILITAR (API EFETIVO)
+    # ==========================================================
+
+    @app.get("/api/militar/buscar")
+    async def api_buscar_militar(
+        q: str = Query(..., min_length=2, description="Termo de busca"),
+        limit: int = Query(10, ge=1, le=50, description="Limite de resultados")
+    ):
+        """
+        Busca militares na API de Efetivo.
+        Usado para autocomplete no frontend.
+
+        Exemplo: GET /api/militar/buscar?q=gilmar&limit=5
+        """
+        import time
+        inicio = time.time()
+
+        records = await buscar_militar_efetivo(q, limit)
+        militares = [formatar_militar(r) for r in records]
+        tempo_ms = int((time.time() - inicio) * 1000)
+
+        return {
+            "sucesso": True,
+            "query": q,
+            "total": len(militares),
+            "militares": militares,
+            "tempo_ms": tempo_ms,
+            "fonte": "efetivo-api"
+        }
+
+    @app.get("/api/militar/{matricula}")
+    async def api_obter_militar(matricula: str):
+        """
+        Obtem dados completos de um militar por matricula.
+
+        Exemplo: GET /api/militar/9268863
+        """
+        dados = await buscar_militar_por_matricula(matricula)
+
+        if not dados:
+            return {
+                "sucesso": False,
+                "erro": f"Militar com matricula '{matricula}' nao encontrado"
+            }
+
+        militar = formatar_militar(dados)
+        return {
+            "sucesso": True,
+            "militar": militar,
+            "fonte": "efetivo-api"
+        }
+
+    # ==========================================================
+    # ENDPOINTS EXISTENTES
+    # ==========================================================
+
     @app.post("/api/v2/analisar-processo")
     async def analisar_processo_v2(req: AnalisarProcessoRequest, request: Request):
         """

@@ -218,12 +218,14 @@ async def buscar_militar_api(query: str, limit: int = 10) -> List[Dict]:
 
 async def buscar_militar_por_matricula(matricula: str) -> Optional[Dict]:
     """Busca militar por matrícula exata"""
-    mat_limpa = matricula.split("-")[0].replace(".", "")
-    
+    # A API de Efetivo aceita matricula completa (com hifen) ou apenas numeros
+    # Primeiro tenta com a matricula como veio
+    mat_busca = matricula.strip()
+
     async with httpx.AsyncClient(timeout=10.0) as client:
         try:
             response = await client.get(
-                f"{EFETIVO_API_URL}/efetivo/{mat_limpa}",
+                f"{EFETIVO_API_URL}/efetivo/{mat_busca}",
                 headers={"X-API-Key": EFETIVO_API_KEY}
             )
             if response.status_code == 404:

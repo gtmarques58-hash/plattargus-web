@@ -141,6 +141,9 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ARGUS_MASTER_KEY=${ARGUS_MASTER_KEY}
       - SEI_RUNNER_URL=http://runner:8001
+      # API de Efetivo para buscar dados de servidores
+      - EFETIVO_API_URL=https://efetivo.gt2m58.cloud
+      - EFETIVO_API_KEY=gw_PlattArgusWeb2025_CBMAC
     volumes:
       - ./fastapi/scripts:/app/scripts:ro
       - ./fastapi/prompts:/app/prompts:ro
