@@ -528,15 +528,59 @@ class ProcessRequest(BaseModel):
     usuario: str | None = None
     senha: str | None = None
     orgao_id: str = "31"
+    # Cache
+    force: bool = False  # Se True, ignora cache e reprocessa
 
 @http_app.get("/health")
 async def health():
     return {"ok": True, "service": "worker-v2.0"}
 
+
+def buscar_cache_por_nup(nup: str) -> dict | None:
+    """Busca resumo em cache pelo NUP (verifica arquivos de resumo)."""
+    # Busca em todos os arquivos de resumo
+    for resumo_file in DIR_RESUMO.glob("*.json"):
+        try:
+            data = json.loads(resumo_file.read_text(encoding="utf-8"))
+            if data.get("nup") == nup:
+                return {
+                    "job_id": data.get("job_id"),
+                    "resumo_texto": data.get("resumo_texto", ""),
+                    "resumo": data.get("resumo", {}),
+                    "metricas": data.get("metricas", {}),
+                    "from_cache": True
+                }
+        except:
+            continue
+    return None
+
+
 @http_app.post("/process-now")
 async def process_now(req: ProcessRequest):
-    job_id = str(uuid.uuid4())
     modo = "WEB" if req.usuario else "SIGLA"
+
+    # 1. VERIFICAR CACHE (se não forçar reprocessamento)
+    if not req.force:
+        cache = buscar_cache_por_nup(req.nup)
+        if cache:
+            print(f"[CACHE] {req.nup} encontrado!", file=sys.stderr)
+            resumo = cache.get("resumo", {})
+            return {
+                "status": "ok",
+                "nup": req.nup,
+                "job_id": cache.get("job_id"),
+                "from_cache": True,
+                "resumo_texto": cache.get("resumo_texto"),
+                "situacao": resumo.get("situacao", {}).get("status"),
+                "interessado": resumo.get("interessado"),
+                "pedido": resumo.get("pedido"),
+                "confianca": resumo.get("confianca"),
+                "metricas": cache.get("metricas"),
+                "erro": None
+            }
+
+    # 2. PROCESSAR (não tem cache ou force=True)
+    job_id = str(uuid.uuid4())
     print(f"[DIRETO-{modo}] {req.nup} ({job_id})", file=sys.stderr)
 
     try:
@@ -548,12 +592,14 @@ async def process_now(req: ProcessRequest):
             "senha": req.senha,
             "orgao_id": req.orgao_id
         }
-        result = await processar_job(job_data, job_id, update_db=False)
+        # update_db=True para salvar no banco e permitir cache futuro
+        result = await processar_job(job_data, job_id, update_db=True)
         p = result.get("pipeline", {})
         return {
             "status": "ok" if result.get("sucesso") else "erro",
             "nup": req.nup,
             "job_id": job_id,
+            "from_cache": False,
             "resumo_texto": result.get("resumo_processo"),
             "situacao": p.get("situacao"),
             "interessado": p.get("interessado"),

@@ -181,14 +181,17 @@ async def chamar_sei_reader_com_credencial(nup: str, credencial: CredencialSEI) 
 
             if data.get("status") == "ok":
                 duracao = time.time() - t0
-                print(f"   ✓ Worker OK em {duracao:.1f}s", file=sys.stderr)
+                from_cache = data.get("from_cache", False)
+                cache_info = " (CACHE)" if from_cache else ""
+                print(f"   ✓ Worker OK{cache_info} em {duracao:.1f}s", file=sys.stderr)
 
                 # Montar resultado no formato esperado
                 return {
                     "sucesso": True,
                     "nup": nup,
                     "pipeline_v2": True,
-                    "fonte": "detalhar-worker",
+                    "from_cache": from_cache,
+                    "fonte": "detalhar-worker-cache" if from_cache else "detalhar-worker",
                     "job_id": data.get("job_id"),
                     "resumo_processo": data.get("resumo_texto", ""),
                     "resumo_executivo": data.get("resumo_texto", ""),
