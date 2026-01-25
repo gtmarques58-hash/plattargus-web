@@ -568,6 +568,33 @@
     </div>
 </div>
 
+<!-- Modal: Documento Criado no SEI -->
+<div id="modalDocumentoCriado" class="modal hidden">
+    <div class="modal-content" style="max-width:550px;position:relative;text-align:center">
+        <button class="modal-close" onclick="fecharModalDocumentoCriado()">X</button>
+        <div class="documento-criado-box">
+            <div style="font-size:3rem;margin-bottom:15px">✅</div>
+            <h3 style="color:var(--success);margin-bottom:10px">Ordem Cumprida!</h3>
+            <p style="color:var(--text-primary);font-size:1.1rem;margin-bottom:20px">
+                Documento SEI n° <strong id="docCriadoSeiNumero" style="color:var(--accent)">-</strong> criado com sucesso.
+            </p>
+            <div class="doc-info-criado" style="background:var(--bg-tertiary);padding:15px;border-radius:8px;margin-bottom:20px;text-align:left">
+                <p style="margin:5px 0"><strong>Tipo:</strong> <span id="docCriadoTipo">-</span></p>
+                <p style="margin:5px 0"><strong>Cabeçalho:</strong> <span id="docCriadoCabecalho">-</span></p>
+                <p style="margin:5px 0"><strong>Processo:</strong> <span id="docCriadoNup">-</span></p>
+            </div>
+            <p style="color:var(--warning);font-size:0.85rem;margin-bottom:20px;background:rgba(245,158,11,0.15);padding:10px;border-radius:6px">
+                ⚠️ Recomendamos <strong>Ver Documento</strong> antes de assinar para confirmar que o conteúdo foi inserido corretamente.
+            </p>
+            <div class="btn-group" style="justify-content:center;flex-wrap:wrap">
+                <button class="btn btn-info" onclick="verDocumentoCriado()">👁️ Ver Documento</button>
+                <button class="btn btn-success" onclick="assinarDocumentoCriado()">✍️ Assinar</button>
+                <button class="btn btn-secondary" onclick="fecharModalDocumentoCriado()">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal: Histórico de Análises -->
 <div id="modalHistorico" class="modal hidden">
     <div class="modal-content modal-lg">
@@ -687,6 +714,7 @@
         var arquivoChatAnexado = null;
         var ultimaRespostaSugestao = '';
         var usuarioAtual = null;
+        var ultimoDocCriado = null;
 
         // ========== PAINEL DE VOZ v1.0 ==========
         var isVoiceListening = false;
@@ -1664,18 +1692,18 @@
             var html = getHTMLFromPreview();
             var tipo = document.getElementById('tipoDocumento').value;
             var dest = document.getElementById('destinatario').value;
-            
+
             if (!html || !nupAtual) {
                 alert('Gere um documento primeiro');
                 return;
             }
             if (!confirm('Inserir ' + tipo + ' no processo ' + nupAtual + '?')) return;
-            
+
             var status = document.getElementById('statusInserir');
             status.className = 'status status-loading';
             status.innerHTML = '<span class="spinner"></span> Inserindo no SEI...';
             status.classList.remove('hidden');
-            
+
             fetch(API + '/api/processos/inserir-sei', {
                 method: 'POST',
                 headers: getAuthHeaders(),
@@ -1690,12 +1718,37 @@
             .then(function(resp) { return resp.json(); })
             .then(function(data) {
                 if (data.sucesso) {
-                    status.className = 'status status-success';
-                    status.innerHTML = '<strong>Documento inserido!</strong> ' + (data.documento_nome || '');
-                    if (data.sei_numero) {
-                        window.ultimoSeiNumeroInserido = data.sei_numero;
+                    // Captura o número SEI do documento criado
+                    var seiNumero = data.sei_numero_arvore || data.sei_numero_editor || data.sei_numero || '';
+                    var cabecalho = data.cabecalho_doc || '';
+                    var tipoDoc = data.tipo_documento || tipo;
+
+                    // Armazena dados do documento criado
+                    ultimoDocCriado = {
+                        sei_numero: seiNumero,
+                        cabecalho: cabecalho,
+                        tipo: tipoDoc,
+                        numero: data.numero_doc || '',
+                        nup: nupAtual
+                    };
+
+                    // Mantém compatibilidade
+                    if (seiNumero) {
+                        window.ultimoSeiNumeroInserido = seiNumero;
                     }
+
+                    // Atualiza status com número SEI
+                    status.className = 'status status-success';
+                    if (seiNumero) {
+                        status.innerHTML = '<strong>Documento SEI n° ' + seiNumero + ' criado!</strong>';
+                    } else {
+                        status.innerHTML = '<strong>Documento inserido!</strong> ' + (cabecalho || '');
+                    }
+
                     document.getElementById('btnAssinarProcesso').classList.remove('hidden');
+
+                    // Mostra modal com opções
+                    mostrarModalDocumentoCriado(seiNumero, tipoDoc, cabecalho, nupAtual);
                 } else {
                     throw new Error(data.erro || 'Erro');
                 }
@@ -1704,6 +1757,37 @@
                 status.className = 'status status-error';
                 status.textContent = 'Erro: ' + e.message;
             });
+        }
+
+        function mostrarModalDocumentoCriado(seiNumero, tipo, cabecalho, nup) {
+            document.getElementById('docCriadoSeiNumero').textContent = seiNumero || '-';
+            document.getElementById('docCriadoTipo').textContent = tipo || '-';
+            document.getElementById('docCriadoCabecalho').textContent = cabecalho || '-';
+            document.getElementById('docCriadoNup').textContent = nup || '-';
+            document.getElementById('modalDocumentoCriado').classList.remove('hidden');
+        }
+
+        function fecharModalDocumentoCriado() {
+            document.getElementById('modalDocumentoCriado').classList.add('hidden');
+        }
+
+        function verDocumentoCriado() {
+            if (!ultimoDocCriado || !ultimoDocCriado.sei_numero) {
+                alert('Número SEI não disponível');
+                return;
+            }
+            fecharModalDocumentoCriado();
+            visualizarDoc(ultimoDocCriado.sei_numero);
+        }
+
+        function assinarDocumentoCriado() {
+            if (!ultimoDocCriado || !ultimoDocCriado.sei_numero) {
+                alert('Número SEI não disponível');
+                return;
+            }
+            fecharModalDocumentoCriado();
+            var docNome = (ultimoDocCriado.tipo || 'Documento') + ' ' + (ultimoDocCriado.numero || '');
+            prepararAssinatura(ultimoDocCriado.sei_numero, docNome.trim(), ultimoDocCriado.nup);
         }
 
         function toggleChat() {
