@@ -211,8 +211,11 @@
 .voice-circle{width:150px;height:150px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#b91c1c);display:flex;align-items:center;justify-content:center;font-size:60px;animation:voicePulse 1.5s infinite;box-shadow:0 0 60px var(--accent-glow)}
 .voice-listening-text{margin-top:24px;font-size:1.2rem;color:var(--text-primary)}
 .voice-transcript{margin-top:16px;padding:16px 32px;background:var(--bg-card);border-radius:12px;font-size:1rem;max-width:500px;text-align:center;min-height:50px;color:var(--text-secondary);border:1px solid var(--border-color)}
-.voice-cancel-btn{margin-top:24px;padding:12px 32px;border-radius:8px;border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer;font-family:var(--font-display);transition:all 0.2s}
+.voice-overlay-buttons{display:flex;gap:16px;margin-top:24px}
+.voice-cancel-btn{padding:12px 32px;border-radius:8px;border:1px solid var(--border-color);background:transparent;color:var(--text-primary);cursor:pointer;font-family:var(--font-display);transition:all 0.2s}
 .voice-cancel-btn:hover{border-color:var(--accent);color:var(--accent)}
+.voice-finish-btn{padding:12px 32px;border-radius:8px;border:none;background:var(--success);color:white;cursor:pointer;font-family:var(--font-display);font-weight:600;transition:all 0.2s;box-shadow:0 4px 15px rgba(16,185,129,0.4)}
+.voice-finish-btn:hover{background:#0ea66d;transform:translateY(-2px);box-shadow:0 6px 20px rgba(16,185,129,0.5)}
     </style>
 </head>
 <body>
@@ -708,28 +711,60 @@
             'voltar': { tipo: 'Despacho', template: 'DESPACHO_ENCAMINHAMENTO' }
         };
 
+        var voiceTranscriptAccumulated = '';
+
         function initVoiceRecognition() {
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return;
             var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             voiceRecognition = new SpeechRecognition();
-            voiceRecognition.continuous = false;
+            voiceRecognition.continuous = true;
             voiceRecognition.interimResults = true;
             voiceRecognition.lang = 'pt-BR';
             voiceRecognition.onresult = function(event) {
-                var transcript = '';
+                var interimTranscript = '';
+                var finalTranscript = '';
                 for (var i = event.resultIndex; i < event.results.length; i++) {
-                    transcript += event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
                 }
-                document.getElementById('voiceTranscript').textContent = '"' + transcript + '"';
-                if (event.results[event.results.length - 1].isFinal) {
-                    document.getElementById('voiceInput').value = transcript;
-                    setTimeout(function() { toggleVoiceListening(); processVoiceCommand(); }, 500);
+                if (finalTranscript) {
+                    voiceTranscriptAccumulated += (voiceTranscriptAccumulated ? ' ' : '') + finalTranscript.trim();
+                }
+                var displayText = voiceTranscriptAccumulated + (interimTranscript ? ' ' + interimTranscript : '');
+                document.getElementById('voiceTranscript').textContent = displayText ? '"' + displayText + '"' : 'Fale seu comando...';
+                // Detecta comando de voz "concluir"
+                if (finalTranscript.toLowerCase().indexOf('concluir') >= 0) {
+                    voiceTranscriptAccumulated = voiceTranscriptAccumulated.replace(/concluir/gi, '').trim();
+                    finalizarEscuta();
                 }
             };
             voiceRecognition.onerror = function(event) {
-                document.getElementById('voiceTranscript').textContent = 'Erro: ' + event.error;
-                setTimeout(function() { toggleVoiceListening(); }, 2000);
+                if (event.error !== 'no-speech') {
+                    document.getElementById('voiceTranscript').textContent = 'Erro: ' + event.error;
+                }
             };
+            voiceRecognition.onend = function() {
+                // Reinicia se ainda estiver em modo de escuta (para manter contínuo)
+                if (isVoiceListening && voiceRecognition) {
+                    try { voiceRecognition.start(); } catch (e) {}
+                }
+            };
+        }
+
+        function finalizarEscuta() {
+            var transcript = voiceTranscriptAccumulated.trim();
+            isVoiceListening = false;
+            document.getElementById('voiceOverlay').classList.remove('active');
+            document.getElementById('voiceBtn').classList.remove('listening');
+            if (voiceRecognition) try { voiceRecognition.stop(); } catch (e) {}
+            if (transcript) {
+                document.getElementById('voiceInput').value = transcript;
+                processVoiceCommand();
+            }
+            voiceTranscriptAccumulated = '';
         }
 
         function toggleVoiceListening() {
@@ -737,6 +772,7 @@
             var overlay = document.getElementById('voiceOverlay');
             var btn = document.getElementById('voiceBtn');
             if (isVoiceListening) {
+                voiceTranscriptAccumulated = '';
                 overlay.classList.add('active');
                 btn.classList.add('listening');
                 document.getElementById('voiceTranscript').textContent = 'Fale seu comando...';
@@ -746,6 +782,7 @@
                 overlay.classList.remove('active');
                 btn.classList.remove('listening');
                 if (voiceRecognition) try { voiceRecognition.stop(); } catch (e) {}
+                voiceTranscriptAccumulated = '';
             }
         }
 
@@ -2722,9 +2759,12 @@ function executarAssinaturaProcesso() {
     </script>
 <div id="voiceOverlay" class="voice-overlay">
     <div class="voice-circle">🎤</div>
-    <div class="voice-listening-text">Ouvindo...</div>
+    <div class="voice-listening-text">Ouvindo... (diga "concluir" ou clique no botão)</div>
     <div id="voiceTranscript" class="voice-transcript">Fale seu comando...</div>
-    <button class="voice-cancel-btn" onclick="toggleVoiceListening()">Cancelar</button>
+    <div class="voice-overlay-buttons">
+        <button class="voice-cancel-btn" onclick="toggleVoiceListening()">Cancelar</button>
+        <button class="voice-finish-btn" onclick="finalizarEscuta()">✓ Concluir</button>
+    </div>
 </div>
 </body>
 </html>
