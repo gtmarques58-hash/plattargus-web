@@ -148,6 +148,7 @@ services:
       - ./fastapi/scripts:/app/scripts:ro
       - ./fastapi/prompts:/app/prompts:ro
       - ./fastapi/modelos:/app/modelos:ro
+      - ./fastapi/laravel_integration.py:/app/laravel_integration.py:ro
       - /root/secretario-sei/data:/data:ro
     networks:
       - plattargus
@@ -177,6 +178,7 @@ services:
       - ARGUS_AUTORIDADES_DB=/data/argus_autoridades.db
     volumes:
       - ./fastapi/scripts:/app/scripts:ro
+      - ./fastapi/api_runner.py:/app/api_runner.py:ro
       - /root/secretario-sei/data:/data
     networks:
       - plattargus

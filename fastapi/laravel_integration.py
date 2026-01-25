@@ -1000,7 +1000,8 @@ async def gerar_documento_com_ia(
         print(f"[LLM] Sem instrução explícita, usando LLM para gerar conteúdo contextualizado", file=sys.stderr)
 
     # =========================================================
-    # TENTATIVA 2: Usar LLM (OpenAI) para gerar conteúdo
+    # TENTATIVA 2: Usar LLM (OpenAI) para gerar APENAS O CORPO
+    # O código monta a estrutura completa (destinatário, vocativo, fecho, assinatura)
     # =========================================================
     try:
         import openai
@@ -1010,11 +1011,59 @@ async def gerar_documento_com_ia(
         interessado = analise.get("interessado", {})
         pedido = analise.get("pedido_original", {}) or analise.get("pedido", {})
         sugestao = analise.get("sugestao", {})
-        
-        # Monta bloco de destinatário(s)
-        bloco_destinatario = ""
-        vocativo = "Senhor(a)"
-        
+
+        # =========================================================
+        # FUNÇÃO AUXILIAR: DETERMINAR GÊNERO
+        # =========================================================
+        def determinar_genero(nome: str, cargo: str) -> str:
+            """
+            Determina gênero baseado no cargo e nome.
+            Retorna 'F' para feminino, 'M' para masculino.
+            """
+            # 1. Verifica pelo cargo (mais confiável)
+            cargos_femininos = ['Diretora', 'Comandante Geral', 'Subcomandante', 'Chefa', 'Assessora', 'Coordenadora']
+            cargos_masculinos = ['Diretor', 'Comandante', 'Chefe', 'Assessor', 'Coordenador']
+
+            cargo_lower = cargo.lower() if cargo else ''
+
+            # Cargos explicitamente femininos
+            if 'diretora' in cargo_lower or 'chefa' in cargo_lower or 'assessora' in cargo_lower or 'coordenadora' in cargo_lower:
+                return 'F'
+
+            # 2. Verifica pelo nome (heurística)
+            if nome:
+                primeiro_nome = nome.split()[0].upper() if nome.split() else ''
+
+                # Nomes femininos comuns (lista não exaustiva)
+                nomes_femininos = [
+                    'MARIA', 'ANA', 'FRANCISCA', 'ANTONIA', 'ADRIANA', 'JULIANA', 'MARCIA',
+                    'FERNANDA', 'PATRICIA', 'ALINE', 'SANDRA', 'CAMILA', 'AMANDA', 'BRUNA',
+                    'JESSICA', 'LETICIA', 'JULIA', 'LUCIANA', 'VANESSA', 'CARLA', 'SIMONE',
+                    'DANIELA', 'RENATA', 'CAROLINA', 'RAFAELA', 'CRISTIANE', 'FABIANA',
+                    'CLAUDIA', 'HELENA', 'BEATRIZ', 'LARISSA', 'PRISCILA', 'TATIANA',
+                    'GABRIELA', 'NATALIA', 'MONICA', 'PAULA', 'RAQUEL', 'VIVIANE', 'ELIANE',
+                    'ROSANGELA', 'ROSA', 'LUCIA', 'ELIZABETH', 'TEREZA', 'EDILENE', 'EDNA'
+                ]
+
+                if primeiro_nome in nomes_femininos:
+                    return 'F'
+
+                # Heurística: nomes terminados em 'A' geralmente são femininos
+                # (mas há exceções como ÉDEN, que não termina em A)
+                # Nomes que terminam em 'A' e não são exceções conhecidas
+                excecoes_masculinas = ['JOSEFA', 'COSTA', 'SOUZA', 'SILVA', 'MOURA', 'VIEIRA', 'OLIVEIRA', 'PEREIRA']
+                if primeiro_nome.endswith('A') and primeiro_nome not in excecoes_masculinas and len(primeiro_nome) > 2:
+                    return 'F'
+
+            # Default: masculino (mais comum no CBMAC)
+            return 'M'
+
+        # =========================================================
+        # 1. MONTA HTML DO DESTINATÁRIO
+        # =========================================================
+        html_destinatario = ""
+        vocativo = "Senhor,"
+
         if destinatarios and len(destinatarios) > 0:
             if len(destinatarios) == 1:
                 # Um destinatário
@@ -1024,177 +1073,235 @@ async def gerar_documento_com_ia(
                 cargo_dest = d.get('cargo', '')
                 sigla_dest = d.get('sigla', '')
                 sigla_sei = d.get('sigla_sei', f'CBMAC-{sigla_dest}')
-                
-                bloco_destinatario = f"Ao(à) Sr(a). {posto_dest} {nome_dest}\n{cargo_dest} - {sigla_sei}"
-                
-                # Define vocativo baseado no cargo
-                if 'Comandante' in cargo_dest:
-                    vocativo = "Senhor Comandante"
-                elif 'Diretor' in cargo_dest:
-                    vocativo = "Senhor Diretor"
-                elif 'Chefe' in cargo_dest:
-                    vocativo = "Senhor Chefe"
+
+                # Determina gênero
+                genero = determinar_genero(nome_dest, cargo_dest)
+
+                # Monta destinatário com pronome correto
+                if genero == 'F':
+                    pronome_dest = "À Sra."
                 else:
-                    vocativo = "Senhor(a)"
+                    pronome_dest = "Ao Sr."
+
+                html_destinatario = f'<p style="text-align: left;">{pronome_dest} <b>{posto_dest} {nome_dest}</b><br>{cargo_dest} - {sigla_sei}</p>'
+
+                # Define vocativo baseado no cargo e gênero
+                if 'Comandante' in cargo_dest:
+                    vocativo = "Senhora Comandante," if genero == 'F' else "Senhor Comandante,"
+                elif 'Diretor' in cargo_dest:
+                    vocativo = "Senhora Diretora," if genero == 'F' else "Senhor Diretor,"
+                elif 'Chefe' in cargo_dest:
+                    vocativo = "Senhora Chefe," if genero == 'F' else "Senhor Chefe,"
+                elif 'Subcomandante' in cargo_dest:
+                    vocativo = "Senhora Subcomandante," if genero == 'F' else "Senhor Subcomandante,"
+                else:
+                    vocativo = "Senhora," if genero == 'F' else "Senhor,"
             else:
                 # Múltiplos destinatários (circular)
-                nomes = []
-                siglas = []
+                partes_dest = []
+                generos = []
                 for d in destinatarios:
-                    posto = d.get('posto_grad', '')
                     nome = d.get('nome', '')
+                    posto = d.get('posto_grad', '')
+                    cargo = d.get('cargo', '')
                     sigla = d.get('sigla', '')
-                    nomes.append(f"{posto} {nome}".strip())
-                    siglas.append(d.get('sigla_sei', f'CBMAC-{sigla}'))
-                
-                # Determina vocativo para circular
+                    sigla_sei = d.get('sigla_sei', f'CBMAC-{sigla}')
+
+                    genero = determinar_genero(nome, cargo)
+                    generos.append(genero)
+                    pronome = "À Sra." if genero == 'F' else "Ao Sr."
+
+                    partes_dest.append(f'<p style="text-align: left;">{pronome} <b>{posto} {nome}</b><br>{cargo} - {sigla_sei}</p>')
+
+                html_destinatario = '\n'.join(partes_dest)
+
+                # Determina vocativo para circular (usa masculino plural se misto)
                 cargos = [d.get('cargo', '') for d in destinatarios]
+                todos_femininos = all(g == 'F' for g in generos)
+
                 if all('Comandante' in c for c in cargos):
-                    vocativo = "Senhores Comandantes"
+                    vocativo = "Senhoras Comandantes," if todos_femininos else "Senhores Comandantes,"
                 elif all('Diretor' in c for c in cargos):
-                    vocativo = "Senhores Diretores"
+                    vocativo = "Senhoras Diretoras," if todos_femininos else "Senhores Diretores,"
                 else:
-                    vocativo = "Senhores"
-                
-                bloco_destinatario = f"Aos Senhores:\n" + "\n".join([f"- {n}" for n in nomes])
-                bloco_destinatario += f"\n\n{', '.join(siglas)}"
+                    vocativo = "Senhoras," if todos_femininos else "Senhores,"
         elif destinatario:
             # Fallback: destinatário como string simples
-            bloco_destinatario = f"Ao(à) Sr(a). {destinatario}"
+            genero = determinar_genero(destinatario, '')
+            pronome = "À Sra." if genero == 'F' else "Ao Sr."
+            html_destinatario = f'<p style="text-align: left;">{pronome} <b>{destinatario}</b></p>'
+            vocativo = "Senhora," if genero == 'F' else "Senhor,"
         elif interessado and interessado.get('nome'):
             # Fallback: usa dados do interessado da análise
             nome_int = interessado.get('nome', '')
             cargo_int = interessado.get('cargo', '')
             posto_int = interessado.get('posto_grad', '')
 
-            if posto_int:
-                bloco_destinatario = f"Ao(à) Sr(a). {posto_int} {nome_int}"
-            else:
-                bloco_destinatario = f"Ao(à) Sr(a). {nome_int}"
-            if cargo_int:
-                bloco_destinatario += f"\n{cargo_int}"
+            genero = determinar_genero(nome_int, cargo_int)
+            pronome = "À Sra." if genero == 'F' else "Ao Sr."
 
-            # Define vocativo baseado no cargo do interessado
-            if cargo_int and 'Comandante' in cargo_int:
-                vocativo = "Senhor Comandante"
-            elif cargo_int and 'Diretor' in cargo_int:
-                vocativo = "Senhor Diretor"
-            elif cargo_int and 'Chefe' in cargo_int:
-                vocativo = "Senhor Chefe"
+            if posto_int:
+                html_destinatario = f'<p style="text-align: left;">{pronome} <b>{posto_int} {nome_int}</b>'
             else:
-                vocativo = "Senhor(a)"
-        else:
-            bloco_destinatario = ""
-        
-        # Monta bloco do remetente
-        bloco_remetente = ""
+                html_destinatario = f'<p style="text-align: left;">{pronome} <b>{nome_int}</b>'
+            if cargo_int:
+                html_destinatario += f'<br>{cargo_int}'
+            html_destinatario += '</p>'
+
+            # Define vocativo baseado no cargo e gênero do interessado
+            if cargo_int and 'Comandante' in cargo_int:
+                vocativo = "Senhora Comandante," if genero == 'F' else "Senhor Comandante,"
+            elif cargo_int and 'Diretor' in cargo_int:
+                vocativo = "Senhora Diretora," if genero == 'F' else "Senhor Diretor,"
+            elif cargo_int and 'Chefe' in cargo_int:
+                vocativo = "Senhora Chefe," if genero == 'F' else "Senhor Chefe,"
+            else:
+                vocativo = "Senhora," if genero == 'F' else "Senhor,"
+
+        # =========================================================
+        # 2. MONTA HTML DO VOCATIVO
+        # =========================================================
+        html_vocativo = f'<p style="text-align: left; text-indent: 1.5cm;">{vocativo}</p>'
+
+        # =========================================================
+        # 2.1 MONTA HTML DO ASSUNTO
+        # =========================================================
+        # Extrai assunto da análise
+        assunto = analise.get('assunto', '') or pedido.get('descricao', '') or analise.get('tipo_demanda', '') or ''
+        assunto = assunto.strip()
+
+        html_assunto = ""
+        if assunto:
+            # Formato SEI: Assunto: <strong>TEXTO EM NEGRITO</strong>
+            html_assunto = f'<p class="Texto_Justificado">Assunto: <strong>{assunto}</strong></p>'
+
+        # =========================================================
+        # 3. MONTA HTML DO FECHO
+        # =========================================================
+        html_fecho = '<p style="text-align: left; text-indent: 1.5cm;">Atenciosamente,</p>'
+
+        # =========================================================
+        # 4. MONTA HTML DA ASSINATURA
+        # =========================================================
+        html_assinatura = ""
         if remetente:
             nome_rem = remetente.get('nome', '')
             posto_rem = remetente.get('posto_grad', '')
             cargo_rem = remetente.get('cargo', '')
+            unidade_rem = remetente.get('unidade', '')
             portaria = remetente.get('portaria', '')
-            
-            bloco_remetente = f"{posto_rem} {nome_rem}\n{cargo_rem}"
+
+            html_assinatura = f'<p style="text-align: center;"><b>{nome_rem} - {posto_rem}</b><br>{cargo_rem}'
+            if unidade_rem and unidade_rem not in cargo_rem:
+                html_assinatura += f' - {unidade_rem}'
             if portaria:
-                bloco_remetente += f"\n{portaria}"
-        
-        # Extrai assunto da análise
+                html_assinatura += f'<br>{portaria}'
+            html_assinatura += '</p>'
+
+        # =========================================================
+        # 5. MONTA CONTEXTO PARA A IA GERAR APENAS O CORPO
+        # =========================================================
         assunto = analise.get('assunto', '') or pedido.get('descricao', '') or analise.get('tipo_demanda', '')
 
-        # Monta bloco de instrução do usuário (comando de voz)
-        bloco_instrucao = ""
-        if instrucao_voz and instrucao_voz.strip():
-            bloco_instrucao = f"INSTRUÇÃO DO USUÁRIO: {instrucao_voz.strip()}"
-
-        contexto = f"""
+        contexto = f"""TIPO DE DOCUMENTO: {tipo}
 NUP: {nup}
-TIPO DE DOCUMENTO: {tipo}
 TIPO DE DEMANDA: {analise.get('tipo_demanda', '-')}
-RESUMO: {resumo}
 
-INTERESSADO: {interessado.get('nome', '-')} - {interessado.get('cargo', '-')}
+RESUMO DO PROCESSO:
+{resumo}
+
+INTERESSADO: {interessado.get('nome', '-')} - {interessado.get('posto_grad', '-')} - {interessado.get('cargo', '-')}
 PEDIDO: {pedido.get('descricao', '-')}
+ASSUNTO: {assunto}
 
-SUGESTíO DE AííO: {sugestao.get('acao', '-') if isinstance(sugestao, dict) else '-'}
-FUNDAMENTAííO: {sugestao.get('fundamentacao', '-') if isinstance(sugestao, dict) else '-'}
-{bloco_instrucao}
+SUGESTÃO DE AÇÃO: {sugestao.get('acao', '-') if isinstance(sugestao, dict) else '-'}
+FUNDAMENTAÇÃO: {sugestao.get('fundamentacao', '-') if isinstance(sugestao, dict) else '-'}
 """
-        
-        # Carrega prompt de geração
-        prompt_template = carregar_prompt("gerar_documento")
-        
-        if prompt_template:
-            prompt = prompt_template.replace("{tipo_documento}", tipo)
-            prompt = prompt.replace("{nup}", nup)
-            prompt = prompt.replace("{analise}", contexto)
-            prompt = prompt.replace("{dados_destinatario}", bloco_destinatario)
-            prompt = prompt.replace("{dados_remetente}", bloco_remetente)
-            prompt = prompt.replace("{vocativo}", vocativo)
-            prompt = prompt.replace("{assunto}", assunto)
-            prompt = prompt.replace("{legislacao}", "")
-            prompt = prompt.replace("{instrucao_voz}", instrucao_voz.strip() if instrucao_voz else "")
-        else:
-            prompt = f"""Gere um {tipo} formal para o processo {nup}.
+
+        # Adiciona instrução do usuário se houver
+        if instrucao_voz and instrucao_voz.strip():
+            contexto += f"\nINSTRUÇÃO DO USUÁRIO (PRIORIDADE MÁXIMA): {instrucao_voz.strip()}"
+
+        # =========================================================
+        # 6. PROMPT PARA A IA GERAR APENAS O CORPO
+        # =========================================================
+        prompt = f"""Gere APENAS o CORPO de um {tipo} formal do CBMAC.
 
 {contexto}
 
-=== ESTRUTURA DO DOCUMENTO ===
+IMPORTANTE:
+- Gere APENAS os parágrafos do corpo do documento (1 a 3 parágrafos)
+- NÃO inclua destinatário, vocativo, fecho ou assinatura (já serão adicionados automaticamente)
+- NÃO inclua NUP ou tipo de documento no texto
+- Use linguagem DIRETA, CLARA e OBJETIVA
+- Vá direto ao ponto - sem enrolação
+- Se houver INSTRUÇÃO DO USUÁRIO, siga EXATAMENTE o que foi solicitado
 
-{bloco_destinatario}
+FORMATO HTML OBRIGATÓRIO para cada parágrafo:
+<p style="text-align: justify; text-indent: 1.5cm;">Texto do parágrafo aqui.</p>
 
-Assunto: {assunto}
+Gere apenas os parágrafos do corpo, nada mais."""
 
-{vocativo},
+        print(f"[LLM] Gerando corpo do documento...", file=sys.stderr)
 
-[GERE O CORPO DO DOCUMENTO AQUI - Use parágrafos numerados se apropriado]
-
-Atenciosamente,
-
-{bloco_remetente}
-
-=== INSTRUííES ===
-- Use linguagem formal e objetiva
-- Siga o padrão de documentos oficiais do CBMAC
-- O cabeçalho acima (destinatário, assunto, vocativo) já está definido - use exatamente como está
-- Gere apenas o corpo do documento (texto principal)
-- Finalize com "Atenciosamente," e os dados do remetente
-- Baseie-se apenas no contexto fornecido
-
-Gere o documento em HTML simples (use <p>, <br>, <strong>).
-Use style inline para formatação:
-- Parágrafos: text-align: justify; text-indent: 1.5cm
-- Assinatura: text-align: center
-"""
-        
         client = openai.OpenAI(api_key=OPENAI_API_KEY)
         response = client.chat.completions.create(
             model="gpt-4.1-mini",
             messages=[
-                {"role": "system", "content": "Você gera documentos oficiais do CBMAC em HTML. Mantenha o formato estruturado com destinatário, assunto, vocativo, corpo e assinatura."},
+                {"role": "system", "content": "Você é um redator oficial do CBMAC. Gere apenas o corpo do documento (parágrafos), sem destinatário, vocativo, fecho ou assinatura. Use HTML com style inline."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=2000,
+            max_tokens=1500,
             temperature=0.3
         )
-        
-        html = response.choices[0].message.content
+
+        html_corpo = response.choices[0].message.content
+
         # Limpa markdown se houver
-        html = re.sub(r'```html\s*', '', html)
-        html = re.sub(r'```\s*', '', html)
+        html_corpo = re.sub(r'```html\s*', '', html_corpo)
+        html_corpo = re.sub(r'```\s*', '', html_corpo)
+        html_corpo = html_corpo.strip()
 
-        # Remove NUP/Tipo que o LLM possa ter gerado (evita duplicação)
-        html = re.sub(r'<p[^>]*>\s*[•\-]?\s*NUP\s*:\s*[\d\.\-/]+.*?</p>\s*', '', html, flags=re.IGNORECASE | re.DOTALL)
-        html = re.sub(r'[•\-]?\s*NUP\s*:\s*[\d\.\-/]+\s*<br\s*/?>', '', html, flags=re.IGNORECASE)
-        html = re.sub(r'[•\-]?\s*Tipo\s*(de\s*)?documento\s*:\s*[^<]+<br\s*/?>', '', html, flags=re.IGNORECASE)
-        html = re.sub(r'<p[^>]*>\s*</p>', '', html)  # Remove parágrafos vazios
-        html = html.strip()
+        # Remove qualquer NUP/Tipo que o LLM possa ter gerado
+        html_corpo = re.sub(r'<p[^>]*>\s*[•\-]?\s*NUP\s*:\s*[\d\.\-/]+.*?</p>\s*', '', html_corpo, flags=re.IGNORECASE | re.DOTALL)
+        html_corpo = re.sub(r'[•\-]?\s*NUP\s*:\s*[\d\.\-/]+\s*<br\s*/?>', '', html_corpo, flags=re.IGNORECASE)
+        html_corpo = re.sub(r'<p[^>]*>\s*</p>', '', html_corpo)  # Remove parágrafos vazios
+        html_corpo = html_corpo.strip()
 
-        # Adiciona cabeçalho padronizado com NUP e Tipo no início do documento
-        cabecalho_nup_tipo = f'<p style="text-align: left; font-size: 10pt; color: #555;">• NUP: {nup}<br>• Tipo de documento: {tipo}</p><hr style="margin: 10px 0;">'
-        html = cabecalho_nup_tipo + html
+        print(f"[LLM] Corpo gerado: {len(html_corpo)} chars", file=sys.stderr)
 
-        return {"sucesso": True, "documento": html, "tipo": tipo, "nup": nup, "fonte": "llm"}
+        # =========================================================
+        # 7. MONTA O DOCUMENTO COMPLETO
+        # =========================================================
+        # Cabeçalho com NUP e Tipo (será removido antes de enviar ao SEI)
+        cabecalho = f'<p style="text-align: left; font-size: 10pt; color: #555;">• NUP: {nup}<br>• Tipo de documento: {tipo}</p><hr style="margin: 10px 0;">'
+
+        # Monta documento completo
+        partes = [cabecalho]
+
+        # Inclui destinatário no HTML para extração posterior
+        # O endpoint /v1/inserir-sei vai extrair e remover antes de enviar ao SEI
+        if html_destinatario:
+            partes.append(html_destinatario)
+
+        # Inclui assunto ANTES do vocativo (ordem correta em docs oficiais)
+        if html_assunto:
+            partes.append(html_assunto)
+
+        partes.append(html_vocativo)
+        partes.append(html_corpo)
+        partes.append(html_fecho)
+
+        if html_assinatura:
+            partes.append(html_assinatura)
+
+        html_completo = '\n'.join(partes)
+
+        print(f"[LLM] Documento completo: {len(html_completo)} chars", file=sys.stderr)
+
+        return {"sucesso": True, "documento": html_completo, "tipo": tipo, "nup": nup, "fonte": "llm"}
     except Exception as e:
+        print(f"[LLM] Erro: {e}", file=sys.stderr)
         return {"sucesso": False, "erro": str(e), "fonte": "llm"}
 
 # ============================================================
@@ -1427,8 +1534,44 @@ def registrar_endpoints_laravel(app):
     @app.post("/v1/inserir-sei")
     async def inserir_sei_v1(req: InserirSEIRequest, request: Request):
         """Endpoint para inserir documento no SEI"""
-        print(f"ð¥ /v1/inserir-sei - NUP: {req.nup}, Tipo: {req.tipo_documento}", file=sys.stderr)
-        
+        print(f"🔥 /v1/inserir-sei - NUP: {req.nup}, Tipo: {req.tipo_documento}", file=sys.stderr)
+
+        # Extrai destinatário do HTML para preencher o iframe de Endereçamento do SEI
+        # Formatos aceitos:
+        # - Novo: <p>Ao Sr. <b>NOME</b><br>CARGO</p> ou <p>À Sra. <b>NOME</b><br>CARGO</p>
+        # - Antigo: <p>Ao(À) Sr(a). <b>NOME</b><br>CARGO</p>
+        destinatario = req.destinatario or ""
+        html_para_sei = req.html or ""
+
+        if not destinatario and html_para_sei:
+            # Regex que aceita: "Ao Sr.", "À Sra.", "Ao(À) Sr(a)."
+            match = re.search(
+                r'(Ao\s+Sr\.|À\s+Sra\.|Ao\(À\)\s*Sr\(a\)\.)\s*<b>([^<]+)</b><br>([^<]+)',
+                html_para_sei,
+                re.IGNORECASE
+            )
+            if match:
+                pronome = match.group(1).strip()
+                nome = match.group(2).strip()
+                cargo = match.group(3).strip()
+                # Formato para o iframe mantém o pronome original
+                destinatario = f"{pronome} {nome}\n{cargo}"
+                print(f"   📬 destinatario extraído: '{pronome}' '{nome}' / '{cargo}'", file=sys.stderr)
+
+                # Remove o bloco de destinatário do HTML (SEI tem campo próprio)
+                html_para_sei = re.sub(
+                    r'<p[^>]*>\s*(Ao\s+Sr\.|À\s+Sra\.|Ao\(À\)\s*Sr\(a\)\.)\s*<b>[^<]+</b><br>[^<]+</p>\s*',
+                    '',
+                    html_para_sei,
+                    flags=re.IGNORECASE
+                )
+            else:
+                print(f"   📬 destinatario: não encontrado no HTML", file=sys.stderr)
+        else:
+            print(f"   📬 destinatario: '{destinatario[:50] if destinatario else 'vazio'}'", file=sys.stderr)
+
+        print(f"   📄 html length: {len(html_para_sei)} chars", file=sys.stderr)
+
         try:
             async with httpx.AsyncClient(timeout=180.0) as client:
                 response = await client.post(
@@ -1437,8 +1580,8 @@ def registrar_endpoints_laravel(app):
                         "mode": "atuar",
                         "nup": req.nup,
                         "tipo_documento": req.tipo_documento,
-                        "destinatario": req.destinatario or "",
-                        "texto_despacho": limpar_html_para_sei(req.html) if req.html else "",
+                        "destinatario": destinatario,
+                        "texto_despacho": limpar_html_para_sei(html_para_sei) if html_para_sei else "",
                         "credentials": {
                             "usuario": req.credencial.usuario,
                             "senha": req.credencial.senha,
@@ -1525,13 +1668,61 @@ def registrar_endpoints_laravel(app):
     @app.get("/api/v2/health")
     async def health_v2():
         return {
-            "status": "ok", 
-            "laravel_integration": True, 
+            "status": "ok",
+            "laravel_integration": True,
             "supports_direct_credentials": True,
             "ia_analysis": True,
             "version": "3.0"
         }
-    
+
+    @app.post("/api/debug/capturar-editor-sei")
+    async def capturar_editor_sei(request: Request):
+        """
+        DEBUG: Captura a estrutura HTML do editor de documentos do SEI.
+        Usado para analisar como o SEI monta os campos (destinatário, corpo, etc).
+        """
+        try:
+            data = await request.json()
+            nup = data.get("nup")
+            tipo_documento = data.get("tipo_documento", "Memorando")
+            credencial = data.get("credencial", {})
+
+            if not nup:
+                return {"sucesso": False, "erro": "Campo 'nup' é obrigatório"}
+            if not credencial.get("usuario") or not credencial.get("senha"):
+                return {"sucesso": False, "erro": "Credenciais (usuario/senha) são obrigatórias"}
+
+            print(f"🔍 DEBUG: Capturando estrutura editor SEI - NUP: {nup}, Tipo: {tipo_documento}", file=sys.stderr)
+
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                response = await client.post(
+                    f"{SEI_RUNNER_URL}/run",
+                    json={
+                        "mode": "capturar_editor",
+                        "nup": nup,
+                        "tipo_documento": tipo_documento,
+                        "credentials": {
+                            "usuario": credencial.get("usuario"),
+                            "senha": credencial.get("senha"),
+                            "orgao_id": credencial.get("orgao_id", "31")
+                        }
+                    }
+                )
+                data = response.json()
+
+            if not data.get("ok"):
+                return {"sucesso": False, "erro": data.get("error", "Erro ao capturar"), "output": data.get("output", "")[:2000]}
+
+            json_data = data.get("json_data", {})
+            if json_data:
+                return {"sucesso": True, "estrutura": json_data}
+
+            return {"sucesso": False, "erro": "Não foi possível extrair estrutura", "output": data.get("output", "")[:2000]}
+
+        except Exception as e:
+            import traceback
+            return {"sucesso": False, "erro": str(e), "traceback": traceback.format_exc()}
+
     @app.post("/api/melhorar-texto")
     async def melhorar_texto_endpoint(request: Request):
         """Melhora texto usando OpenAI"""

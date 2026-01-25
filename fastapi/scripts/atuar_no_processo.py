@@ -547,11 +547,23 @@ async def atuar_no_processo(
                     frame_end = page_editor.frame_locator(
                         'iframe[title*="Endereçamento"], iframe[title*="Destinatário"]'
                     ).first
+
+                    # Formata o destinatário como HTML válido
+                    # Converte quebras de linha para <br> e envolve em <p>
+                    dest_html = destinatario.strip()
+                    dest_html = dest_html.replace("\n", "<br>")
+                    dest_html = f"<p>{dest_html}</p>"
+
+                    # Escapa backticks para uso em template string JS
+                    dest_escapado = dest_html.replace("`", "\\`")
+
                     await frame_end.locator("body").evaluate(
-                        f"el => el.innerHTML = '{destinatario}'"
+                        f"el => el.innerHTML = `{dest_escapado}`"
                     )
-                except Exception:
+                    debug_print(f"Destinatário injetado: {dest_html[:100]}...")
+                except Exception as e:
                     # Se não conseguir, adiciona no corpo
+                    debug_print(f"Erro ao preencher endereçamento: {e}")
                     corpo_html = f"<p><strong>AO SR(A). {destinatario}</strong></p><br>{corpo_html}"
             
             # =================================================================

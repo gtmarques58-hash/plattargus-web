@@ -80,6 +80,7 @@ SCRIPTS = {
     "ler_documento": "/app/scripts/ler_para_assinar.py",
     "enviar": "/app/scripts/enviar_processo.py",
     "atribuir": "/app/scripts/sei_atribuir.py",
+    "capturar_editor": "/app/scripts/capturar_editor_sei.py",
 }
 
 
@@ -383,7 +384,22 @@ def run_job(payload: RunPayload = Body(...)):
 
         if payload.debug:
             cmd += ["--debug"]
-    
+
+    # ==========================================
+    # CAPTURAR ESTRUTURA DO EDITOR
+    # ==========================================
+    elif mode == "capturar_editor":
+        if not payload.nup:
+            return {"ok": False, "error": "Campo 'nup' é obrigatório para capturar_editor"}
+        if not payload.tipo_documento:
+            return {"ok": False, "error": "Campo 'tipo_documento' é obrigatório para capturar_editor"}
+
+        cmd += [
+            payload.nup,
+            payload.tipo_documento,
+        ]
+        cmd += auth_args
+
     # Executa
     return run_script(cmd)
 
