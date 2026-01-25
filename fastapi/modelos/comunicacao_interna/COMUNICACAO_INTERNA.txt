@@ -1,4 +1,4 @@
-<p style="text-align: left;">Ao(À) Sr(a). <b>{POSTO_GRAD} {NOME_COMPLETO}</b></p>
+<p style="text-align: left;">Ao(Ã€) Sr(a). <b>{POSTO_GRAD} {NOME_COMPLETO}</b></p>
 
 <p style="text-align: left;">Assunto: <b>{ASSUNTO_RESUMIDO}</b></p>
 

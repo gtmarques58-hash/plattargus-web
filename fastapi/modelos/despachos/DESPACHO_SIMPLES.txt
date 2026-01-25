@@ -1,4 +1,4 @@
-<p style="text-align: left;">Ao(À) Sr(a). <b>{CARGO_DESTINO}</b><br>
+<p style="text-align: left;">Ao(Ã€) Sr(a). <b>{CARGO_DESTINO}</b><br>
 {SIGLA_UNIDADE}</p>
 
 <p style="text-align: left; text-indent: 1.5cm;">{VOCATIVO}</p>

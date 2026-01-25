@@ -694,6 +694,155 @@ RETORNE EXATAMENTE ESTE JSON (sem texto adicional):
         }
 
 
+# ============================================================
+# SISTEMA DE TEMPLATES
+# ============================================================
+
+def carregar_template(template_id: str) -> tuple:
+    """
+    Carrega um template do sistema de modelos.
+    Retorna (conteudo_html, metadados) ou (None, None) se não encontrar.
+    """
+    try:
+        # Importa os metadados dos templates
+        from modelos.templates_meta import TEMPLATES_META, MODELOS_DIR
+
+        if template_id not in TEMPLATES_META:
+            print(f"[TEMPLATE] Template não encontrado: {template_id}", file=sys.stderr)
+            return None, None
+
+        meta = TEMPLATES_META[template_id]
+        caminho = meta.get("arquivo_path")
+
+        if caminho is None or not caminho.exists():
+            print(f"[TEMPLATE] Arquivo não encontrado: {caminho}", file=sys.stderr)
+            return None, None
+
+        conteudo = caminho.read_text(encoding="utf-8")
+        return conteudo, meta
+    except Exception as e:
+        print(f"[TEMPLATE] Erro ao carregar template {template_id}: {e}", file=sys.stderr)
+        return None, None
+
+
+def preencher_template(
+    template_id: str,
+    conteudo: str,
+    analise: dict,
+    destinatarios: list = None,
+    destinatario: str = None,
+    remetente: dict = None,
+    instrucao_voz: str = None
+) -> str:
+    """
+    Preenche um template com os dados fornecidos.
+    Mapeia os campos da análise/destinatário/remetente para os placeholders do template.
+    """
+    # Extrai dados da análise
+    interessado = analise.get("interessado", {})
+    pedido = analise.get("pedido_original", {}) or analise.get("pedido", {})
+    sugestao = analise.get("sugestao", {})
+
+    # Monta dados do destinatário
+    nome_dest = ""
+    posto_dest = ""
+    cargo_dest = ""
+    sigla_dest = ""
+    vocativo = "Senhor(a)"
+
+    if destinatarios and len(destinatarios) > 0:
+        d = destinatarios[0]
+        nome_dest = d.get('nome', '')
+        posto_dest = d.get('posto_grad', '')
+        cargo_dest = d.get('cargo', '')
+        sigla_dest = d.get('sigla_sei', '') or d.get('sigla', '')
+
+        # Define vocativo
+        if 'Comandante' in cargo_dest:
+            vocativo = "Senhor Comandante"
+        elif 'Diretor' in cargo_dest:
+            vocativo = "Senhor Diretor"
+        elif 'Chefe' in cargo_dest:
+            vocativo = "Senhor Chefe"
+    elif destinatario:
+        nome_dest = destinatario
+    elif interessado:
+        nome_dest = interessado.get('nome', '')
+        posto_dest = interessado.get('posto_grad', '')
+        cargo_dest = interessado.get('cargo', '')
+
+        if 'Comandante' in cargo_dest:
+            vocativo = "Senhor Comandante"
+        elif 'Diretor' in cargo_dest:
+            vocativo = "Senhor Diretor"
+        elif 'Chefe' in cargo_dest:
+            vocativo = "Senhor Chefe"
+
+    # Monta dados do remetente
+    nome_rem = remetente.get('nome', '') if remetente else ''
+    posto_rem = remetente.get('posto_grad', '') if remetente else ''
+    cargo_rem = remetente.get('cargo', '') if remetente else ''
+    sigla_rem = remetente.get('unidade', '') if remetente else ''
+    portaria_rem = remetente.get('portaria', '') if remetente else ''
+
+    # Extrai assunto
+    assunto = analise.get('assunto', '') or pedido.get('descricao', '') or analise.get('tipo_demanda', '')
+
+    # Gera texto do corpo baseado na sugestão/instrução
+    texto_corpo = ""
+    if instrucao_voz:
+        texto_corpo = f"<p style=\"text-align: justify; text-indent: 1.5cm;\">{instrucao_voz}</p>"
+    elif sugestao:
+        acao = sugestao.get('acao', '') if isinstance(sugestao, dict) else ''
+        fund = sugestao.get('fundamentacao', '') if isinstance(sugestao, dict) else ''
+        if acao and fund:
+            texto_corpo = f"<p style=\"text-align: justify; text-indent: 1.5cm;\">{acao}. {fund}</p>"
+        elif acao:
+            texto_corpo = f"<p style=\"text-align: justify; text-indent: 1.5cm;\">{acao}</p>"
+
+    # Dicionário de substituição (todos os campos possíveis)
+    dados = {
+        # Destinatário
+        "NOME_COMPLETO": f"{posto_dest} {nome_dest}".strip() if posto_dest else nome_dest,
+        "NOME_DESTINATARIO": nome_dest,
+        "POSTO_GRAD_DESTINATARIO": posto_dest,
+        "CARGO_DESTINO": cargo_dest,
+        "CARGO_DESTINATARIO": cargo_dest,
+        "SIGLA_UNIDADE": sigla_dest or "CBMAC",
+        "VOCATIVO": f"{vocativo},",
+
+        # Remetente
+        "NOME_REMETENTE": f"{posto_rem} {nome_rem}".strip() if posto_rem else nome_rem,
+        "POSTO_GRAD_REMETENTE": posto_rem,
+        "CARGO_REMETENTE": cargo_rem,
+        "SIGLA_REMETENTE": sigla_rem or "CBMAC",
+        "NUMERO_PORTARIA": portaria_rem,
+
+        # Conteúdo
+        "ASSUNTO": assunto,
+        "ASSUNTO_RESUMIDO": assunto[:100] if assunto else "",
+        "TEXTO_CORPO": texto_corpo,
+
+        # Campos extras que alguns templates podem usar
+        "MOTIVO_ENCAMINHAMENTO": pedido.get('descricao', ''),
+        "DIA": "",
+        "MES": "",
+        "ANO": "",
+    }
+
+    # Substitui os placeholders
+    try:
+        html = conteudo.format(**dados)
+    except KeyError as e:
+        # Se faltar algum campo, tenta substituir os que existem
+        print(f"[TEMPLATE] Campo ausente {e}, usando substituição parcial", file=sys.stderr)
+        for chave, valor in dados.items():
+            conteudo = conteudo.replace(f"{{{chave}}}", str(valor))
+        html = conteudo
+
+    return html
+
+
 async def gerar_documento_com_ia(
     tipo: str,
     nup: str,
@@ -704,10 +853,57 @@ async def gerar_documento_com_ia(
     template_id: str = None,
     instrucao_voz: str = None
 ) -> Dict:
-    """Gera documento usando OpenAI GPT-4"""
+    """
+    Gera documento usando template (se disponível) ou OpenAI GPT-4 (fallback).
+
+    Fluxo:
+    1. Se template_id fornecido, tenta carregar e preencher o template
+    2. Se template não existir ou falhar, usa LLM como fallback
+    """
+
+    # =========================================================
+    # TENTATIVA 1: Usar template se template_id foi fornecido
+    # =========================================================
+    if template_id:
+        print(f"[TEMPLATE] Tentando usar template: {template_id}", file=sys.stderr)
+        conteudo, meta = carregar_template(template_id)
+
+        if conteudo:
+            try:
+                html = preencher_template(
+                    template_id=template_id,
+                    conteudo=conteudo,
+                    analise=analise,
+                    destinatarios=destinatarios,
+                    destinatario=destinatario,
+                    remetente=remetente,
+                    instrucao_voz=instrucao_voz
+                )
+
+                # Adiciona cabeçalho com NUP e Tipo
+                cabecalho = f'<p style="text-align: left; font-size: 10pt; color: #555;">• NUP: {nup}<br>• Tipo de documento: {tipo}</p><hr style="margin: 10px 0;">'
+                html = cabecalho + html
+
+                print(f"[TEMPLATE] Documento gerado com sucesso via template {template_id}", file=sys.stderr)
+                return {
+                    "sucesso": True,
+                    "documento": html,
+                    "tipo": tipo,
+                    "nup": nup,
+                    "fonte": "template",
+                    "template_id": template_id
+                }
+            except Exception as e:
+                print(f"[TEMPLATE] Erro ao preencher template {template_id}: {e}, usando LLM como fallback", file=sys.stderr)
+        else:
+            print(f"[TEMPLATE] Template {template_id} não encontrado, usando LLM como fallback", file=sys.stderr)
+
+    # =========================================================
+    # TENTATIVA 2: Usar LLM (OpenAI) como fallback
+    # =========================================================
     try:
         import openai
-        
+
         # Monta contexto da análise
         resumo = analise.get("resumo_executivo", "") or analise.get("resumo_processo", "") or ""
         interessado = analise.get("interessado", {})
@@ -896,9 +1092,9 @@ Use style inline para formatação:
         cabecalho_nup_tipo = f'<p style="text-align: left; font-size: 10pt; color: #555;">• NUP: {nup}<br>• Tipo de documento: {tipo}</p><hr style="margin: 10px 0;">'
         html = cabecalho_nup_tipo + html
 
-        return {"sucesso": True, "documento": html, "tipo": tipo, "nup": nup}
+        return {"sucesso": True, "documento": html, "tipo": tipo, "nup": nup, "fonte": "llm"}
     except Exception as e:
-        return {"sucesso": False, "erro": str(e)}
+        return {"sucesso": False, "erro": str(e), "fonte": "llm"}
 
 # ============================================================
 # CLIENTE API DE EFETIVO
