@@ -124,6 +124,8 @@ class PlattEngineService
             'instrucao_voz' => $instrucaoVoz,
         ];
 
+        \Log::info('PlattEngine - payload instrucao_voz:', ['instrucao_voz' => $instrucaoVoz]);
+
         $response = $this->post('/v1/gerar-documento', $payload);
 
         $this->logAction($user, 'gerar_documento', $nup, $response, [

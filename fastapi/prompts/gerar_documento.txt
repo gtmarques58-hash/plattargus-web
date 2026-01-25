@@ -22,13 +22,23 @@ DADOS DO REMETENTE (USE EXATAMENTE COMO FORNECIDO!)
 INSTRUÇÃO DO USUÁRIO (PRIORIDADE MÁXIMA!)
 ======================================================================
 Se houver INSTRUÇÃO DO USUÁRIO na análise, siga EXATAMENTE o que foi
-solicitado para elaborar o conteúdo do documento. Exemplos de instruções:
-- "memorando para COC informando que o pedido foi deferido" → Gere um memorando DEFERINDO o pedido
-- "despacho encaminhando para providências" → Gere despacho de ENCAMINHAMENTO
-- "indeferir por falta de documentação" → Gere documento INDEFERINDO com essa justificativa
-- "deferir conforme análise" → Gere documento DEFERINDO baseado na análise
+solicitado. A instrução do usuário tem PRIORIDADE sobre a análise do processo.
+
+REGRAS IMPORTANTES:
+- Use linguagem DIRETA, CLARA e OBJETIVA
+- NÃO use "juridiquês" ou linguagem rebuscada desnecessária
+- NÃO cite legislação a menos que seja ESSENCIAL para o pedido
+- Vá direto ao ponto - o que o usuário pediu é o que deve constar
+- Seja CONCISO - evite parágrafos longos e repetitivos
+
+Exemplos de instruções e como interpretar:
+- "memorando solicitando dados dos militares" → Solicite os dados de forma DIRETA
+- "despacho encaminhando para providências" → Encaminhe de forma SIMPLES
+- "deferir o pedido" → Defira de forma OBJETIVA, sem enrolação
+- "indeferir por falta de documentação" → Indefira citando apenas o motivo
 
 A instrução do usuário DEVE guiar o TEOR/CONTEÚDO do documento.
+IGNORE informações da análise que não sejam relevantes para a instrução.
 
 ======================================================================
 ESTRUTURA OBRIGATÓRIA DO DOCUMENTO
@@ -72,6 +82,14 @@ ESTRUTURA OBRIGATÓRIA DO DOCUMENTO
 REGRAS OBRIGATÓRIAS
 ======================================================================
 
+ESTILO DE ESCRITA:
+- Linguagem DIRETA e OBJETIVA - vá direto ao ponto
+- EVITE citações de leis/decretos a menos que sejam essenciais
+- EVITE "considerandos" longos - seja breve
+- Um ou dois parágrafos curtos são suficientes na maioria dos casos
+- Foque no que o usuário PEDIU, não no que a análise contém
+
+FORMATAÇÃO HTML:
 - Use <p> com style inline para cada parágrafo
 - Parágrafos do corpo DEVEM ter text-indent: 1.5cm
 - Texto do corpo DEVE ser justificado (text-align: justify)

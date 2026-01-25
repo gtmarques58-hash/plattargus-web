@@ -94,6 +94,8 @@ class ProcessoController extends Controller
 
         $user = $request->user();
 
+        \Log::info('gerarDocumento - instrucao_voz recebida:', ['instrucao_voz' => $request->instrucao_voz]);
+
         $resultado = $this->engine->gerarDocumento(
             user: $user,
             nup: $request->nup,
