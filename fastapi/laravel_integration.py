@@ -1223,9 +1223,71 @@ FUNDAMENTAÇÃO: {sugestao.get('fundamentacao', '-') if isinstance(sugestao, dic
             contexto += f"\nINSTRUÇÃO DO USUÁRIO (PRIORIDADE MÁXIMA): {instrucao_voz.strip()}"
 
         # =========================================================
-        # 6. PROMPT PARA A IA GERAR APENAS O CORPO
+        # 6. PROMPT PARA A IA GERAR APENAS O CORPO (DIFERENCIADO POR TIPO)
         # =========================================================
-        prompt = f"""Gere APENAS o CORPO de um {tipo} formal do CBMAC.
+        tipo_lower = tipo.lower()
+
+        # Prompt específico para TERMO DE ENCERRAMENTO
+        if 'termo' in tipo_lower and 'encerramento' in tipo_lower:
+            # Extrai motivo da instrução ou análise
+            motivo = ""
+            if instrucao_voz:
+                # Tenta extrair número do BG se mencionado
+                import re as re_local
+                bg_match = re_local.search(r'BG\s*n?[º°]?\s*(\d+[/-]?\d*)', instrucao_voz, re_local.IGNORECASE)
+                if bg_match:
+                    motivo = f"a publicação no BG nº {bg_match.group(1)}"
+                elif 'deferido' in instrucao_voz.lower() or 'deferimento' in instrucao_voz.lower():
+                    motivo = "o deferimento do pedido"
+                elif 'indeferido' in instrucao_voz.lower() or 'indeferimento' in instrucao_voz.lower():
+                    motivo = "o indeferimento do pedido"
+                elif 'arquiv' in instrucao_voz.lower():
+                    motivo = "o arquivamento administrativo"
+                else:
+                    motivo = "a conclusão da tramitação"
+            else:
+                motivo = "a conclusão das providências solicitadas"
+
+            prompt = f"""Gere o texto de um TERMO DE ENCERRAMENTO DE PROCESSO ELETRÔNICO do CBMAC.
+
+MOTIVO DO ENCERRAMENTO: {motivo}
+
+O texto DEVE seguir EXATAMENTE este formato padrão:
+
+<p style="text-align: justify; text-indent: 1.5cm;">Nesta data, procedo o encerramento da tramitação do Processo Eletrônico, tendo em vista {motivo}.</p>
+<p style="text-align: justify; text-indent: 1.5cm;">Para constar, eu, subscrevo eletronicamente.</p>
+<p style="text-align: justify; text-indent: 1.5cm;">O referido é verdade e dou fé.</p>
+
+Gere APENAS esses 3 parágrafos, nada mais. NÃO inclua assinatura."""
+
+        # Prompt específico para DESPACHO
+        elif 'despacho' in tipo_lower:
+            prompt = f"""Gere APENAS o CORPO de um DESPACHO formal do CBMAC.
+
+{contexto}
+
+IMPORTANTE PARA DESPACHO:
+- Despachos são DIRETOS e OBJETIVOS (1 a 2 parágrafos no máximo)
+- Vá direto ao ponto - informe a decisão/encaminhamento
+- NÃO use vocativo formal (nada de "Senhor Diretor,")
+- NÃO use fecho (nada de "Atenciosamente,")
+- NÃO inclua assinatura
+- Se houver INSTRUÇÃO DO USUÁRIO, siga EXATAMENTE o que foi solicitado
+
+EXEMPLOS DE DESPACHOS:
+- "Encaminho à [unidade] para providências."
+- "Defiro o pedido nos termos do art. X da Lei Y."
+- "Ciente. Arquive-se."
+- "À [unidade] para análise e parecer."
+
+FORMATO HTML OBRIGATÓRIO:
+<p style="text-align: justify; text-indent: 1.5cm;">Texto do despacho aqui.</p>
+
+Gere apenas o(s) parágrafo(s) do despacho, nada mais."""
+
+        # Prompt para MEMORANDO / OFÍCIO (padrão)
+        else:
+            prompt = f"""Gere APENAS o CORPO de um {tipo} formal do CBMAC.
 
 {contexto}
 
@@ -1271,29 +1333,71 @@ Gere apenas os parágrafos do corpo, nada mais."""
         print(f"[LLM] Corpo gerado: {len(html_corpo)} chars", file=sys.stderr)
 
         # =========================================================
-        # 7. MONTA O DOCUMENTO COMPLETO
+        # 7. MONTA O DOCUMENTO COMPLETO (DIFERENCIADO POR TIPO)
         # =========================================================
         # Cabeçalho com NUP e Tipo (será removido antes de enviar ao SEI)
         cabecalho = f'<p style="text-align: left; font-size: 10pt; color: #555;">• NUP: {nup}<br>• Tipo de documento: {tipo}</p><hr style="margin: 10px 0;">'
 
-        # Monta documento completo
+        # Monta documento completo baseado no tipo
         partes = [cabecalho]
+        tipo_lower = tipo.lower()
 
-        # Inclui destinatário no HTML para extração posterior
-        # O endpoint /v1/inserir-sei vai extrair e remover antes de enviar ao SEI
-        if html_destinatario:
-            partes.append(html_destinatario)
+        # =========================================================
+        # TERMO DE ENCERRAMENTO: estrutura específica
+        # =========================================================
+        if 'termo' in tipo_lower and 'encerramento' in tipo_lower:
+            # Termo de Encerramento não tem destinatário, vocativo ou fecho
+            # Estrutura: corpo + assinatura (com matrícula)
+            partes.append(html_corpo)
 
-        # Inclui assunto ANTES do vocativo (ordem correta em docs oficiais)
-        if html_assunto:
-            partes.append(html_assunto)
+            # Assinatura especial para Termo (inclui matrícula)
+            if remetente:
+                nome_rem = remetente.get('nome', '')
+                posto_rem = remetente.get('posto_grad', '')
+                cargo_rem = remetente.get('cargo', '')
+                matricula = remetente.get('matricula', '')
 
-        partes.append(html_vocativo)
-        partes.append(html_corpo)
-        partes.append(html_fecho)
+                html_assinatura_termo = f'<p style="text-align: center;"><b>{nome_rem} - {posto_rem}</b><br>{cargo_rem}'
+                if matricula:
+                    html_assinatura_termo += f'<br>mat. {matricula}'
+                html_assinatura_termo += '</p>'
+                partes.append(html_assinatura_termo)
+            elif html_assinatura:
+                partes.append(html_assinatura)
 
-        if html_assinatura:
-            partes.append(html_assinatura)
+        # =========================================================
+        # DESPACHO: estrutura simplificada
+        # =========================================================
+        elif 'despacho' in tipo_lower:
+            # Despacho tem: destinatário simples + corpo direto + assinatura
+            # SEM vocativo formal, SEM "Atenciosamente,"
+            if html_destinatario:
+                partes.append(html_destinatario)
+
+            partes.append(html_corpo)
+
+            if html_assinatura:
+                partes.append(html_assinatura)
+
+        # =========================================================
+        # MEMORANDO / OFÍCIO: estrutura completa
+        # =========================================================
+        else:
+            # Inclui destinatário no HTML para extração posterior
+            # O endpoint /v1/inserir-sei vai extrair e remover antes de enviar ao SEI
+            if html_destinatario:
+                partes.append(html_destinatario)
+
+            # Inclui assunto ANTES do vocativo (ordem correta em docs oficiais)
+            if html_assunto:
+                partes.append(html_assunto)
+
+            partes.append(html_vocativo)
+            partes.append(html_corpo)
+            partes.append(html_fecho)
+
+            if html_assinatura:
+                partes.append(html_assinatura)
 
         html_completo = '\n'.join(partes)
 

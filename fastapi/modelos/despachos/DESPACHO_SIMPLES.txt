@@ -1,11 +1,7 @@
 <p style="text-align: left;">Ao(À) Sr(a). <b>{CARGO_DESTINO}</b><br>
 {SIGLA_UNIDADE}</p>
 
-<p style="text-align: left; text-indent: 1.5cm;">{VOCATIVO}</p>
-
 {TEXTO_CORPO}
-
-<p style="text-align: left; text-indent: 1.5cm;">Atenciosamente,</p>
 
 <p style="text-align: center;"><b>{NOME_REMETENTE}</b><br>
 {CARGO_REMETENTE}<br>

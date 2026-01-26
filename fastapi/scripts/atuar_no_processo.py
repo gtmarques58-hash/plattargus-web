@@ -234,8 +234,11 @@ async def capturar_dados_completos_editor(page_editor) -> Dict[str, Optional[str
     
     # Padrões de busca
     padrao_sei = re.compile(r"SEI\s*n[ºo°]?\s*(\d{10,})", re.IGNORECASE)
+    # Padrão mais flexível para capturar diferentes tipos de documento
+    # Exemplos: "Despacho nº 1/2025/CBMAC - DRH", "Termo de Encerramento de Processo Eletrônico nº 1/2025/CBMAC - DRH"
+    # Usa [A-Za-zÀ-ÿ\s]*? para capturar nomes compostos como "Termo de Encerramento de Processo Eletrônico"
     padrao_cabecalho = re.compile(
-        r"((Despacho|Memorando|Ofício|Termo)\s*n[ºo°]\s*(\d+)/\d{4}/CBMAC\s*-\s*([A-Z0-9]+))",
+        r"(((?:Despacho|Memorando|Ofício|Oficio|Termo|Informação|Requerimento|Nota|Portaria)[A-Za-zÀ-ÿ\s]*?)\s*n[ºo°]\s*(\d+)/(\d{4})/CBMAC\s*-\s*([A-Z0-9]+))",
         re.IGNORECASE
     )
     
@@ -260,7 +263,7 @@ async def capturar_dados_completos_editor(page_editor) -> Dict[str, Optional[str
                     if match_cab:
                         resultado["cabecalho_doc"] = _norm_space(match_cab.group(1))
                         resultado["numero_doc"] = match_cab.group(3)
-                        resultado["sigla_doc"] = match_cab.group(4).upper()
+                        resultado["sigla_doc"] = match_cab.group(5).upper()
                         debug_print(f"Cabeçalho (frame '{frame.name}'): {resultado['cabecalho_doc']}")
                 
             except Exception:
@@ -286,7 +289,7 @@ async def capturar_dados_completos_editor(page_editor) -> Dict[str, Optional[str
                 if match_cab:
                     resultado["cabecalho_doc"] = _norm_space(match_cab.group(1))
                     resultado["numero_doc"] = match_cab.group(3)
-                    resultado["sigla_doc"] = match_cab.group(4).upper()
+                    resultado["sigla_doc"] = match_cab.group(5).upper()
                     debug_print(f"Cabeçalho (HTML): {resultado['cabecalho_doc']}")
         except Exception as e:
             debug_print(f"Erro HTML: {e}")
