@@ -100,7 +100,13 @@
         .subcategoria-header{padding:6px 12px;margin:10px 0 8px 15px;font-weight:600;color:var(--text-secondary);font-size:0.85rem;border-left:3px solid var(--accent)}
 
         /* Preview Document */
-        .preview-doc{background:#fff;color:#000;border-radius:8px;padding:30px;font-family:'Times New Roman',serif;font-size:12pt;line-height:1.8;max-height:600px;overflow-y:auto}
+        .preview-hint{font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+        .preview-toolbar{display:flex;gap:4px;flex-wrap:wrap;padding:10px;background:var(--bg-primary);border-radius:8px 8px 0 0;border:1px solid var(--border-color);border-bottom:none}
+        .toolbar-btn{padding:8px 12px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-primary);cursor:pointer;border-radius:4px;font-size:0.85rem;transition:all 0.2s;min-width:36px;text-align:center}
+        .toolbar-btn:hover{background:var(--bg-secondary);border-color:var(--accent);color:var(--accent)}
+        .toolbar-separator{width:1px;background:var(--border-color);margin:0 6px}
+        .preview-doc{background:#fff;color:#000;border-radius:0 0 8px 8px;padding:30px;font-family:'Times New Roman',serif;font-size:12pt;line-height:1.8;max-height:500px;overflow-y:auto;border:1px solid var(--border-color)}
+        .preview-doc:focus{outline:2px solid var(--success);outline-offset:-2px}
         .preview-doc h1{font-size:14pt;text-align:center;margin-bottom:5px}
         .preview-doc h2{font-size:12pt;text-align:center;margin-bottom:20px}
         .preview-doc .parte{text-align:center;font-weight:bold;margin:20px 0 10px}
@@ -327,10 +333,25 @@
 
             <!-- Aba Preview -->
             <div id="abaPreview" class="tab-content hidden">
-                <div id="previewDoc" class="preview-doc">
+                <p class="preview-hint"><i class="fas fa-info-circle"></i> Clique no texto para editar. Use a barra de ferramentas para formatar.</p>
+                <div class="preview-toolbar">
+                    <button type="button" class="toolbar-btn" onclick="App.formatDoc('bold')" title="Negrito"><b>N</b></button>
+                    <button type="button" class="toolbar-btn" onclick="App.formatDoc('italic')" title="Italico"><i>I</i></button>
+                    <button type="button" class="toolbar-btn" onclick="App.formatDoc('underline')" title="Sublinhado"><u>S</u></button>
+                    <div class="toolbar-separator"></div>
+                    <button type="button" class="toolbar-btn" onclick="App.formatDoc('justifyLeft')" title="Esquerda"><i class="fas fa-align-left"></i></button>
+                    <button type="button" class="toolbar-btn" onclick="App.formatDoc('justifyCenter')" title="Centro"><i class="fas fa-align-center"></i></button>
+                    <button type="button" class="toolbar-btn" onclick="App.formatDoc('justifyFull')" title="Justificar"><i class="fas fa-align-justify"></i></button>
+                    <div class="toolbar-separator"></div>
+                    <button type="button" class="toolbar-btn" onclick="App.desfazerEdicao()" title="Desfazer"><i class="fas fa-undo"></i></button>
+                </div>
+                <div id="previewDoc" class="preview-doc" contenteditable="true">
                     <p style="text-align:center;color:#999;padding:50px">Adicione publicacoes e clique em "Gerar Nota" para visualizar</p>
                 </div>
                 <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap">
+                    <button class="btn btn-secondary" onclick="App.gerarNota()">
+                        <i class="fas fa-sync"></i> Regerar
+                    </button>
                     <button class="btn btn-primary" onclick="App.inserirSEI()" id="btnInserir" disabled>
                         <i class="fas fa-paper-plane"></i> Inserir no SEI
                     </button>
@@ -964,7 +985,8 @@
             },
 
             async inserirSEI() {
-                if (!this.htmlGerado) return;
+                const htmlAtual = this.getPreviewHTML();
+                if (!htmlAtual || htmlAtual.includes('Adicione publicacoes')) return;
 
                 const status = document.getElementById('statusNota');
                 const btn = document.getElementById('btnInserir');
@@ -979,7 +1001,7 @@
                         method: 'POST',
                         headers: this.getHeaders(),
                         body: JSON.stringify({
-                            html: this.htmlGerado
+                            html: htmlAtual
                         })
                     });
                     const data = await resp.json();
@@ -1007,8 +1029,9 @@
             },
 
             copiarHTML() {
-                if (this.htmlGerado) {
-                    navigator.clipboard.writeText(this.htmlGerado);
+                const html = this.getPreviewHTML();
+                if (html && !html.includes('Adicione publicacoes')) {
+                    navigator.clipboard.writeText(html);
                     alert('HTML copiado!');
                 }
             },
@@ -1059,6 +1082,23 @@
                 if (tipo !== 'loading') {
                     setTimeout(() => el.classList.add('hidden'), 5000);
                 }
+            },
+
+            // ==================== EDITOR ====================
+
+            formatDoc(command, value = null) {
+                document.execCommand(command, false, value);
+                document.getElementById('previewDoc').focus();
+            },
+
+            desfazerEdicao() {
+                if (this.htmlGerado) {
+                    document.getElementById('previewDoc').innerHTML = this.htmlGerado;
+                }
+            },
+
+            getPreviewHTML() {
+                return document.getElementById('previewDoc').innerHTML;
             },
 
             getHeaders() {
