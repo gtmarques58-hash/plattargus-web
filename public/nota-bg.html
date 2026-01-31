@@ -305,6 +305,41 @@
 
         <!-- Painel Direito: Lista e Preview -->
         <div class="panel">
+            <!-- Processo/NUP -->
+            <div id="nupSection" style="margin-bottom:20px">
+                <h3 style="margin-bottom:10px;font-size:0.95rem;color:var(--text-secondary)"><i class="fas fa-folder-open"></i> Processo para Inserir</h3>
+
+                <!-- NUP Ativo -->
+                <div id="nupAtivo" class="nup-box hidden">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div>
+                            <div class="nup-box-label"><i class="fas fa-check-circle"></i> Processo Ativo</div>
+                            <div class="nup-box-valor" id="nupAtivoValor">-</div>
+                        </div>
+                        <button class="btn btn-sm btn-secondary" onclick="App.limparProcesso()"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+
+                <!-- Formulario NUP -->
+                <div id="formNup">
+                    <div class="form-group" style="margin-bottom:10px">
+                        <input type="text" id="nupExistente" class="form-input" placeholder="NUP: 0609.012080.00000/2026-00">
+                    </div>
+                    <div style="display:flex;gap:8px">
+                        <button class="btn btn-sm btn-secondary" onclick="App.usarNupExistente()" style="flex:1">
+                            <i class="fas fa-link"></i> Usar NUP
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="App.criarProcesso()" id="btnCriarProc" style="flex:1">
+                            <i class="fas fa-plus"></i> Criar Processo
+                        </button>
+                    </div>
+                    <p class="form-hint" style="margin-top:6px">Tipo: Acesso a Informacao: Boletim Geral</p>
+                </div>
+                <div id="statusNup" class="status hidden"></div>
+            </div>
+
+            <div class="divider"></div>
+
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
                 <h2 style="margin:0"><i class="fas fa-list"></i> Publicacoes <span class="pub-count" id="pubCount">0</span></h2>
                 <div style="display:flex;gap:8px">
@@ -386,6 +421,7 @@
 
         const App = {
             token: localStorage.getItem('plattargus_token'),
+            nupAtual: null,
             publicacoes: [],
             militarSelecionado: null,
             resultadosBusca: [],
@@ -495,6 +531,71 @@
                 }
 
                 this.atualizarCampos();
+            },
+
+            // ==================== PROCESSO/NUP ====================
+
+            async criarProcesso() {
+                const btn = document.getElementById('btnCriarProc');
+                const status = document.getElementById('statusNup');
+
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> Criando...';
+                status.className = 'status status-loading';
+                status.innerHTML = '<span class="spinner"></span> Criando processo no SEI...';
+                status.classList.remove('hidden');
+
+                try {
+                    const resp = await fetch(API_URL + '/processos/criar', {
+                        method: 'POST',
+                        headers: this.getHeaders(),
+                        body: JSON.stringify({ tipo_processo: 'Acesso à Informação: Boletim Geral' })
+                    });
+                    const data = await resp.json();
+
+                    if (data.sucesso || data.ok) {
+                        const nup = data.nup || data.resultado?.nup;
+                        this.setNupAtivo(nup);
+                        status.className = 'status status-success';
+                        status.innerHTML = '<i class="fas fa-check"></i> Processo criado!';
+                    } else {
+                        throw new Error(data.erro || data.error || 'Erro ao criar processo');
+                    }
+                } catch (err) {
+                    status.className = 'status status-error';
+                    status.innerHTML = '<i class="fas fa-times"></i> ' + err.message;
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-plus"></i> Criar Processo';
+                }
+            },
+
+            usarNupExistente() {
+                const nup = document.getElementById('nupExistente').value.trim();
+                if (!nup) {
+                    alert('Digite o NUP do processo');
+                    return;
+                }
+                if (!nup.match(/\d{4}\.\d{6}\.\d{5}\/\d{4}-\d{2}/)) {
+                    alert('Formato de NUP invalido. Use: 0609.012080.00000/2025-00');
+                    return;
+                }
+                this.setNupAtivo(nup);
+            },
+
+            setNupAtivo(nup) {
+                this.nupAtual = nup;
+                document.getElementById('nupAtivoValor').textContent = nup;
+                document.getElementById('nupAtivo').classList.remove('hidden');
+                document.getElementById('formNup').classList.add('hidden');
+                document.getElementById('statusNup').classList.add('hidden');
+            },
+
+            limparProcesso() {
+                this.nupAtual = null;
+                document.getElementById('nupAtivo').classList.add('hidden');
+                document.getElementById('formNup').classList.remove('hidden');
+                document.getElementById('nupExistente').value = '';
             },
 
             // Detecta categoria pelo posto/graduacao
@@ -988,6 +1089,11 @@
                 const htmlAtual = this.getPreviewHTML();
                 if (!htmlAtual || htmlAtual.includes('Adicione publicacoes')) return;
 
+                if (!this.nupAtual) {
+                    alert('Primeiro, informe ou crie um processo (NUP) para inserir a nota.');
+                    return;
+                }
+
                 const status = document.getElementById('statusNota');
                 const btn = document.getElementById('btnInserir');
 
@@ -1001,6 +1107,7 @@
                         method: 'POST',
                         headers: this.getHeaders(),
                         body: JSON.stringify({
+                            nup: this.nupAtual,
                             html: htmlAtual
                         })
                     });
