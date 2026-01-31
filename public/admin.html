@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlattArgus - Administração</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--bg-primary:#0a0e14;--bg-secondary:#111820;--bg-tertiary:#1a222d;--bg-card:linear-gradient(145deg,#141c26 0%,#0d1219 100%);--accent:#e63946;--accent-hover:#ff4d5a;--accent-glow:rgba(230,57,70,0.4);--text-primary:#f1f5f9;--text-secondary:#94a3b8;--text-muted:#64748b;--success:#10b981;--warning:#f59e0b;--error:#ef4444;--info:#3b82f6;--border-color:rgba(255,255,255,0.08);--border-accent:rgba(230,57,70,0.3);--font-display:'Plus Jakarta Sans',sans-serif}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:var(--font-display);background:var(--bg-primary);color:var(--text-primary);min-height:100vh;line-height:1.6}
+        body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:linear-gradient(rgba(230,57,70,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(230,57,70,0.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:-1}
+        .header{background:var(--bg-secondary);border-bottom:1px solid var(--border-color);padding:12px 24px;position:sticky;top:0;z-index:100}
+        .header-content{max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+        .logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--accent) 0%,#b91c1c 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;box-shadow:0 0 20px var(--accent-glow)}
+        .logo-text{font-weight:700;font-size:1.1rem;color:var(--text-primary)}
+        .logo-text span{color:var(--accent)}
+        .header-actions{display:flex;align-items:center;gap:12px}
+        .btn{padding:8px 16px;border-radius:8px;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;border:none}
+        .btn-primary{background:linear-gradient(135deg,var(--accent) 0%,#b91c1c 100%);color:white}
+        .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 12px var(--accent-glow)}
+        .btn-secondary{background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-primary)}
+        .btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+        .btn-success{background:var(--success);color:white}
+        .btn-danger{background:var(--error);color:white}
+        .btn-sm{padding:6px 12px;font-size:0.8rem}
+        .main{max-width:1400px;margin:0 auto;padding:24px}
+        .page-title{font-size:1.5rem;font-weight:700;margin-bottom:24px;display:flex;align-items:center;gap:12px}
+        .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+        @media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+        .stat-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:12px;padding:20px}
+        .stat-value{font-size:2rem;font-weight:700;color:var(--accent)}
+        .stat-label{font-size:0.85rem;color:var(--text-muted)}
+        .filters{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+        .search-input{padding:10px 16px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:0.9rem;min-width:250px}
+        .search-input:focus{outline:none;border-color:var(--accent)}
+        .filter-select{padding:10px 16px;background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:0.9rem}
+        .table-container{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:12px;overflow:hidden}
+        table{width:100%;border-collapse:collapse}
+        th{text-align:left;padding:14px 16px;background:var(--bg-tertiary);font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px}
+        td{padding:14px 16px;border-top:1px solid var(--border-color);font-size:0.9rem}
+        tr:hover td{background:rgba(230,57,70,0.05)}
+        .badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:0.75rem;font-weight:600}
+        .badge-success{background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3)}
+        .badge-warning{background:rgba(245,158,11,0.15);color:var(--warning);border:1px solid rgba(245,158,11,0.3)}
+        .badge-error{background:rgba(239,68,68,0.15);color:var(--error);border:1px solid rgba(239,68,68,0.3)}
+        .badge-info{background:rgba(59,130,246,0.15);color:var(--info);border:1px solid rgba(59,130,246,0.3)}
+        .actions{display:flex;gap:6px}
+        .user-info{display:flex;flex-direction:column;gap:2px}
+        .user-name{font-weight:600}
+        .user-sei{font-size:0.8rem;color:var(--text-muted)}
+        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;visibility:hidden;transition:all 0.3s}
+        .modal-overlay.active{opacity:1;visibility:visible}
+        .modal{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:16px;padding:24px;width:90%;max-width:500px;transform:scale(0.9);transition:transform 0.3s}
+        .modal-overlay.active .modal{transform:scale(1)}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+        .modal-title{font-size:1.25rem;font-weight:700}
+        .modal-close{background:none;border:none;color:var(--text-muted);font-size:1.5rem;cursor:pointer}
+        .form-group{margin-bottom:16px}
+        .form-label{display:block;font-size:0.85rem;font-weight:500;margin-bottom:6px;color:var(--text-secondary)}
+        .form-input{width:100%;padding:12px 14px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:0.9rem}
+        .form-input:focus{outline:none;border-color:var(--accent)}
+        .form-hint{font-size:0.75rem;color:var(--text-muted);margin-top:4px}
+        .alert{padding:12px 16px;border-radius:8px;font-size:0.85rem;margin-bottom:16px}
+        .alert-success{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:var(--success)}
+        .alert-error{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:var(--error)}
+        .spinner{width:16px;height:16px;border:2px solid var(--border-color);border-top-color:currentColor;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .empty-state{text-align:center;padding:60px 20px;color:var(--text-muted)}
+        .empty-state-icon{font-size:3rem;margin-bottom:16px}
+        .hidden{display:none!important}
+        .militar-preview{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:12px;margin-bottom:16px}
+        .militar-preview-name{font-weight:600;color:var(--success)}
+        .militar-preview-info{font-size:0.85rem;color:var(--text-muted)}
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">
+                <div class="logo-icon">🔥</div>
+                <div class="logo-text">Platt<span>Argus</span> Admin</div>
+            </a>
+            <div class="header-actions">
+                <a href="/" class="btn btn-secondary">← Voltar</a>
+                <button class="btn btn-primary" onclick="Admin.openNovoUsuario()">+ Novo Usuário</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <h1 class="page-title">Gerenciamento de Usuários</h1>
+
+        <div class="stats-grid" id="stats">
+            <div class="stat-card"><div class="stat-value" id="statTotal">-</div><div class="stat-label">Total de Usuários</div></div>
+            <div class="stat-card"><div class="stat-value" id="statAtivos">-</div><div class="stat-label">Ativos</div></div>
+            <div class="stat-card"><div class="stat-value" id="statCredencial">-</div><div class="stat-label">Com Credencial SEI</div></div>
+            <div class="stat-card"><div class="stat-value" id="statPendentes">-</div><div class="stat-label">Primeiro Acesso Pendente</div></div>
+        </div>
+
+        <div class="filters">
+            <input type="text" class="search-input" placeholder="Buscar por nome ou usuário SEI..." id="searchInput" oninput="Admin.filtrar()">
+            <select class="filter-select" id="filterAtivo" onchange="Admin.filtrar()">
+                <option value="">Todos</option>
+                <option value="1">Ativos</option>
+                <option value="0">Inativos</option>
+            </select>
+            <select class="filter-select" id="filterCredencial" onchange="Admin.filtrar()">
+                <option value="">Credencial SEI</option>
+                <option value="1">Com credencial</option>
+                <option value="0">Sem credencial</option>
+            </select>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Usuário</th>
+                        <th>Matrícula</th>
+                        <th>Unidade</th>
+                        <th>Status</th>
+                        <th>Credencial SEI</th>
+                        <th>Último Acesso</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="usuariosTable">
+                    <tr><td colspan="7" class="empty-state"><div class="spinner"></div> Carregando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Modal Novo Usuário -->
+    <div id="modalNovo" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Novo Usuário</h2>
+                <button class="modal-close" onclick="Admin.closeModal('modalNovo')">&times;</button>
+            </div>
+            <div id="novoAlert"></div>
+            <form onsubmit="Admin.criarUsuario(event)">
+                <!-- Etapa 1: Matrícula -->
+                <div id="novoEtapa1">
+                    <div class="form-group">
+                        <label class="form-label">Matrícula do Efetivo</label>
+                        <div style="display:flex;gap:8px">
+                            <input type="text" id="novoMatricula" class="form-input" placeholder="Ex: 1234567-8" style="flex:1">
+                            <button type="button" class="btn btn-primary" onclick="Admin.validarMatricula()">Validar</button>
+                        </div>
+                        <p class="form-hint">Digite a matrícula para buscar no efetivo</p>
+                    </div>
+                </div>
+                <!-- Preview do militar -->
+                <div id="novoMilitarPreview" class="militar-preview hidden">
+                    <div class="militar-preview-name" id="novoMilitarNome"></div>
+                    <div class="militar-preview-info" id="novoMilitarInfo"></div>
+                </div>
+                <!-- Etapa 2: Dados -->
+                <div id="novoEtapa2" class="hidden">
+                    <div class="form-group">
+                        <label class="form-label">Usuário SEI</label>
+                        <input type="text" id="novoUsuarioSei" class="form-input" placeholder="seu.usuario" required>
+                        <p class="form-hint">O login que o usuário usa no SEI</p>
+                    </div>
+                    <div style="display:flex;gap:12px">
+                        <button type="button" class="btn btn-secondary" onclick="Admin.resetNovo()">Voltar</button>
+                        <button type="submit" class="btn btn-primary" style="flex:1" id="novoSubmit">Criar Usuário</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar Usuário -->
+    <div id="modalEditar" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Editar Usuário</h2>
+                <button class="modal-close" onclick="Admin.closeModal('modalEditar')">&times;</button>
+            </div>
+            <div id="editarAlert"></div>
+            <form onsubmit="Admin.salvarUsuario(event)">
+                <input type="hidden" id="editarId">
+                <div class="form-group">
+                    <label class="form-label">Usuário SEI</label>
+                    <input type="text" id="editarUsuarioSei" class="form-input" readonly style="background:var(--bg-tertiary)">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nome Completo</label>
+                    <input type="text" id="editarNome" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Posto/Graduação</label>
+                    <input type="text" id="editarPosto" class="form-input" placeholder="Ex: MAJ QOBMEC">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cargo</label>
+                    <input type="text" id="editarCargo" class="form-input" placeholder="Ex: Diretor">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Unidade</label>
+                    <input type="text" id="editarUnidade" class="form-input" placeholder="Ex: DRH">
+                </div>
+                <div style="display:flex;gap:12px">
+                    <button type="button" class="btn btn-secondary" onclick="Admin.closeModal('modalEditar')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" style="flex:1" id="editarSubmit">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const Admin = {
+            API_URL: window.location.origin + '/api',
+            token: null,
+            usuarios: [],
+            matriculaValidada: null,
+            militarData: null,
+
+            init() {
+                this.token = localStorage.getItem('plattargus_token');
+                if (!this.token) {
+                    alert('Você precisa estar logado para acessar esta página.');
+                    window.location.href = '/';
+                    return;
+                }
+                this.carregarEstatisticas();
+                this.carregarUsuarios();
+            },
+
+            async api(endpoint, method = 'GET', body = null) {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + this.token
+                    }
+                };
+                if (body) options.body = JSON.stringify(body);
+                const response = await fetch(this.API_URL + endpoint, options);
+                if (response.status === 401 || response.status === 403) {
+                    alert('Sessão expirada ou sem permissão. Faça login novamente.');
+                    window.location.href = '/';
+                    return null;
+                }
+                return response.json();
+            },
+
+            async carregarEstatisticas() {
+                const data = await this.api('/admin/estatisticas');
+                if (data && data.usuarios) {
+                    document.getElementById('statTotal').textContent = data.usuarios.total;
+                    document.getElementById('statAtivos').textContent = data.usuarios.ativos;
+                    document.getElementById('statCredencial').textContent = data.usuarios.com_credencial;
+                    document.getElementById('statPendentes').textContent = data.usuarios.primeiro_acesso_pendente;
+                }
+            },
+
+            async carregarUsuarios() {
+                const params = new URLSearchParams();
+                const search = document.getElementById('searchInput').value;
+                const ativo = document.getElementById('filterAtivo').value;
+
+                if (search) params.append('search', search);
+                if (ativo !== '') params.append('ativo', ativo);
+
+                const data = await this.api('/admin/usuarios?' + params.toString());
+                if (data && data.usuarios) {
+                    this.usuarios = data.usuarios;
+                    this.renderTabela();
+                }
+            },
+
+            filtrar() {
+                clearTimeout(this.filterTimeout);
+                this.filterTimeout = setTimeout(() => this.carregarUsuarios(), 300);
+            },
+
+            renderTabela() {
+                const tbody = document.getElementById('usuariosTable');
+                const filterCredencial = document.getElementById('filterCredencial').value;
+
+                let usuarios = this.usuarios;
+                if (filterCredencial !== '') {
+                    usuarios = usuarios.filter(u => u.sei_credencial_ativa == (filterCredencial === '1'));
+                }
+
+                if (usuarios.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><div class="empty-state-icon">👥</div>Nenhum usuário encontrado</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = usuarios.map(u => `
+                    <tr>
+                        <td>
+                            <div class="user-info">
+                                <span class="user-name">${u.posto_grad ? u.posto_grad + ' ' : ''}${u.nome_completo || '-'}</span>
+                                <span class="user-sei">${u.usuario_sei}</span>
+                            </div>
+                        </td>
+                        <td>${u.matricula || '-'}</td>
+                        <td>${u.unidade || '-'}</td>
+                        <td>
+                            ${u.ativo
+                                ? '<span class="badge badge-success">Ativo</span>'
+                                : '<span class="badge badge-error">Inativo</span>'}
+                            ${u.primeiro_acesso ? '<span class="badge badge-warning" style="margin-left:4px">1º Acesso</span>' : ''}
+                        </td>
+                        <td>
+                            ${u.sei_credencial_ativa
+                                ? '<span class="badge badge-info">Vinculada</span>'
+                                : '<span class="badge badge-error">Não</span>'}
+                        </td>
+                        <td>${u.ultimo_acesso ? new Date(u.ultimo_acesso).toLocaleDateString('pt-BR') : 'Nunca'}</td>
+                        <td>
+                            <div class="actions">
+                                <button class="btn btn-sm btn-secondary" onclick="Admin.editarUsuario(${u.id})">Editar</button>
+                                ${u.ativo
+                                    ? `<button class="btn btn-sm btn-danger" onclick="Admin.desativarUsuario(${u.id})">Desativar</button>`
+                                    : `<button class="btn btn-sm btn-success" onclick="Admin.reativarUsuario(${u.id})">Reativar</button>`}
+                                ${u.primeiro_acesso || !u.ativo ? '' : `<button class="btn btn-sm btn-secondary" onclick="Admin.resetSenha(${u.id})">Reset</button>`}
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            },
+
+            openModal(id) {
+                document.getElementById(id).classList.add('active');
+            },
+
+            closeModal(id) {
+                document.getElementById(id).classList.remove('active');
+            },
+
+            openNovoUsuario() {
+                this.matriculaValidada = null;
+                this.militarData = null;
+                document.getElementById('novoMatricula').value = '';
+                document.getElementById('novoUsuarioSei').value = '';
+                document.getElementById('novoAlert').innerHTML = '';
+                document.getElementById('novoEtapa1').classList.remove('hidden');
+                document.getElementById('novoEtapa2').classList.add('hidden');
+                document.getElementById('novoMilitarPreview').classList.add('hidden');
+                this.openModal('modalNovo');
+            },
+
+            async validarMatricula() {
+                const matricula = document.getElementById('novoMatricula').value.trim();
+                const alertDiv = document.getElementById('novoAlert');
+                if (!matricula) {
+                    alertDiv.innerHTML = '<div class="alert alert-error">Digite a matrícula</div>';
+                    return;
+                }
+
+                alertDiv.innerHTML = '<div class="alert"><span class="spinner"></span> Validando...</div>';
+
+                try {
+                    const response = await fetch(this.API_URL + '/auth/validar-matricula', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ matricula })
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        this.matriculaValidada = matricula;
+                        this.militarData = data.militar;
+                        document.getElementById('novoMilitarNome').textContent = data.militar.formatado || (data.militar.posto_grad + ' ' + data.militar.nome);
+                        document.getElementById('novoMilitarInfo').textContent = 'Lotação: ' + (data.militar.lotacao || 'N/A');
+                        document.getElementById('novoEtapa1').classList.add('hidden');
+                        document.getElementById('novoMilitarPreview').classList.remove('hidden');
+                        document.getElementById('novoEtapa2').classList.remove('hidden');
+                        alertDiv.innerHTML = '';
+                    } else if (data.ja_cadastrado) {
+                        alertDiv.innerHTML = '<div class="alert alert-error">' + data.message + ' Usuário SEI: <strong>' + data.usuario_sei + '</strong></div>';
+                    } else {
+                        alertDiv.innerHTML = '<div class="alert alert-error">' + data.message + '</div>';
+                    }
+                } catch (e) {
+                    alertDiv.innerHTML = '<div class="alert alert-error">Erro de conexão</div>';
+                }
+            },
+
+            resetNovo() {
+                this.matriculaValidada = null;
+                this.militarData = null;
+                document.getElementById('novoEtapa1').classList.remove('hidden');
+                document.getElementById('novoEtapa2').classList.add('hidden');
+                document.getElementById('novoMilitarPreview').classList.add('hidden');
+                document.getElementById('novoAlert').innerHTML = '';
+            },
+
+            async criarUsuario(event) {
+                event.preventDefault();
+                if (!this.matriculaValidada || !this.militarData) {
+                    document.getElementById('novoAlert').innerHTML = '<div class="alert alert-error">Valide a matrícula primeiro</div>';
+                    return;
+                }
+
+                const usuarioSei = document.getElementById('novoUsuarioSei').value.trim();
+                if (!usuarioSei) {
+                    document.getElementById('novoAlert').innerHTML = '<div class="alert alert-error">Digite o usuário SEI</div>';
+                    return;
+                }
+
+                const btn = document.getElementById('novoSubmit');
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> Criando...';
+
+                const data = await this.api('/admin/usuarios', 'POST', {
+                    usuario_sei: usuarioSei,
+                    matricula: this.matriculaValidada,
+                    nome_completo: this.militarData.nome,
+                    posto_grad: this.militarData.posto_grad,
+                    unidade: this.militarData.lotacao
+                });
+
+                if (data && data.success) {
+                    this.closeModal('modalNovo');
+                    this.carregarUsuarios();
+                    this.carregarEstatisticas();
+                } else {
+                    document.getElementById('novoAlert').innerHTML = '<div class="alert alert-error">' + (data?.message || 'Erro ao criar usuário') + '</div>';
+                }
+
+                btn.disabled = false;
+                btn.innerHTML = 'Criar Usuário';
+            },
+
+            editarUsuario(id) {
+                const u = this.usuarios.find(x => x.id === id);
+                if (!u) return;
+
+                document.getElementById('editarId').value = u.id;
+                document.getElementById('editarUsuarioSei').value = u.usuario_sei;
+                document.getElementById('editarNome').value = u.nome_completo || '';
+                document.getElementById('editarPosto').value = u.posto_grad || '';
+                document.getElementById('editarCargo').value = u.cargo || '';
+                document.getElementById('editarUnidade').value = u.unidade || '';
+                document.getElementById('editarAlert').innerHTML = '';
+                this.openModal('modalEditar');
+            },
+
+            async salvarUsuario(event) {
+                event.preventDefault();
+                const id = document.getElementById('editarId').value;
+                const btn = document.getElementById('editarSubmit');
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> Salvando...';
+
+                const data = await this.api('/admin/usuarios/' + id, 'PUT', {
+                    nome_completo: document.getElementById('editarNome').value,
+                    posto_grad: document.getElementById('editarPosto').value,
+                    cargo: document.getElementById('editarCargo').value,
+                    unidade: document.getElementById('editarUnidade').value
+                });
+
+                if (data && data.success) {
+                    this.closeModal('modalEditar');
+                    this.carregarUsuarios();
+                } else {
+                    document.getElementById('editarAlert').innerHTML = '<div class="alert alert-error">' + (data?.message || 'Erro ao salvar') + '</div>';
+                }
+
+                btn.disabled = false;
+                btn.innerHTML = 'Salvar';
+            },
+
+            async desativarUsuario(id) {
+                if (!confirm('Deseja desativar este usuário?')) return;
+                const data = await this.api('/admin/usuarios/' + id, 'DELETE');
+                if (data && data.success) {
+                    this.carregarUsuarios();
+                    this.carregarEstatisticas();
+                } else {
+                    alert(data?.message || 'Erro ao desativar');
+                }
+            },
+
+            async reativarUsuario(id) {
+                if (!confirm('Deseja reativar este usuário?')) return;
+                const data = await this.api('/admin/usuarios/' + id + '/reativar', 'POST');
+                if (data && data.success) {
+                    this.carregarUsuarios();
+                    this.carregarEstatisticas();
+                } else {
+                    alert(data?.message || 'Erro ao reativar');
+                }
+            },
+
+            async resetSenha(id) {
+                if (!confirm('Deseja resetar a senha deste usuário? Ele precisará definir nova senha no próximo acesso.')) return;
+                const data = await this.api('/admin/usuarios/' + id + '/reset-senha', 'POST');
+                if (data && data.success) {
+                    alert('Senha resetada com sucesso!');
+                    this.carregarUsuarios();
+                } else {
+                    alert(data?.message || 'Erro ao resetar senha');
+                }
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => Admin.init());
+    </script>
+</body>
+</html>

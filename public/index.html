@@ -209,21 +209,47 @@
                                 </div>
                                 <button type="submit" class="btn-login" id="loginBtn">Entrar</button>
                             </form>
-                            <form id="primeiroForm" class="hidden" onsubmit="PlattArgus.handlePrimeiroAcesso(event)">
-                                <div class="form-group">
-                                    <label class="form-label">Usuário SEI</label>
-                                    <input type="text" id="primeiroUsuario" class="form-input" placeholder="seu.usuario" required>
-                                    <p class="form-hint">Seu usuário deve ter sido pré-cadastrado</p>
+                            <form id="primeiroForm" class="hidden" onsubmit="PlattArgus.handleCadastro(event)">
+                                <!-- Etapa 1: Matrícula -->
+                                <div id="etapaMatricula">
+                                    <div class="form-group">
+                                        <label class="form-label">Matrícula do Efetivo</label>
+                                        <div style="display:flex;gap:8px">
+                                            <input type="text" id="primeiroMatricula" class="form-input" placeholder="Ex: 1234567-8" style="flex:1">
+                                            <button type="button" class="btn-login" style="width:auto;padding:14px 20px" onclick="PlattArgus.validarMatricula()" id="btnValidar">Validar</button>
+                                        </div>
+                                        <p class="form-hint">Digite sua matrícula para validar no efetivo</p>
+                                    </div>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label">Criar Senha</label>
-                                    <input type="password" id="primeiroSenha" class="form-input" placeholder="Mínimo 6 caracteres" required minlength="6">
+                                <!-- Dados do Militar (aparece após validação) -->
+                                <div id="dadosMilitar" class="hidden" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:16px;margin-bottom:20px">
+                                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                                        <span style="color:var(--success);font-size:1.2rem">✓</span>
+                                        <strong id="militarNome" style="color:var(--success)"></strong>
+                                    </div>
+                                    <div style="font-size:0.85rem;color:var(--text-muted)">
+                                        <span id="militarLotacao"></span>
+                                    </div>
+                                    <button type="button" style="margin-top:10px;background:none;border:none;color:var(--accent);font-size:0.8rem;cursor:pointer;text-decoration:underline" onclick="PlattArgus.resetMatricula()">Alterar matrícula</button>
                                 </div>
-                                <div class="form-group">
-                                    <label class="form-label">Confirmar Senha</label>
-                                    <input type="password" id="primeiroSenhaConfirm" class="form-input" placeholder="Repita a senha" required>
+                                <!-- Etapa 2: Credenciais (aparece após validação) -->
+                                <div id="etapaCredenciais" class="hidden">
+                                    <div class="form-group">
+                                        <label class="form-label">Usuário SEI</label>
+                                        <input type="text" id="primeiroUsuario" class="form-input" placeholder="seu.usuario" required>
+                                        <p class="form-hint">O usuário que você usa para acessar o SEI</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Criar Senha</label>
+                                        <input type="password" id="primeiroSenha" class="form-input" placeholder="Mínimo 6 caracteres" required minlength="6">
+                                        <p class="form-hint">Senha para acessar o PlattArgus (não é a senha do SEI)</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Confirmar Senha</label>
+                                        <input type="password" id="primeiroSenhaConfirm" class="form-input" placeholder="Repita a senha" required>
+                                    </div>
+                                    <button type="submit" class="btn-login" id="primeiroBtn">Criar Conta</button>
                                 </div>
-                                <button type="submit" class="btn-login" id="primeiroBtn">Cadastrar Senha</button>
                             </form>
                             <p class="login-footer">PlattArgus v3.0 • CBMAC</p>
                         </div>
@@ -234,7 +260,14 @@
                 const primeiroForm=document.getElementById('primeiroForm');
                 const tabs=document.querySelectorAll('.login-tab');
                 if(tab==='login'){loginForm.classList.remove('hidden');primeiroForm.classList.add('hidden');tabs[0].classList.add('active');tabs[1].classList.remove('active')}
-                else{loginForm.classList.add('hidden');primeiroForm.classList.remove('hidden');tabs[0].classList.remove('active');tabs[1].classList.add('active')}
+                else{
+                    loginForm.classList.add('hidden');primeiroForm.classList.remove('hidden');tabs[0].classList.remove('active');tabs[1].classList.add('active');
+                    // Reset estado do cadastro
+                    this.matriculaValidada=null;
+                    document.getElementById('etapaMatricula').classList.remove('hidden');
+                    document.getElementById('dadosMilitar').classList.add('hidden');
+                    document.getElementById('etapaCredenciais').classList.add('hidden');
+                }
                 document.getElementById('loginAlert').innerHTML='';
             },
             async handleLogin(event){
@@ -247,8 +280,43 @@
                 const result=await this.login(usuario,senha);
                 if(!result.success){alertDiv.innerHTML='<div class="alert alert-error">❌ '+result.message+'</div>';btn.disabled=false;btn.innerHTML='Entrar'}
             },
-            async handlePrimeiroAcesso(event){
+            matriculaValidada:null,
+            async validarMatricula(){
+                const matricula=document.getElementById('primeiroMatricula').value.trim();
+                const btn=document.getElementById('btnValidar');
+                const alertDiv=document.getElementById('loginAlert');
+                if(!matricula){alertDiv.innerHTML='<div class="alert alert-error">❌ Digite sua matrícula</div>';return}
+                btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+                try{
+                    const response=await fetch(this.API_URL+'/auth/validar-matricula',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({matricula})});
+                    const data=await response.json();
+                    if(data.success){
+                        this.matriculaValidada=matricula;
+                        document.getElementById('militarNome').textContent=data.militar.formatado||(data.militar.posto_grad+' '+data.militar.nome);
+                        document.getElementById('militarLotacao').textContent='Lotação: '+(data.militar.lotacao||'N/A');
+                        document.getElementById('etapaMatricula').classList.add('hidden');
+                        document.getElementById('dadosMilitar').classList.remove('hidden');
+                        document.getElementById('etapaCredenciais').classList.remove('hidden');
+                        alertDiv.innerHTML='';
+                    }else if(data.ja_cadastrado){
+                        alertDiv.innerHTML='<div class="alert alert-error">❌ '+data.message+' Use o login com usuário: <strong>'+data.usuario_sei+'</strong></div>';
+                    }else{
+                        alertDiv.innerHTML='<div class="alert alert-error">❌ '+data.message+'</div>';
+                    }
+                }catch(error){alertDiv.innerHTML='<div class="alert alert-error">❌ Erro de conexão</div>'}
+                finally{btn.disabled=false;btn.innerHTML='Validar'}
+            },
+            resetMatricula(){
+                this.matriculaValidada=null;
+                document.getElementById('primeiroMatricula').value='';
+                document.getElementById('etapaMatricula').classList.remove('hidden');
+                document.getElementById('dadosMilitar').classList.add('hidden');
+                document.getElementById('etapaCredenciais').classList.add('hidden');
+                document.getElementById('loginAlert').innerHTML='';
+            },
+            async handleCadastro(event){
                 event.preventDefault();
+                if(!this.matriculaValidada){document.getElementById('loginAlert').innerHTML='<div class="alert alert-error">❌ Valide sua matrícula primeiro</div>';return}
                 const usuario=document.getElementById('primeiroUsuario').value;
                 const senha=document.getElementById('primeiroSenha').value;
                 const senhaConfirm=document.getElementById('primeiroSenhaConfirm').value;
@@ -257,12 +325,12 @@
                 if(senha!==senhaConfirm){alertDiv.innerHTML='<div class="alert alert-error">❌ As senhas não conferem</div>';return}
                 btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Cadastrando...';
                 try{
-                    const response=await fetch(this.API_URL+'/auth/primeiro-acesso',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario_sei:usuario,senha:senha,senha_confirmation:senhaConfirm})});
+                    const response=await fetch(this.API_URL+'/auth/cadastrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({matricula:this.matriculaValidada,usuario_sei:usuario,senha:senha,senha_confirmation:senhaConfirm})});
                     const data=await response.json();
-                    if(data.success){alertDiv.innerHTML='<div class="alert alert-success">✅ Senha cadastrada! Faça login.</div>';setTimeout(()=>this.showLoginTab('login'),1500)}
+                    if(data.success){alertDiv.innerHTML='<div class="alert alert-success">✅ Cadastro realizado! Faça login.</div>';setTimeout(()=>this.showLoginTab('login'),1500)}
                     else{alertDiv.innerHTML='<div class="alert alert-error">❌ '+data.message+'</div>'}
                 }catch(error){alertDiv.innerHTML='<div class="alert alert-error">❌ Erro de conexão</div>'}
-                finally{btn.disabled=false;btn.innerHTML='Cadastrar Senha'}
+                finally{btn.disabled=false;btn.innerHTML='Criar Conta'}
             },
             renderDashboard(){
                 const iniciais=this.user.nome_completo?this.user.nome_completo.split(' ').map(n=>n[0]).slice(0,2).join(''):this.user.usuario_sei.substring(0,2).toUpperCase();
@@ -320,7 +388,7 @@
                             <div class="acoes-grid">
                                 <button class="btn-acao" onclick="PlattArgus.openCredencial()">🔐 Atualizar Credencial SEI</button>
                                 <button class="btn-acao" onclick="alert('Em breve!')">📋 Histórico de Análises</button>
-                                <button class="btn-acao" onclick="alert('Em breve!')">👥 Pesquisar Efetivo</button>
+                                <button class="btn-acao" onclick="window.location.href='/admin.html'">⚙️ Administração</button>
                             </div>
                         </div>
                     </main>`;

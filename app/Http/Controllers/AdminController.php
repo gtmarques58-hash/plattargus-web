@@ -50,7 +50,7 @@ class AdminController extends Controller
 
         $usuarios = $query->orderBy('nome_completo')
             ->get([
-                'id', 'usuario_sei', 'nome_completo', 'posto_grad',
+                'id', 'usuario_sei', 'matricula', 'nome_completo', 'posto_grad',
                 'cargo', 'unidade', 'ativo', 'primeiro_acesso',
                 'sei_credencial_ativa', 'ultimo_acesso', 'created_at'
             ]);
@@ -70,6 +70,7 @@ class AdminController extends Controller
     {
         $request->validate([
             'usuario_sei' => 'required|string|max:100|unique:users,usuario_sei',
+            'matricula' => 'nullable|string|max:20|unique:users,matricula',
             'nome_completo' => 'required|string|max:255',
             'posto_grad' => 'nullable|string|max:50',
             'cargo' => 'nullable|string|max:100',
@@ -82,6 +83,7 @@ class AdminController extends Controller
 
         $usuario = User::create([
             'usuario_sei' => strtolower(trim($request->usuario_sei)),
+            'matricula' => $request->matricula,
             'password' => Hash::make($senhaTemp),
             'nome_completo' => $request->nome_completo,
             'posto_grad' => $request->posto_grad,

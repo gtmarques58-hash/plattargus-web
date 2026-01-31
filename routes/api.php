@@ -27,11 +27,21 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])
         ->middleware('throttle:login')
         ->name('auth.login');
-    
-    // Primeiro acesso
+
+    // Primeiro acesso (legado - para usuários pré-cadastrados)
     Route::post('/primeiro-acesso', [AuthController::class, 'primeiroAcesso'])
         ->middleware('throttle:login')
         ->name('auth.primeiro-acesso');
+
+    // Validar matrícula na API de Efetivo
+    Route::post('/validar-matricula', [AuthController::class, 'validarMatricula'])
+        ->middleware('throttle:login')
+        ->name('auth.validar-matricula');
+
+    // Cadastro via matrícula do efetivo
+    Route::post('/cadastrar', [AuthController::class, 'cadastrar'])
+        ->middleware('throttle:login')
+        ->name('auth.cadastrar');
 });
 
 // Health check

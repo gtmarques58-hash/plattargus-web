@@ -8,6 +8,7 @@ use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends Controller
@@ -114,6 +115,142 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'Senha definida com sucesso! Faca login agora.',
         ]);
+    }
+
+    /**
+     * Valida matrícula na API de Efetivo.
+     * Endpoint público para o frontend validar antes de cadastrar.
+     */
+    public function validarMatricula(Request $request): JsonResponse
+    {
+        $request->validate([
+            'matricula' => 'required|string|max:20',
+        ]);
+
+        $matricula = trim($request->matricula);
+
+        // Verificar se matrícula já está cadastrada
+        $existente = User::where('matricula', $matricula)->first();
+        if ($existente) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta matrícula já possui cadastro no sistema.',
+                'ja_cadastrado' => true,
+                'usuario_sei' => $existente->usuario_sei,
+            ], 409);
+        }
+
+        // Buscar na API de Efetivo (FastAPI)
+        try {
+            $engineUrl = rtrim(config('services.platt_engine.url', 'http://plattargus-api-1:8000'), '/');
+            $response = Http::timeout(10)->get("{$engineUrl}/api/militar/{$matricula}");
+
+            if (!$response->successful()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Matrícula não encontrada no efetivo.',
+                ], 404);
+            }
+
+            $data = $response->json();
+            $militar = $data['militar'] ?? $data;
+
+            return response()->json([
+                'success' => true,
+                'militar' => [
+                    'matricula' => $militar['matricula_completa'] ?? $militar['matricula'] ?? $matricula,
+                    'nome' => $militar['nome'] ?? null,
+                    'posto_grad' => $militar['posto_grad'] ?? null,
+                    'lotacao' => $militar['lotacao'] ?? null,
+                    'formatado' => $militar['formatado'] ?? null,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao consultar API de efetivo: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Cadastro de novo usuário via matrícula do efetivo.
+     * Endpoint público - valida matrícula e cria usuário automaticamente.
+     */
+    public function cadastrar(Request $request): JsonResponse
+    {
+        $request->validate([
+            'matricula' => 'required|string|max:20',
+            'usuario_sei' => 'required|string|max:100',
+            'senha' => 'required|string|min:6|confirmed',
+        ]);
+
+        $matricula = trim($request->matricula);
+        $usuarioSei = strtolower(trim($request->usuario_sei));
+
+        // Verificar se matrícula já cadastrada
+        if (User::where('matricula', $matricula)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta matrícula já possui cadastro no sistema.',
+            ], 409);
+        }
+
+        // Verificar se usuario_sei já cadastrado
+        if (User::where('usuario_sei', $usuarioSei)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Este usuário SEI já está cadastrado.',
+            ], 409);
+        }
+
+        // Buscar dados na API de Efetivo (FastAPI)
+        try {
+            $engineUrl = rtrim(config('services.platt_engine.url', 'http://plattargus-api-1:8000'), '/');
+            $response = Http::timeout(10)->get("{$engineUrl}/api/militar/{$matricula}");
+
+            if (!$response->successful()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Matrícula não encontrada no efetivo.',
+                ], 404);
+            }
+
+            $data = $response->json();
+            $militar = $data['militar'] ?? $data;
+
+            // Criar usuário
+            $user = User::create([
+                'usuario_sei' => $usuarioSei,
+                'matricula' => $militar['matricula_completa'] ?? $militar['matricula'] ?? $matricula,
+                'password' => Hash::make($request->senha),
+                'nome_completo' => $militar['nome'] ?? null,
+                'posto_grad' => $militar['posto_grad'] ?? null,
+                'unidade' => $militar['lotacao'] ?? null,
+                'ativo' => true,
+                'primeiro_acesso' => false, // Já está definindo a senha agora
+            ]);
+
+            AuditLog::log($user->id, 'cadastro_efetivo', 'success', 'user', $user->usuario_sei, [
+                'matricula' => $matricula,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cadastro realizado com sucesso! Faça login agora.',
+                'usuario' => [
+                    'id' => $user->id,
+                    'usuario_sei' => $user->usuario_sei,
+                    'nome_completo' => $user->nome_completo,
+                ],
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao cadastrar: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function verificar(Request $request): JsonResponse
