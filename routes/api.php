@@ -7,6 +7,7 @@ use App\Http\Controllers\ProcessoController;
 use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AutoridadeController;
+use App\Http\Controllers\NotaBGController;
 
 /*
 |--------------------------------------------------------------------------
@@ -54,6 +55,7 @@ Route::get('/health', function () {
     ]);
 })->name('health');
 
+
 // =========================================================================
 // ROTAS AUTENTICADAS
 // =========================================================================
@@ -100,6 +102,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // PROCESSOS SEI
     // -----------------------------------------------------------------
     Route::prefix('processos')->group(function () {
+        // Criar processo
+        Route::post('/criar', [ProcessoController::class, 'criarProcesso'])->name('processos.criar');
+
         // Análise
         Route::post('/analisar', [ProcessoController::class, 'analisar'])->name('processos.analisar');
         Route::get('/analises', [ProcessoController::class, 'listarAnalises'])->name('processos.analises');
@@ -121,7 +126,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/chat', [ProcessoController::class, 'chat'])->name('processos.chat');
         Route::post('/consultar-lei', [ProcessoController::class, 'consultarLei'])->name('processos.consultar-lei');
     });
-    
+
+    // -----------------------------------------------------------------
+    // NOTA PARA BOLETIM GERAL
+    // -----------------------------------------------------------------
+    Route::prefix('nota-bg')->group(function () {
+        Route::post('/inserir', [NotaBGController::class, 'inserir'])->name('nota-bg.inserir');
+    });
+
     // -----------------------------------------------------------------
     // BLOCOS DE ASSINATURA (NOVO)
     // -----------------------------------------------------------------

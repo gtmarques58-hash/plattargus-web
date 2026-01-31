@@ -33,7 +33,7 @@
         .welcome-section{text-align:center;margin-bottom:40px}
         .welcome-title{font-size:2rem;font-weight:700;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:12px}
         .welcome-subtitle{color:var(--text-muted);font-size:1rem}
-        .cards-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-bottom:40px}
+        .cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;margin-bottom:40px}
         @media(max-width:1100px){.cards-grid{grid-template-columns:repeat(2,1fr)}}
         @media(max-width:900px){.cards-grid{grid-template-columns:repeat(2,1fr)}}
         @media(max-width:600px){.cards-grid{grid-template-columns:1fr}}
@@ -185,6 +185,7 @@
             irParaAnalisar(){if(!this.user.tem_credencial_sei){this.openCredencial();return}window.location.href='/analisar.html'},
             irParaGerar(){if(!this.user.tem_credencial_sei){this.openCredencial();return}window.location.href='/documentos.html'},
             irParaNotaBG(){if(!this.user.tem_credencial_sei){this.openCredencial();return}window.location.href='/nota-bg.html'},
+            irParaDispensaRecompensa(){if(!this.user.tem_credencial_sei){this.openCredencial();return}window.location.href='/dispensa-recompensa.html'},
             irParaLegislacao(){window.location.href='/legislacao.html'},
             renderLogin(){
                 document.getElementById('app').innerHTML=`
@@ -383,6 +384,12 @@
                                 <h3 class="card-title">Nota para BG</h3>
                                 <p class="card-subtitle">Múltiplas publicações</p>
                                 <p class="card-description">Crie notas para Boletim Geral com várias publicações (férias, viagens, etc.) organizadas por categoria.</p>
+                            </div>
+                            <div class="card" onclick="PlattArgus.irParaDispensaRecompensa()">
+                                <div class="card-icon">🎖️</div>
+                                <h3 class="card-title">Dispensa Recompensa</h3>
+                                <p class="card-subtitle">Workflow completo</p>
+                                <p class="card-description">Gera 3 documentos no mesmo NUP: Requerimento, Nota BG e Memorando de encaminhamento.</p>
                             </div>
                             <div class="card" onclick="PlattArgus.irParaLegislacao()">
                                 <div class="card-icon">⚖️</div>

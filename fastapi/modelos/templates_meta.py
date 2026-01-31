@@ -170,6 +170,17 @@ TEMPLATES_META = {
             "CPF_DEPENDENTE"
         ],
     },
+    "REQ_DISPENSA_RECOMPENSA": {
+        "arquivo_path": MODELOS_DIR / "requerimentos" / "REQ_DISPENSA_RECOMPENSA.txt",
+        "tipo_sei": "Requerimento",
+        "descricao": "Requerimento de dispensa por bons servicos prestados",
+        "campos": [
+            "NOME_COMANDANTE", "CARGO_COMANDANTE", "NOME_REQUERENTE",
+            "POSTO_GRAD_REQUERENTE", "MATRICULA", "UNIDADE_LOTACAO",
+            "QUANTIDADE_DIAS", "QUANTIDADE_DIAS_EXTENSO", "DATA_INICIO",
+            "JUSTIFICATIVA"
+        ],
+    },
 
     # ==========================================================================
     # DESPACHOS
@@ -382,7 +393,7 @@ OFICIOS (2):
 - OFICIO_EXTERNO: Oficio para orgaos externos
 - OFICIO_CONVOCACAO_FERIAS: Oficio de convocacao para ferias pendentes
 
-REQUERIMENTOS (7):
+REQUERIMENTOS (8):
 - REQ_GENERICO: Requerimento generico
 - REQ_LICENCA_NUPCIAS: Requerimento de licenca por nupcias
 - REQ_DISPENSA_LUTO: Requerimento de dispensa por luto
@@ -390,6 +401,7 @@ REQUERIMENTOS (7):
 - REQ_LICENCA_MATERNIDADE: Requerimento de licenca maternidade
 - REQ_ADICIONAL_TITULACAO: Requerimento de adicional de titulacao
 - REQ_INCLUSAO_DEPENDENTE: Requerimento de inclusao de dependente
+- REQ_DISPENSA_RECOMPENSA: Requerimento de dispensa por bons servicos
 
 DESPACHOS (5):
 - DESPACHO_SIMPLES: Despacho com texto livre
@@ -409,5 +421,5 @@ PORTARIAS (2):
 - PORTARIA_COMISSAO: Portaria de nomeacao de comissao
 - PORTARIA_GENERICA: Portaria generica
 
-TOTAL: 23 templates
+TOTAL: 24 templates
 """

@@ -417,7 +417,7 @@
     <script>
         const API_URL = '/api';
         const API_NOTA = '/api/nota-bg';
-        const MILITAR_API = '/api/nota-bg/militar';
+        const MILITAR_API = '/api/militar';
 
         const App = {
             token: localStorage.getItem('plattargus_token'),
@@ -651,9 +651,10 @@
 
                     const dropdown = document.getElementById('militarDropdown');
 
-                    if (data.resultados && data.resultados.length > 0) {
-                        this.resultadosBusca = data.resultados;
-                        dropdown.innerHTML = data.resultados.map((m, i) => `
+                    const resultados = data.resultados || data.militares || [];
+                    if (resultados.length > 0) {
+                        this.resultadosBusca = resultados;
+                        dropdown.innerHTML = resultados.map((m, i) => `
                             <div class="autocomplete-item" onclick="App.selecionarMilitar(${i})">
                                 <div class="nome">${m.formatado || m.nome}</div>
                                 <div class="detalhe">${m.lotacao || ''}</div>

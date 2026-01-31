@@ -358,35 +358,62 @@ async def extrair_sei_do_viewer(page) -> Optional[str]:
 async def extrair_ultimo_documento_arvore(page, tipo_documento: str = "Despacho") -> Dict[str, Optional[str]]:
     """Extrai o último documento da árvore do processo."""
     debug_print("Extraindo último documento da árvore...")
-    
+
     resultado = {
         "ultimo_item_arvore_texto": None,
         "numero_arvore": None,
         "sei_numero_arvore": None,
     }
-    
-    # Padrão: "Despacho 86 (0018817133)"
-    padrao = re.compile(
-        rf"({tipo_documento})\s*(\d+)\s*\((\d{{10,}})\)",
-        re.IGNORECASE
-    )
-    
+
     try:
         frame_arvore = page.frame_locator(SELETOR_FRAME_ARVORE).first
         texto = await frame_arvore.locator("#divArvore").inner_text(timeout=5000)
-        
-        # Encontra todas as ocorrências e pega a última
-        matches = list(padrao.finditer(texto))
-        
+        debug_print(f"Texto da árvore (últimos 500 chars): ...{texto[-500:]}")
+
+        # Estratégia 1: Padrão específico para o tipo de documento
+        # Ex: "Despacho 86 (0018817133)" ou "Memorando 123 (0019181003)"
+        tipo_simplificado = tipo_documento.split()[0]  # Pega primeira palavra
+        padrao_especifico = re.compile(
+            rf"({tipo_simplificado}[^(]*?)\s*(\d+)\s*\((\d{{10,}})\)",
+            re.IGNORECASE
+        )
+
+        matches = list(padrao_especifico.finditer(texto))
         if matches:
             ultimo = matches[-1]
             resultado["ultimo_item_arvore_texto"] = _norm_space(ultimo.group(0))
             resultado["numero_arvore"] = ultimo.group(2)
             resultado["sei_numero_arvore"] = ultimo.group(3)
-            debug_print(f"Árvore: {resultado['ultimo_item_arvore_texto']}")
+            debug_print(f"Árvore (específico): {resultado['ultimo_item_arvore_texto']}")
+            return resultado
+
+        # Estratégia 2: Padrão genérico - qualquer documento com número SEI
+        # Ex: "Nota para Boletim Geral 5 (0019235863)" ou "Requerimento 1 (0019181003)"
+        padrao_generico = re.compile(
+            r"([A-Za-zÀ-ÿ\s\-]+?)\s+(\d+)\s*\((\d{10,})\)",
+            re.IGNORECASE
+        )
+
+        matches = list(padrao_generico.finditer(texto))
+        if matches:
+            # Pega o último documento da árvore
+            ultimo = matches[-1]
+            resultado["ultimo_item_arvore_texto"] = _norm_space(ultimo.group(0))
+            resultado["numero_arvore"] = ultimo.group(2)
+            resultado["sei_numero_arvore"] = ultimo.group(3)
+            debug_print(f"Árvore (genérico): {resultado['ultimo_item_arvore_texto']}")
+            return resultado
+
+        # Estratégia 3: Só captura o número SEI (10+ dígitos entre parênteses)
+        padrao_sei = re.compile(r"\((\d{10,})\)")
+        matches_sei = list(padrao_sei.finditer(texto))
+        if matches_sei:
+            resultado["sei_numero_arvore"] = matches_sei[-1].group(1)
+            debug_print(f"Árvore (só SEI): {resultado['sei_numero_arvore']}")
+
     except Exception as e:
         debug_print(f"Erro ao ler árvore: {e}")
-    
+
     return resultado
 
 
@@ -691,39 +718,51 @@ async def atuar_no_processo(
             output["foto"] = None
             
             # =================================================================
-            # 14. VALIDAÇÕES
+            # 14. CONSOLIDAR NÚMERO SEI
             # =================================================================
-            erros = []
-            if not output["sei_numero_arvore"] and not output["sei_numero_editor"]:
-                erros.append("SEI nº não capturado")
+            # Garante que temos o número SEI de alguma fonte
+            sei_numero_final = (
+                output["sei_numero_arvore"] or
+                output["sei_numero_editor"] or
+                None
+            )
+            output["sei_numero_arvore"] = sei_numero_final
+            output["sei_numero"] = sei_numero_final  # Campo padronizado para retorno
+
+            # =================================================================
+            # 15. VALIDAÇÕES (mais tolerante)
+            # =================================================================
+            avisos = []
+            if not sei_numero_final:
+                avisos.append("SEI nº não capturado")
             if not output["cabecalho_doc"]:
-                erros.append("Cabeçalho não capturado")
+                avisos.append("Cabeçalho não capturado")
             if not output["numero_doc"]:
-                erros.append("Número do documento não capturado")
-            
-            if erros:
-                output["erro"] = " | ".join(erros)
-                debug_print(f"Erros: {output['erro']}")
-            
+                avisos.append("Número do documento não capturado")
+
+            if avisos:
+                output["avisos"] = avisos
+                debug_print(f"Avisos: {avisos}")
+
             # =================================================================
-            # 15. TELEGRAM (REMOVIDO NESTE SCRIPT)
+            # 16. TELEGRAM (REMOVIDO NESTE SCRIPT)
             #    (atuar) não envia foto; apenas retorna dados do documento.
             # =================================================================
             output["telegram_result"] = None
-            
+
             # =================================================================
-            # 16. RESULTADO FINAL
+            # 17. RESULTADO FINAL
             # =================================================================
-            output["sucesso"] = bool(output["cabecalho_doc"] and output["numero_doc"])
+            # Sucesso se temos o número SEI (documento foi criado)
+            # Mesmo sem cabeçalho/número, se temos SEI, o documento existe
+            output["sucesso"] = bool(sei_numero_final)
             output["documento_criado"] = output["sucesso"]
-            
-            # Garante que sei_numero_arvore tenha algum valor
-            if not output["sei_numero_arvore"] and output["sei_numero_editor"]:
-                output["sei_numero_arvore"] = output["sei_numero_editor"]
-            
+
             if output["sucesso"]:
-                output["mensagem"] = f"Documento '{tipo_documento}' criado com sucesso!"
-                debug_print(f"✅ Documento criado: {output['cabecalho_doc']}")
+                output["mensagem"] = f"Documento SEI nº {sei_numero_final} criado com sucesso!"
+                debug_print(f"✅ Documento criado: SEI nº {sei_numero_final}")
+                if output["cabecalho_doc"]:
+                    debug_print(f"   Cabeçalho: {output['cabecalho_doc']}")
             
             return output
     
