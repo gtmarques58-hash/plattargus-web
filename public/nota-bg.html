@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nota para BG - PlattArgus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root{--bg-primary:#0a0e14;--bg-secondary:#111820;--bg-tertiary:#1a222d;--bg-card:#141c26;--accent:#e63946;--accent-hover:#ff4d5a;--accent-glow:rgba(230,57,70,0.4);--text-primary:#f1f5f9;--text-secondary:#94a3b8;--text-muted:#64748b;--success:#10b981;--warning:#f59e0b;--error:#ef4444;--info:#3b82f6;--border-color:rgba(255,255,255,0.08);--font-display:'Plus Jakarta Sans',sans-serif}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:var(--font-display);background:var(--bg-primary);color:var(--text-primary);min-height:100vh;line-height:1.6}
+        body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(230,57,70,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(230,57,70,0.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:-1}
+
+        .header{background:var(--bg-secondary);border-bottom:1px solid var(--border-color);padding:12px 24px;position:sticky;top:0;z-index:100}
+        .header-content{max-width:1600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+        .logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--accent) 0%,#b91c1c 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;box-shadow:0 0 20px var(--accent-glow)}
+        .logo-text{font-weight:700;font-size:1.1rem;color:var(--text-primary)}
+        .logo-text span{color:var(--accent)}
+        .logo-subtitle{color:var(--text-muted);font-size:0.75rem;margin-left:10px;padding-left:10px;border-left:1px solid var(--border-color)}
+        .btn-header{background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px 16px;border-radius:8px;font-weight:500;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all 0.2s;text-decoration:none}
+        .btn-header:hover{border-color:var(--accent);color:var(--accent)}
+
+        .container{display:grid;grid-template-columns:450px 1fr;gap:20px;padding:20px;max-width:1800px;margin:0 auto}
+        @media(max-width:1200px){.container{grid-template-columns:1fr}}
+
+        .panel{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px}
+        .panel h2{color:var(--accent);margin-bottom:15px;font-size:1.1rem;display:flex;align-items:center;gap:8px}
+        .panel h3{color:var(--text-primary);margin:15px 0 10px;font-size:0.95rem;display:flex;align-items:center;gap:8px}
+
+        .form-group{margin-bottom:14px}
+        .form-label{display:block;font-size:0.85rem;font-weight:500;margin-bottom:6px;color:var(--text-secondary)}
+        .form-input,.form-select,.form-textarea{width:100%;padding:10px 12px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:0.9rem;font-family:var(--font-display);transition:all 0.2s}
+        .form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+        .form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+        .form-hint{font-size:0.75rem;color:var(--text-muted);margin-top:4px}
+        input[type="date"]{cursor:pointer}
+        input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);cursor:pointer;opacity:0.7}
+        input[type="date"]::-webkit-calendar-picker-indicator:hover{opacity:1}
+
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+        .btn{padding:10px 18px;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.85rem;transition:all 0.2s;font-family:var(--font-display);display:inline-flex;align-items:center;gap:8px}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),#b91c1c);color:#fff;box-shadow:0 4px 15px var(--accent-glow)}
+        .btn-primary:hover{transform:translateY(-1px)}
+        .btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+        .btn-secondary{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color)}
+        .btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+        .btn-success{background:var(--success);color:#fff}
+        .btn-success:hover{background:#0ea66d}
+        .btn-block{width:100%;justify-content:center}
+        .btn-sm{padding:6px 12px;font-size:0.8rem}
+
+        .status{padding:10px 14px;border-radius:8px;margin:12px 0;font-size:0.85rem}
+        .status-success{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:var(--success)}
+        .status-error{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:var(--error)}
+        .status-loading{background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:var(--info);display:flex;align-items:center;gap:10px}
+        .status-info{background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:var(--info)}
+        .status-warning{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:var(--warning)}
+
+        .spinner{width:16px;height:16px;border:2px solid var(--border-color);border-top-color:currentColor;border-radius:50%;animation:spin 0.8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+
+        .hidden{display:none!important}
+        .required::after{content:" *";color:var(--error)}
+
+        /* Autocomplete */
+        .autocomplete-wrapper{position:relative}
+        .autocomplete-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;max-height:200px;overflow-y:auto;z-index:50;margin-top:4px;box-shadow:0 10px 25px rgba(0,0,0,0.5)}
+        .autocomplete-item{padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-color);transition:all 0.15s}
+        .autocomplete-item:last-child{border-bottom:none}
+        .autocomplete-item:hover{background:var(--bg-tertiary);border-left:3px solid var(--accent)}
+        .autocomplete-item .nome{font-weight:600;color:var(--text-primary);font-size:0.9rem}
+        .autocomplete-item .detalhe{font-size:0.75rem;color:var(--text-muted)}
+
+        /* Lista de Publicacoes */
+        .pub-list{max-height:400px;overflow-y:auto;margin:15px 0}
+        .pub-item{background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:8px;padding:12px;margin-bottom:10px;position:relative}
+        .pub-item:hover{border-color:var(--accent)}
+        .pub-item-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+        .pub-item-tipo{font-weight:600;color:var(--accent);font-size:0.85rem}
+        .pub-item-categoria{font-size:0.7rem;padding:2px 8px;border-radius:4px;background:var(--bg-primary);color:var(--text-muted)}
+        .pub-item-militar{font-size:0.9rem;color:var(--text-primary)}
+        .pub-item-data{font-size:0.8rem;color:var(--text-muted)}
+        .pub-item-actions{position:absolute;top:8px;right:8px;display:flex;gap:4px}
+        .pub-item-btn{width:24px;height:24px;border:none;border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.7rem;transition:all 0.2s}
+        .pub-item-btn.edit{background:var(--info);color:#fff}
+        .pub-item-btn.delete{background:var(--error);color:#fff}
+        .pub-item-btn:hover{transform:scale(1.1)}
+
+        .pub-empty{text-align:center;padding:30px;color:var(--text-muted)}
+        .pub-empty i{font-size:2rem;margin-bottom:10px;display:block;opacity:0.5}
+
+        .pub-count{background:var(--accent);color:#fff;padding:2px 8px;border-radius:10px;font-size:0.75rem;margin-left:8px}
+
+        /* Categorias no preview */
+        .categoria-header{background:var(--bg-secondary);padding:8px 12px;border-radius:6px;margin:15px 0 10px;font-weight:600;color:var(--text-primary);font-size:0.9rem}
+        .subcategoria-header{padding:6px 12px;margin:10px 0 8px 15px;font-weight:600;color:var(--text-secondary);font-size:0.85rem;border-left:3px solid var(--accent)}
+
+        /* Preview Document */
+        .preview-doc{background:#fff;color:#000;border-radius:8px;padding:30px;font-family:'Times New Roman',serif;font-size:12pt;line-height:1.8;max-height:600px;overflow-y:auto}
+        .preview-doc h1{font-size:14pt;text-align:center;margin-bottom:5px}
+        .preview-doc h2{font-size:12pt;text-align:center;margin-bottom:20px}
+        .preview-doc .parte{text-align:center;font-weight:bold;margin:20px 0 10px}
+        .preview-doc .parte-titulo{text-align:center;margin-bottom:15px}
+        .preview-doc .sem-alteracao{text-align:center;font-style:italic;margin-bottom:20px}
+        .preview-doc .secao{font-weight:bold;margin:15px 0 10px}
+        .preview-doc .subsecao{font-weight:bold;margin:10px 0 8px 20px}
+        .preview-doc .publicacao{margin:10px 0 15px 20px;text-align:justify}
+        .preview-doc .publicacao-titulo{font-weight:bold;text-decoration:underline}
+        .preview-doc .publicacao-data{font-weight:bold}
+        .preview-doc .assinatura{text-align:center;margin-top:40px}
+
+        /* Tabs */
+        .tabs{display:flex;gap:4px;margin-bottom:15px;flex-wrap:wrap}
+        .tab{padding:8px 16px;background:transparent;border:1px solid var(--border-color);color:var(--text-muted);cursor:pointer;font-size:0.85rem;font-weight:500;border-radius:6px;transition:all 0.2s;display:flex;align-items:center;gap:6px}
+        .tab:hover{color:var(--text-primary);background:var(--bg-tertiary)}
+        .tab.active{color:var(--accent);background:var(--bg-tertiary);border-color:var(--accent)}
+
+        /* Campos dinamicos viagem */
+        .viagem-fields{background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;padding:12px;margin-top:10px}
+        .viagem-fields label{font-size:0.8rem}
+
+        /* Divider */
+        .divider{border-top:1px solid var(--border-color);margin:20px 0}
+
+        /* NUP Box */
+        .nup-box{background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.05));border:2px solid var(--success);border-radius:10px;padding:14px;margin-bottom:15px}
+        .nup-box-label{font-size:0.75rem;color:var(--success);font-weight:600;margin-bottom:4px}
+        .nup-box-valor{font-family:monospace;font-size:1.1rem;color:var(--text-primary);font-weight:700}
+        .nup-box-unidade{font-size:0.8rem;color:var(--text-muted);margin-top:2px}
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+                    <div class="logo-icon"><i class="fas fa-fire"></i></div>
+                    <div class="logo-text">Platt<span>Argus</span></div>
+                </a>
+                <span class="logo-subtitle">NOTA PARA BOLETIM GERAL</span>
+            </div>
+            <div style="display:flex;gap:12px">
+                <a href="/" class="btn-header"><i class="fas fa-home"></i> Inicio</a>
+                <a href="/documentos.html" class="btn-header"><i class="fas fa-file-alt"></i> Documentos</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Painel Esquerdo: Formulario -->
+        <div class="panel">
+            <h2><i class="fas fa-plus-circle"></i> Adicionar Publicacao</h2>
+
+            <!-- Unidade -->
+            <div class="form-group">
+                <label class="form-label required">Unidade</label>
+                <select id="unidade" class="form-select">
+                    <option value="">Selecione a unidade...</option>
+                    <option value="CEMAN">CEMAN - Centro de Manutencao</option>
+                    <option value="DRH">DRH - Diretoria de Recursos Humanos</option>
+                    <option value="1BEPCIF">1o BEPCIF - Rio Branco</option>
+                    <option value="2BEPCIF">2o BEPCIF - Cruzeiro do Sul</option>
+                    <option value="3BEPCIF">3o BEPCIF - Tarauaca</option>
+                    <option value="8BEPCIF">8o BEPCIF - Xapuri</option>
+                    <option value="1CIACIAER-RB">1a CIACIAER - Rio Branco</option>
+                    <option value="2CIACIAER-CZS">2a CIACIAER - Cruzeiro do Sul</option>
+                    <option value="DEI">DEI - Diretoria de Ensino</option>
+                    <option value="OUTRA">Outra</option>
+                </select>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Tipo de Ato -->
+            <div class="form-group">
+                <label class="form-label required">Tipo de Ato</label>
+                <select id="tipoAto" class="form-select" onchange="App.atualizarCampos()">
+                    <option value="">Selecione o tipo...</option>
+                    <optgroup label="Ferias">
+                        <option value="FERIAS_CONCESSAO">FERIAS - CONCESSAO</option>
+                        <option value="FERIAS_APRESENTACAO">FERIAS - APRESENTACAO</option>
+                        <option value="FERIAS_SUSTACAO">FERIAS - SUSTACAO</option>
+                        <option value="FERIAS_INTERRUPCAO">FERIAS - INTERRUPCAO</option>
+                    </optgroup>
+                    <optgroup label="Dispensa como Recompensa">
+                        <option value="DISPENSA_RECOMPENSA_CONCESSAO">DISPENSA COMO RECOMPENSA - CONCESSAO</option>
+                        <option value="DISPENSA_RECOMPENSA_APRESENTACAO">DISPENSA COMO RECOMPENSA - APRESENTACAO</option>
+                    </optgroup>
+                    <optgroup label="Dispensa">
+                        <option value="DISPENSA_CONCESSAO">DISPENSA - CONCESSAO</option>
+                        <option value="DISPENSA_APRESENTACAO">DISPENSA - APRESENTACAO</option>
+                    </optgroup>
+                    <optgroup label="Licenca Especial">
+                        <option value="LICENCA_ESPECIAL_CONCESSAO">LICENCA ESPECIAL - CONCESSAO</option>
+                        <option value="LICENCA_ESPECIAL_APRESENTACAO">LICENCA ESPECIAL - APRESENTACAO</option>
+                    </optgroup>
+                    <optgroup label="Licenca Paternidade">
+                        <option value="LICENCA_PATERNIDADE_CONCESSAO">LICENCA PATERNIDADE - CONCESSAO</option>
+                        <option value="LICENCA_PATERNIDADE_APRESENTACAO">LICENCA PATERNIDADE - APRESENTACAO</option>
+                    </optgroup>
+                    <optgroup label="Luto">
+                        <option value="LUTO_CONCESSAO">LUTO - CONCESSAO</option>
+                        <option value="LUTO_APRESENTACAO">LUTO - APRESENTACAO</option>
+                    </optgroup>
+                    <optgroup label="Nupcias">
+                        <option value="NUPCIAS_CONCESSAO">NUPCIAS - CONCESSAO</option>
+                        <option value="NUPCIAS_APRESENTACAO">NUPCIAS - APRESENTACAO</option>
+                    </optgroup>
+                    <optgroup label="Viagem">
+                        <option value="VIAGEM_SERVICO">VIAGEM A SERVICO DA CORPORACAO - COM ONUS</option>
+                    </optgroup>
+                    <optgroup label="Outros">
+                        <option value="ELOGIO">ELOGIO</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <!-- Data do Ato -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label required">Data do Ato</label>
+                    <input type="date" id="dataAto" class="form-input" onchange="App.calcularApresentacao()">
+                </div>
+                <div class="form-group" id="campoDias">
+                    <label class="form-label">Dias</label>
+                    <input type="number" id="dias" class="form-input" min="1" max="90" placeholder="30" onchange="App.calcularApresentacao()">
+                </div>
+            </div>
+
+            <!-- Militar -->
+            <div class="form-group">
+                <label class="form-label required">Militar</label>
+                <div class="autocomplete-wrapper">
+                    <input type="text" id="militarBusca" class="form-input" placeholder="Digite matricula ou nome..." autocomplete="off">
+                    <div id="militarDropdown" class="autocomplete-dropdown hidden"></div>
+                </div>
+                <div id="militarSelecionado" class="hidden" style="margin-top:8px;padding:10px;background:var(--bg-tertiary);border-radius:8px">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div>
+                            <div id="militarNome" style="font-weight:600;color:var(--success);font-size:0.9rem">-</div>
+                            <div id="militarDetalhe" style="font-size:0.75rem;color:var(--text-muted)">-</div>
+                            <div id="militarCategoria" style="font-size:0.7rem;color:var(--info);margin-top:2px">-</div>
+                        </div>
+                        <button class="btn btn-sm btn-secondary" onclick="App.limparMilitar()"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Campos Condicionais -->
+            <div id="campoPeriodo" class="form-group hidden">
+                <label class="form-label">Periodo Aquisitivo</label>
+                <input type="text" id="periodoAquisitivo" class="form-input" placeholder="2024/2025">
+            </div>
+
+            <div id="campoApresentacao" class="form-group hidden">
+                <label class="form-label">Data Apresentacao</label>
+                <input type="date" id="dataApresentacao" class="form-input">
+            </div>
+
+            <div id="campoMotivo" class="form-group hidden">
+                <label class="form-label">Motivo</label>
+                <textarea id="motivo" class="form-input" rows="2" placeholder="Ex: por necessidade do servico..." style="resize:vertical"></textarea>
+            </div>
+
+            <!-- Campos Viagem -->
+            <div id="campoViagem" class="viagem-fields hidden">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Hora Saida</label>
+                        <input type="time" id="horaSaida" class="form-input" value="06:00">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Hora Retorno</label>
+                        <input type="time" id="horaRetorno" class="form-input" value="18:00">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Origem</label>
+                        <input type="text" id="origem" class="form-input" placeholder="Rio Branco - AC">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Destino</label>
+                        <input type="text" id="destino" class="form-input" placeholder="Cruzeiro do Sul - AC">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Missao/Finalidade</label>
+                    <textarea id="missao" class="form-input" rows="2" placeholder="Ex: transportar materiais..." style="resize:vertical"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Veiculo</label>
+                        <input type="text" id="veiculo" class="form-input" placeholder="Van Renault Master">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Placa</label>
+                        <input type="text" id="placa" class="form-input" placeholder="SQS5B64">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Data Retorno</label>
+                    <input type="date" id="dataRetorno" class="form-input">
+                </div>
+            </div>
+
+            <div style="margin-top:20px">
+                <button class="btn btn-primary btn-block" onclick="App.adicionarPublicacao()">
+                    <i class="fas fa-plus"></i> Adicionar Publicacao
+                </button>
+            </div>
+
+            <div id="statusForm" class="status hidden"></div>
+        </div>
+
+        <!-- Painel Direito: Lista e Preview -->
+        <div class="panel">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+                <h2 style="margin:0"><i class="fas fa-list"></i> Publicacoes <span class="pub-count" id="pubCount">0</span></h2>
+                <div style="display:flex;gap:8px">
+                    <button class="btn btn-sm btn-secondary" onclick="App.limparTudo()"><i class="fas fa-trash"></i> Limpar</button>
+                    <button class="btn btn-sm btn-success" onclick="App.gerarNota()" id="btnGerar" disabled><i class="fas fa-file-alt"></i> Gerar Nota</button>
+                </div>
+            </div>
+
+            <!-- Tabs: Lista / Preview -->
+            <div class="tabs">
+                <button class="tab active" onclick="App.trocarAba('lista')"><i class="fas fa-list-ul"></i> Lista</button>
+                <button class="tab" onclick="App.trocarAba('preview')"><i class="fas fa-eye"></i> Preview</button>
+                <button class="tab" onclick="App.trocarAba('estrutura')"><i class="fas fa-sitemap"></i> Estrutura</button>
+            </div>
+
+            <!-- Aba Lista -->
+            <div id="abaLista" class="tab-content">
+                <div id="pubLista" class="pub-list">
+                    <div class="pub-empty">
+                        <i class="fas fa-inbox"></i>
+                        <div>Nenhuma publicacao adicionada</div>
+                        <div style="font-size:0.8rem;margin-top:5px">Use o formulario ao lado para adicionar</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aba Preview -->
+            <div id="abaPreview" class="tab-content hidden">
+                <div id="previewDoc" class="preview-doc">
+                    <p style="text-align:center;color:#999;padding:50px">Adicione publicacoes e clique em "Gerar Nota" para visualizar</p>
+                </div>
+                <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap">
+                    <button class="btn btn-primary" onclick="App.inserirSEI()" id="btnInserir" disabled>
+                        <i class="fas fa-paper-plane"></i> Inserir no SEI
+                    </button>
+                    <button class="btn btn-secondary" onclick="App.copiarHTML()">
+                        <i class="fas fa-copy"></i> Copiar HTML
+                    </button>
+                </div>
+            </div>
+
+            <!-- Aba Estrutura -->
+            <div id="abaEstrutura" class="tab-content hidden">
+                <div id="estruturaDoc" style="font-size:0.85rem">
+                    <p style="color:var(--text-muted);padding:20px;text-align:center">A estrutura sera exibida apos adicionar publicacoes</p>
+                </div>
+            </div>
+
+            <div id="statusNota" class="status hidden"></div>
+
+            <!-- NUP gerado -->
+            <div id="nupGerado" class="nup-box hidden">
+                <div class="nup-box-label"><i class="fas fa-check-circle"></i> Nota Inserida no SEI</div>
+                <div class="nup-box-valor" id="nupValor">-</div>
+                <div class="nup-box-unidade" id="seiNumero">SEI: -</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        const API_NOTA = '/api/nota-bg';
+        const MILITAR_API = '/api/nota-bg/militar';
+
+        const App = {
+            token: localStorage.getItem('plattargus_token'),
+            publicacoes: [],
+            militarSelecionado: null,
+            resultadosBusca: [],
+            editandoIndex: null,
+            htmlGerado: null,
+
+            // Mapeamento de postos/graduacoes para categorias
+            CATEGORIAS: {
+                // Oficiais
+                'CEL': 'OFICIAIS', 'TC': 'OFICIAIS', 'MAJ': 'OFICIAIS',
+                'CAP': 'OFICIAIS', '1º TEN': 'OFICIAIS', '2º TEN': 'OFICIAIS',
+                '1 TEN': 'OFICIAIS', '2 TEN': 'OFICIAIS',
+                'CORONEL': 'OFICIAIS', 'TENENTE-CORONEL': 'OFICIAIS', 'MAJOR': 'OFICIAIS',
+                'CAPITAO': 'OFICIAIS', 'CAPITÃO': 'OFICIAIS',
+                // Subtenentes e Sargentos
+                'ST': 'ST_SGT', 'SUBTENENTE': 'ST_SGT',
+                '1º SGT': 'ST_SGT', '2º SGT': 'ST_SGT', '3º SGT': 'ST_SGT',
+                '1 SGT': 'ST_SGT', '2 SGT': 'ST_SGT', '3 SGT': 'ST_SGT',
+                // Cabos e Soldados
+                'CB': 'CB_SD', 'CABO': 'CB_SD',
+                'SD': 'CB_SD', 'SOLDADO': 'CB_SD',
+                // Civis
+                'CIVIL': 'CIVIS', 'SERVIDOR': 'CIVIS'
+            },
+
+            CATEGORIA_NOMES: {
+                'OFICIAIS': '1. ALTERACOES DE OFICIAIS',
+                'ST_SGT': '2.1. ALTERACOES DE SUBTENENTES E SARGENTOS',
+                'CB_SD': '2.2. ALTERACOES DE CABOS E SOLDADOS',
+                'CIVIS': '3. ALTERACOES DE SERVIDORES CIVIS'
+            },
+
+            TIPO_ATO_TEXTO: {
+                'FERIAS_CONCESSAO': 'FERIAS - CONCESSAO',
+                'FERIAS_APRESENTACAO': 'FERIAS - APRESENTACAO',
+                'FERIAS_SUSTACAO': 'FERIAS - SUSTACAO',
+                'FERIAS_INTERRUPCAO': 'FERIAS - INTERRUPCAO',
+                'DISPENSA_RECOMPENSA_CONCESSAO': 'DISPENSA COMO RECOMPENSA - CONCESSAO',
+                'DISPENSA_RECOMPENSA_APRESENTACAO': 'DISPENSA COMO RECOMPENSA - APRESENTACAO',
+                'DISPENSA_CONCESSAO': 'DISPENSA - CONCESSAO',
+                'DISPENSA_APRESENTACAO': 'DISPENSA - APRESENTACAO',
+                'LICENCA_ESPECIAL_CONCESSAO': 'LICENCA ESPECIAL - CONCESSAO',
+                'LICENCA_ESPECIAL_APRESENTACAO': 'LICENCA ESPECIAL - APRESENTACAO',
+                'LICENCA_PATERNIDADE_CONCESSAO': 'LICENCA PATERNIDADE - CONCESSAO',
+                'LICENCA_PATERNIDADE_APRESENTACAO': 'LICENCA PATERNIDADE - APRESENTACAO',
+                'LUTO_CONCESSAO': 'LUTO - CONCESSAO',
+                'LUTO_APRESENTACAO': 'LUTO - APRESENTACAO',
+                'NUPCIAS_CONCESSAO': 'NUPCIAS - CONCESSAO',
+                'NUPCIAS_APRESENTACAO': 'NUPCIAS - APRESENTACAO',
+                'VIAGEM_SERVICO': 'VIAGEM A SERVICO DA CORPORACAO - COM ONUS',
+                'ELOGIO': 'ELOGIO'
+            },
+
+            // Campos por tipo
+            CAMPOS_TIPO: {
+                'FERIAS_CONCESSAO': ['dias', 'periodo', 'apresentacao'],
+                'FERIAS_APRESENTACAO': ['dias', 'periodo'],
+                'FERIAS_SUSTACAO': ['dias', 'periodo', 'motivo'],
+                'FERIAS_INTERRUPCAO': ['dias', 'periodo'],
+                'DISPENSA_RECOMPENSA_CONCESSAO': ['dias', 'apresentacao', 'motivo'],
+                'DISPENSA_RECOMPENSA_APRESENTACAO': ['dias'],
+                'DISPENSA_CONCESSAO': ['dias', 'apresentacao', 'motivo'],
+                'DISPENSA_APRESENTACAO': ['dias'],
+                'LICENCA_ESPECIAL_CONCESSAO': ['dias', 'periodo', 'apresentacao'],
+                'LICENCA_ESPECIAL_APRESENTACAO': ['dias', 'periodo'],
+                'LICENCA_PATERNIDADE_CONCESSAO': ['dias', 'apresentacao'],
+                'LICENCA_PATERNIDADE_APRESENTACAO': ['dias'],
+                'LUTO_CONCESSAO': ['dias', 'apresentacao', 'motivo'],
+                'LUTO_APRESENTACAO': ['dias'],
+                'NUPCIAS_CONCESSAO': ['dias', 'apresentacao'],
+                'NUPCIAS_APRESENTACAO': ['dias'],
+                'VIAGEM_SERVICO': ['viagem'],
+                'ELOGIO': ['motivo']
+            },
+
+            init() {
+                if (!this.token) {
+                    window.location.href = '/';
+                    return;
+                }
+
+                // Data padrao
+                document.getElementById('dataAto').valueAsDate = new Date();
+
+                // Autocomplete
+                let debounce;
+                document.getElementById('militarBusca').addEventListener('input', (e) => {
+                    clearTimeout(debounce);
+                    debounce = setTimeout(() => this.buscarMilitar(e.target.value), 300);
+                });
+
+                // Fechar dropdown
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('#militarBusca') && !e.target.closest('#militarDropdown')) {
+                        document.getElementById('militarDropdown').classList.add('hidden');
+                    }
+                });
+
+                // Carregar do localStorage
+                const saved = localStorage.getItem('nota_bg_publicacoes');
+                if (saved) {
+                    try {
+                        this.publicacoes = JSON.parse(saved);
+                        this.renderizarLista();
+                        this.atualizarEstrutura();
+                    } catch(e) {}
+                }
+
+                this.atualizarCampos();
+            },
+
+            // Detecta categoria pelo posto/graduacao
+            detectarCategoria(postoGrad) {
+                if (!postoGrad) return 'CIVIS';
+                const pg = postoGrad.toUpperCase().trim();
+
+                for (const [key, cat] of Object.entries(this.CATEGORIAS)) {
+                    if (pg.includes(key)) return cat;
+                }
+                return 'CIVIS';
+            },
+
+            atualizarCampos() {
+                const tipo = document.getElementById('tipoAto').value;
+                const campos = this.CAMPOS_TIPO[tipo] || [];
+
+                // Esconde todos
+                ['campoDias', 'campoPeriodo', 'campoApresentacao', 'campoMotivo', 'campoViagem'].forEach(id => {
+                    document.getElementById(id).classList.add('hidden');
+                });
+
+                // Mostra os necessarios
+                if (campos.includes('dias')) document.getElementById('campoDias').classList.remove('hidden');
+                if (campos.includes('periodo')) document.getElementById('campoPeriodo').classList.remove('hidden');
+                if (campos.includes('apresentacao')) document.getElementById('campoApresentacao').classList.remove('hidden');
+                if (campos.includes('motivo')) document.getElementById('campoMotivo').classList.remove('hidden');
+                if (campos.includes('viagem')) document.getElementById('campoViagem').classList.remove('hidden');
+
+                this.calcularApresentacao();
+            },
+
+            calcularApresentacao() {
+                const dataAto = document.getElementById('dataAto').value;
+                const dias = parseInt(document.getElementById('dias').value);
+
+                if (dataAto && dias > 0) {
+                    const d = new Date(dataAto);
+                    d.setDate(d.getDate() + dias);
+                    document.getElementById('dataApresentacao').value = d.toISOString().split('T')[0];
+                }
+            },
+
+            async buscarMilitar(termo) {
+                if (!termo || termo.length < 2) {
+                    document.getElementById('militarDropdown').classList.add('hidden');
+                    return;
+                }
+
+                try {
+                    const resp = await fetch(`${MILITAR_API}/buscar?q=${encodeURIComponent(termo)}&limit=10`);
+                    const data = await resp.json();
+
+                    const dropdown = document.getElementById('militarDropdown');
+
+                    if (data.resultados && data.resultados.length > 0) {
+                        this.resultadosBusca = data.resultados;
+                        dropdown.innerHTML = data.resultados.map((m, i) => `
+                            <div class="autocomplete-item" onclick="App.selecionarMilitar(${i})">
+                                <div class="nome">${m.formatado || m.nome}</div>
+                                <div class="detalhe">${m.lotacao || ''}</div>
+                            </div>
+                        `).join('');
+                        dropdown.classList.remove('hidden');
+                    } else {
+                        dropdown.innerHTML = '<div style="padding:15px;text-align:center;color:var(--text-muted)">Nenhum encontrado</div>';
+                        dropdown.classList.remove('hidden');
+                    }
+                } catch (err) {
+                    console.error('Erro buscar militar:', err);
+                }
+            },
+
+            selecionarMilitar(index) {
+                const m = this.resultadosBusca[index];
+                this.militarSelecionado = m;
+
+                // Detecta categoria
+                const categoria = this.detectarCategoria(m.posto_grad || m.posto);
+                const categoriaNome = {
+                    'OFICIAIS': 'Oficial',
+                    'ST_SGT': 'Praca (ST/SGT)',
+                    'CB_SD': 'Praca (CB/SD)',
+                    'CIVIS': 'Civil'
+                }[categoria];
+
+                document.getElementById('militarBusca').classList.add('hidden');
+                document.getElementById('militarDropdown').classList.add('hidden');
+                document.getElementById('militarSelecionado').classList.remove('hidden');
+                document.getElementById('militarNome').textContent = m.formatado || m.nome;
+                document.getElementById('militarDetalhe').textContent = `Mat: ${m.matricula_completa || m.matricula} | ${m.lotacao || ''}`;
+                document.getElementById('militarCategoria').textContent = `Categoria: ${categoriaNome}`;
+            },
+
+            limparMilitar() {
+                this.militarSelecionado = null;
+                document.getElementById('militarBusca').value = '';
+                document.getElementById('militarBusca').classList.remove('hidden');
+                document.getElementById('militarSelecionado').classList.add('hidden');
+            },
+
+            adicionarPublicacao() {
+                const tipoAto = document.getElementById('tipoAto').value;
+                const dataAto = document.getElementById('dataAto').value;
+                const unidade = document.getElementById('unidade').value;
+
+                if (!tipoAto || !dataAto || !this.militarSelecionado) {
+                    this.mostrarStatus('statusForm', 'Preencha: Tipo de Ato, Data e Militar', 'error');
+                    return;
+                }
+
+                if (!unidade) {
+                    this.mostrarStatus('statusForm', 'Selecione a Unidade', 'error');
+                    return;
+                }
+
+                const m = this.militarSelecionado;
+                const categoria = this.detectarCategoria(m.posto_grad || m.posto);
+
+                const pub = {
+                    id: Date.now(),
+                    tipo_ato: tipoAto,
+                    tipo_ato_texto: this.TIPO_ATO_TEXTO[tipoAto],
+                    data_ato: dataAto,
+                    militar: {
+                        nome: m.nome,
+                        nome_guerra: m.nome_guerra,
+                        matricula: m.matricula_completa || m.matricula,
+                        posto_grad: m.posto_grad || m.posto,
+                        formatado: m.formatado,
+                        lotacao: m.lotacao
+                    },
+                    categoria: categoria,
+                    unidade: unidade,
+                    dias: parseInt(document.getElementById('dias').value) || null,
+                    periodo_aquisitivo: document.getElementById('periodoAquisitivo').value || null,
+                    data_apresentacao: document.getElementById('dataApresentacao').value || null,
+                    motivo: document.getElementById('motivo').value || null,
+                    // Viagem
+                    hora_saida: document.getElementById('horaSaida').value || null,
+                    hora_retorno: document.getElementById('horaRetorno').value || null,
+                    origem: document.getElementById('origem').value || null,
+                    destino: document.getElementById('destino').value || null,
+                    missao: document.getElementById('missao').value || null,
+                    veiculo: document.getElementById('veiculo').value || null,
+                    placa: document.getElementById('placa').value || null,
+                    data_retorno: document.getElementById('dataRetorno').value || null
+                };
+
+                if (this.editandoIndex !== null) {
+                    this.publicacoes[this.editandoIndex] = pub;
+                    this.editandoIndex = null;
+                } else {
+                    this.publicacoes.push(pub);
+                }
+
+                this.salvarLocal();
+                this.renderizarLista();
+                this.atualizarEstrutura();
+                this.limparFormulario();
+                this.mostrarStatus('statusForm', 'Publicacao adicionada!', 'success');
+            },
+
+            limparFormulario() {
+                document.getElementById('tipoAto').value = '';
+                document.getElementById('dataAto').valueAsDate = new Date();
+                document.getElementById('dias').value = '';
+                document.getElementById('periodoAquisitivo').value = '';
+                document.getElementById('dataApresentacao').value = '';
+                document.getElementById('motivo').value = '';
+                document.getElementById('horaSaida').value = '06:00';
+                document.getElementById('horaRetorno').value = '18:00';
+                document.getElementById('origem').value = '';
+                document.getElementById('destino').value = '';
+                document.getElementById('missao').value = '';
+                document.getElementById('veiculo').value = '';
+                document.getElementById('placa').value = '';
+                document.getElementById('dataRetorno').value = '';
+                this.limparMilitar();
+                this.atualizarCampos();
+            },
+
+            removerPublicacao(index) {
+                if (confirm('Remover esta publicacao?')) {
+                    this.publicacoes.splice(index, 1);
+                    this.salvarLocal();
+                    this.renderizarLista();
+                    this.atualizarEstrutura();
+                }
+            },
+
+            editarPublicacao(index) {
+                const p = this.publicacoes[index];
+                this.editandoIndex = index;
+
+                document.getElementById('unidade').value = p.unidade;
+                document.getElementById('tipoAto').value = p.tipo_ato;
+                document.getElementById('dataAto').value = p.data_ato;
+                document.getElementById('dias').value = p.dias || '';
+                document.getElementById('periodoAquisitivo').value = p.periodo_aquisitivo || '';
+                document.getElementById('dataApresentacao').value = p.data_apresentacao || '';
+                document.getElementById('motivo').value = p.motivo || '';
+                document.getElementById('horaSaida').value = p.hora_saida || '06:00';
+                document.getElementById('horaRetorno').value = p.hora_retorno || '18:00';
+                document.getElementById('origem').value = p.origem || '';
+                document.getElementById('destino').value = p.destino || '';
+                document.getElementById('missao').value = p.missao || '';
+                document.getElementById('veiculo').value = p.veiculo || '';
+                document.getElementById('placa').value = p.placa || '';
+                document.getElementById('dataRetorno').value = p.data_retorno || '';
+
+                // Militar
+                this.militarSelecionado = p.militar;
+                document.getElementById('militarBusca').classList.add('hidden');
+                document.getElementById('militarSelecionado').classList.remove('hidden');
+                document.getElementById('militarNome').textContent = p.militar.formatado || p.militar.nome;
+                document.getElementById('militarDetalhe').textContent = `Mat: ${p.militar.matricula}`;
+
+                this.atualizarCampos();
+                window.scrollTo({top: 0, behavior: 'smooth'});
+            },
+
+            renderizarLista() {
+                const container = document.getElementById('pubLista');
+                const count = document.getElementById('pubCount');
+                const btnGerar = document.getElementById('btnGerar');
+
+                count.textContent = this.publicacoes.length;
+                btnGerar.disabled = this.publicacoes.length === 0;
+
+                if (this.publicacoes.length === 0) {
+                    container.innerHTML = `
+                        <div class="pub-empty">
+                            <i class="fas fa-inbox"></i>
+                            <div>Nenhuma publicacao adicionada</div>
+                            <div style="font-size:0.8rem;margin-top:5px">Use o formulario ao lado para adicionar</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const categoriaNomes = {
+                    'OFICIAIS': 'Oficial',
+                    'ST_SGT': 'ST/SGT',
+                    'CB_SD': 'CB/SD',
+                    'CIVIS': 'Civil'
+                };
+
+                container.innerHTML = this.publicacoes.map((p, i) => `
+                    <div class="pub-item">
+                        <div class="pub-item-actions">
+                            <button class="pub-item-btn edit" onclick="App.editarPublicacao(${i})" title="Editar"><i class="fas fa-edit"></i></button>
+                            <button class="pub-item-btn delete" onclick="App.removerPublicacao(${i})" title="Remover"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="pub-item-header">
+                            <span class="pub-item-tipo">${p.tipo_ato_texto}</span>
+                            <span class="pub-item-categoria">${categoriaNomes[p.categoria]}</span>
+                        </div>
+                        <div class="pub-item-militar">${p.militar.formatado || p.militar.nome}</div>
+                        <div class="pub-item-data"><i class="fas fa-calendar"></i> ${this.formatarDataBR(p.data_ato)} ${p.dias ? `| ${p.dias} dias` : ''}</div>
+                    </div>
+                `).join('');
+            },
+
+            atualizarEstrutura() {
+                const container = document.getElementById('estruturaDoc');
+
+                if (this.publicacoes.length === 0) {
+                    container.innerHTML = '<p style="color:var(--text-muted);padding:20px;text-align:center">A estrutura sera exibida apos adicionar publicacoes</p>';
+                    return;
+                }
+
+                // Agrupa por categoria
+                const grupos = this.agruparPorCategoria();
+                let html = '<div style="padding:10px">';
+
+                html += '<div class="categoria-header">3a PARTE (ASSUNTOS GERAIS E ADMINISTRATIVOS)</div>';
+
+                // Oficiais
+                if (grupos.OFICIAIS && grupos.OFICIAIS.length > 0) {
+                    html += '<div class="subcategoria-header">1. ALTERACOES DE OFICIAIS</div>';
+                    grupos.OFICIAIS.forEach((p, i) => {
+                        html += `<div style="margin-left:30px;padding:5px 0;font-size:0.85rem">
+                            <span style="color:var(--accent)">${String.fromCharCode(97 + i)})</span> ${p.tipo_ato_texto} - ${p.militar.nome}
+                        </div>`;
+                    });
+                }
+
+                // Pracas
+                const temPracas = (grupos.ST_SGT && grupos.ST_SGT.length > 0) || (grupos.CB_SD && grupos.CB_SD.length > 0);
+                if (temPracas) {
+                    html += '<div class="subcategoria-header">2. ALTERACOES DE PRACAS</div>';
+
+                    if (grupos.ST_SGT && grupos.ST_SGT.length > 0) {
+                        html += '<div style="margin-left:20px;color:var(--text-secondary);font-weight:600;font-size:0.85rem;margin-top:10px">2.1. ALTERACOES DE SUBTENENTES E SARGENTOS</div>';
+                        grupos.ST_SGT.forEach((p, i) => {
+                            html += `<div style="margin-left:40px;padding:5px 0;font-size:0.85rem">
+                                <span style="color:var(--accent)">${String.fromCharCode(97 + i)})</span> ${p.tipo_ato_texto} - ${p.militar.nome}
+                            </div>`;
+                        });
+                    }
+
+                    if (grupos.CB_SD && grupos.CB_SD.length > 0) {
+                        html += '<div style="margin-left:20px;color:var(--text-secondary);font-weight:600;font-size:0.85rem;margin-top:10px">2.2. ALTERACOES DE CABOS E SOLDADOS</div>';
+                        grupos.CB_SD.forEach((p, i) => {
+                            html += `<div style="margin-left:40px;padding:5px 0;font-size:0.85rem">
+                                <span style="color:var(--accent)">${String.fromCharCode(97 + i)})</span> ${p.tipo_ato_texto} - ${p.militar.nome}
+                            </div>`;
+                        });
+                    }
+                }
+
+                // Civis
+                if (grupos.CIVIS && grupos.CIVIS.length > 0) {
+                    html += '<div class="subcategoria-header">3. ALTERACOES DE SERVIDORES CIVIS</div>';
+                    grupos.CIVIS.forEach((p, i) => {
+                        html += `<div style="margin-left:30px;padding:5px 0;font-size:0.85rem">
+                            <span style="color:var(--accent)">${String.fromCharCode(97 + i)})</span> ${p.tipo_ato_texto} - ${p.militar.nome}
+                        </div>`;
+                    });
+                }
+
+                html += '</div>';
+                container.innerHTML = html;
+            },
+
+            agruparPorCategoria() {
+                const grupos = { OFICIAIS: [], ST_SGT: [], CB_SD: [], CIVIS: [] };
+                this.publicacoes.forEach(p => {
+                    if (grupos[p.categoria]) {
+                        grupos[p.categoria].push(p);
+                    }
+                });
+                return grupos;
+            },
+
+            gerarNota() {
+                if (this.publicacoes.length === 0) return;
+
+                const unidade = document.getElementById('unidade').value || 'DRH';
+                const grupos = this.agruparPorCategoria();
+
+                let html = `
+                    <div style="text-align:center;margin-bottom:20px">
+                        <p style="font-weight:bold">ESTADO DO ACRE</p>
+                        <p style="font-weight:bold">CORPO DE BOMBEIROS MILITAR</p>
+                        <p style="font-weight:bold">COMANDO GERAL</p>
+                    </div>
+
+                    <p style="text-align:center;font-weight:bold;margin:30px 0">
+                        NOTA PARA BOLETIM GERAL - BG - CBMAC N° __/2026/CBMAC - ${unidade}
+                    </p>
+
+                    <p style="text-align:center;font-weight:bold">1a P A R T E</p>
+                    <p style="text-align:center">(ESCALA DE SERVICO)</p>
+                    <p style="text-align:center;font-style:italic;margin-bottom:20px">Sem Alteracao</p>
+
+                    <p style="text-align:center;font-weight:bold">2a P A R T E</p>
+                    <p style="text-align:center">(INSTRUCAO)</p>
+                    <p style="text-align:center;font-style:italic;margin-bottom:20px">Sem Alteracao</p>
+
+                    <p style="text-align:center;font-weight:bold">3a P A R T E</p>
+                    <p style="text-align:center;margin-bottom:20px">(ASSUNTOS GERAIS E ADMINISTRATIVOS)</p>
+                `;
+
+                // 1. OFICIAIS
+                if (grupos.OFICIAIS && grupos.OFICIAIS.length > 0) {
+                    html += '<p style="font-weight:bold">1. ALTERACOES DE OFICIAIS</p>';
+                    grupos.OFICIAIS.forEach((p, i) => {
+                        html += this.gerarTextoPublicacao(p, i);
+                    });
+                } else {
+                    html += '<p style="font-weight:bold">1. ALTERACOES DE OFICIAIS - Nao Houve</p>';
+                }
+
+                // 2. PRACAS
+                const temPracas = (grupos.ST_SGT?.length > 0) || (grupos.CB_SD?.length > 0);
+                html += '<p style="font-weight:bold;margin-top:15px">2. ALTERACOES DE PRACAS</p>';
+
+                // 2.1 ST/SGT
+                if (grupos.ST_SGT && grupos.ST_SGT.length > 0) {
+                    html += '<p style="font-weight:bold;margin-left:20px">2.1. ALTERACOES DE SUBTENENTES E SARGENTOS</p>';
+                    grupos.ST_SGT.forEach((p, i) => {
+                        html += this.gerarTextoPublicacao(p, i);
+                    });
+                } else {
+                    html += '<p style="margin-left:20px">2.1. ALTERACOES DE SUBTENENTES E SARGENTOS - Nao Houve</p>';
+                }
+
+                // 2.2 CB/SD
+                if (grupos.CB_SD && grupos.CB_SD.length > 0) {
+                    html += '<p style="font-weight:bold;margin-left:20px;margin-top:10px">2.2. ALTERACOES DE CABOS E SOLDADOS</p>';
+                    grupos.CB_SD.forEach((p, i) => {
+                        html += this.gerarTextoPublicacao(p, i);
+                    });
+                } else {
+                    html += '<p style="margin-left:20px">2.2. ALTERACOES DE CABOS E SOLDADOS - Nao Houve</p>';
+                }
+
+                // 3. CIVIS
+                if (grupos.CIVIS && grupos.CIVIS.length > 0) {
+                    html += '<p style="font-weight:bold;margin-top:15px">3. ALTERACOES DE SERVIDORES CIVIS</p>';
+                    grupos.CIVIS.forEach((p, i) => {
+                        html += this.gerarTextoPublicacao(p, i);
+                    });
+                } else {
+                    html += '<p style="font-weight:bold;margin-top:15px">3. ALTERACOES DE SERVIDORES CIVIS - Nao Houve</p>';
+                }
+
+                // 4. ASSUNTOS GERAIS
+                html += '<p style="font-weight:bold;margin-top:15px">4. ASSUNTOS GERAIS - Nao Houve</p>';
+
+                // 4a PARTE
+                html += `
+                    <p style="text-align:center;font-weight:bold;margin-top:30px">4a P A R T E</p>
+                    <p style="text-align:center">(JUSTICA E DISCIPLINA)</p>
+                    <p style="text-align:center;font-style:italic">Sem Alteracao</p>
+
+                    <div style="text-align:center;margin-top:50px">
+                        <p><strong>Nome do Comandante</strong></p>
+                        <p>Funcao</p>
+                        <p style="font-style:italic">Matricula XXXXXXX-X</p>
+                    </div>
+                `;
+
+                this.htmlGerado = html;
+                document.getElementById('previewDoc').innerHTML = html;
+                document.getElementById('btnInserir').disabled = false;
+                this.trocarAba('preview');
+            },
+
+            gerarTextoPublicacao(p, index) {
+                const letra = String.fromCharCode(97 + index);
+                const m = p.militar;
+                const dataFormatada = this.formatarDataBR(p.data_ato);
+
+                let texto = `<p style="margin-left:20px;margin-top:15px"><strong><u>${letra}) ${p.tipo_ato_texto}</u></strong></p>`;
+                texto += `<p style="margin-left:20px"><strong>Em ${dataFormatada},</strong></p>`;
+
+                // Gera texto baseado no tipo
+                if (p.tipo_ato.includes('VIAGEM')) {
+                    texto += `<p style="margin-left:20px;text-align:justify">
+                        Viajara, as ${p.hora_saida || '06h'} na data acima, o ${m.posto_grad} mat. ${m.matricula} <strong>${m.nome}</strong>,
+                        autorizado pelo Comandante-Geral do CBMAC, com destino ao municipio de ${p.destino || '___'},
+                        ${p.missao ? 'com a missao de ' + p.missao : 'para realizar atividades de servico'}.
+                        A viagem sera realizada em veiculo oficial${p.veiculo ? ', ' + p.veiculo : ''}${p.placa ? ', placa ' + p.placa : ''},
+                        conduzido pelo mesmo. Retorno previsto para as ${p.hora_retorno || '18h'}${p.data_retorno ? ' do dia ' + this.formatarDataBR(p.data_retorno) : ''}.
+                    </p>`;
+                } else if (p.tipo_ato.includes('CONCESSAO')) {
+                    const diasTexto = p.dias ? `${p.dias} (${this.numeroPorExtenso(p.dias)}) dias` : '__ (__) dias';
+                    texto += `<p style="margin-left:20px;text-align:justify">
+                        Concedo, a contar da data acima, ${diasTexto} de ${this.getTipoBase(p.tipo_ato)},
+                        ao ${m.posto_grad} mat. ${m.matricula} <strong>${m.nome}</strong>
+                        ${p.periodo_aquisitivo ? ', relativo ao periodo aquisitivo ' + p.periodo_aquisitivo : ''}
+                        ${p.data_apresentacao ? ', devendo apresentar-se no dia ' + this.formatarDataBR(p.data_apresentacao) : ''}.
+                    </p>`;
+                } else if (p.tipo_ato.includes('SUSTACAO')) {
+                    const diasTexto = p.dias ? `${p.dias} (${this.numeroPorExtenso(p.dias)}) dias` : '__ (__) dias';
+                    texto += `<p style="margin-left:20px;text-align:justify">
+                        Autorizo sustar na data acima, ${diasTexto} de ${this.getTipoBase(p.tipo_ato)},
+                        do ${m.posto_grad} mat. ${m.matricula} <strong>${m.nome}</strong>
+                        ${p.periodo_aquisitivo ? ', relativo ao periodo aquisitivo ' + p.periodo_aquisitivo : ''}
+                        ${p.motivo ? ', ' + p.motivo : ', por extrema necessidade do servico'}.
+                    </p>`;
+                } else if (p.tipo_ato.includes('APRESENTACAO')) {
+                    texto += `<p style="margin-left:20px;text-align:justify">
+                        Apresentou-se na data acima, o ${m.posto_grad} mat. ${m.matricula} <strong>${m.nome}</strong>,
+                        apos usufruir ${p.dias || '__'} dias de ${this.getTipoBase(p.tipo_ato)}
+                        ${p.periodo_aquisitivo ? ', relativo ao periodo aquisitivo ' + p.periodo_aquisitivo : ''}.
+                    </p>`;
+                } else if (p.tipo_ato === 'ELOGIO') {
+                    texto += `<p style="margin-left:20px;text-align:justify">
+                        Elogio o ${m.posto_grad} mat. ${m.matricula} <strong>${m.nome}</strong>,
+                        ${p.motivo || 'pelos bons servicos prestados a esta Corporacao'}.
+                    </p>`;
+                }
+
+                return texto;
+            },
+
+            getTipoBase(tipoAto) {
+                if (tipoAto.includes('FERIAS')) return 'ferias';
+                if (tipoAto.includes('DISPENSA_RECOMPENSA')) return 'dispensa como recompensa';
+                if (tipoAto.includes('DISPENSA')) return 'dispensa';
+                if (tipoAto.includes('LICENCA_ESPECIAL')) return 'licenca especial';
+                if (tipoAto.includes('LICENCA_PATERNIDADE')) return 'licenca paternidade';
+                if (tipoAto.includes('LUTO')) return 'luto';
+                if (tipoAto.includes('NUPCIAS')) return 'nupcias';
+                return '';
+            },
+
+            numeroPorExtenso(n) {
+                const ext = ['zero','um','dois','tres','quatro','cinco','seis','sete','oito','nove','dez',
+                    'onze','doze','treze','quatorze','quinze','dezesseis','dezessete','dezoito','dezenove','vinte',
+                    'vinte e um','vinte e dois','vinte e tres','vinte e quatro','vinte e cinco','vinte e seis','vinte e sete','vinte e oito','vinte e nove','trinta'];
+                return ext[n] || n.toString();
+            },
+
+            async inserirSEI() {
+                if (!this.htmlGerado) return;
+
+                const status = document.getElementById('statusNota');
+                const btn = document.getElementById('btnInserir');
+
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> Inserindo...';
+
+                this.mostrarStatus('statusNota', '<span class="spinner"></span> Inserindo nota no SEI...', 'loading');
+
+                try {
+                    const resp = await fetch(API_URL + '/nota-bg/inserir', {
+                        method: 'POST',
+                        headers: this.getHeaders(),
+                        body: JSON.stringify({
+                            html: this.htmlGerado,
+                            unidade: document.getElementById('unidade').value
+                        })
+                    });
+                    const data = await resp.json();
+
+                    if (data.sucesso) {
+                        document.getElementById('nupValor').textContent = data.nup || '-';
+                        document.getElementById('seiNumero').textContent = 'SEI: ' + (data.sei_numero || data.numero_sei || '-');
+                        document.getElementById('nupGerado').classList.remove('hidden');
+
+                        this.mostrarStatus('statusNota', '<i class="fas fa-check"></i> Nota inserida com sucesso!', 'success');
+
+                        // Limpa publicacoes
+                        this.publicacoes = [];
+                        this.salvarLocal();
+                        this.renderizarLista();
+                    } else {
+                        throw new Error(data.erro || 'Erro ao inserir');
+                    }
+                } catch (err) {
+                    this.mostrarStatus('statusNota', '<i class="fas fa-times"></i> ' + err.message, 'error');
+                }
+
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Inserir no SEI';
+            },
+
+            copiarHTML() {
+                if (this.htmlGerado) {
+                    navigator.clipboard.writeText(this.htmlGerado);
+                    alert('HTML copiado!');
+                }
+            },
+
+            trocarAba(aba) {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+
+                if (aba === 'lista') {
+                    document.querySelector('.tab:nth-child(1)').classList.add('active');
+                    document.getElementById('abaLista').classList.remove('hidden');
+                } else if (aba === 'preview') {
+                    document.querySelector('.tab:nth-child(2)').classList.add('active');
+                    document.getElementById('abaPreview').classList.remove('hidden');
+                } else if (aba === 'estrutura') {
+                    document.querySelector('.tab:nth-child(3)').classList.add('active');
+                    document.getElementById('abaEstrutura').classList.remove('hidden');
+                }
+            },
+
+            limparTudo() {
+                if (confirm('Limpar todas as publicacoes?')) {
+                    this.publicacoes = [];
+                    this.salvarLocal();
+                    this.renderizarLista();
+                    this.atualizarEstrutura();
+                    document.getElementById('previewDoc').innerHTML = '<p style="text-align:center;color:#999;padding:50px">Adicione publicacoes e clique em "Gerar Nota" para visualizar</p>';
+                    document.getElementById('btnInserir').disabled = true;
+                }
+            },
+
+            salvarLocal() {
+                localStorage.setItem('nota_bg_publicacoes', JSON.stringify(this.publicacoes));
+            },
+
+            formatarDataBR(dataISO) {
+                if (!dataISO) return '';
+                const [ano, mes, dia] = dataISO.split('-');
+                return `${dia}/${mes}/${ano}`;
+            },
+
+            mostrarStatus(id, msg, tipo) {
+                const el = document.getElementById(id);
+                el.className = `status status-${tipo}`;
+                el.innerHTML = msg;
+                el.classList.remove('hidden');
+
+                if (tipo !== 'loading') {
+                    setTimeout(() => el.classList.add('hidden'), 5000);
+                }
+            },
+
+            getHeaders() {
+                return {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + this.token,
+                    'Accept': 'application/json'
+                };
+            }
+        };
+
+        App.init();
+    </script>
+</body>
+</html>
