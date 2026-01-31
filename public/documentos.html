@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerar Documento - PlattArgus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root{--bg-primary:#0a0e14;--bg-secondary:#111820;--bg-tertiary:#1a222d;--bg-card:#141c26;--accent:#e63946;--accent-hover:#ff4d5a;--accent-glow:rgba(230,57,70,0.4);--text-primary:#f1f5f9;--text-secondary:#94a3b8;--text-muted:#64748b;--success:#10b981;--warning:#f59e0b;--error:#ef4444;--info:#3b82f6;--border-color:rgba(255,255,255,0.08);--border-accent:rgba(230,57,70,0.3);--font-display:'Plus Jakarta Sans',sans-serif}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:var(--font-display);background:var(--bg-primary);color:var(--text-primary);min-height:100vh;line-height:1.6}
+        body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(230,57,70,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(230,57,70,0.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:-1}
+
+        .header{background:var(--bg-secondary);border-bottom:1px solid var(--border-color);padding:12px 24px;position:sticky;top:0;z-index:100}
+        .header-content{max-width:1600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+        .logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--accent) 0%,#b91c1c 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;box-shadow:0 0 20px var(--accent-glow)}
+        .logo-text{font-weight:700;font-size:1.1rem;color:var(--text-primary)}
+        .logo-text span{color:var(--accent)}
+        .logo-subtitle{color:var(--text-muted);font-size:0.75rem;margin-left:10px;padding-left:10px;border-left:1px solid var(--border-color)}
+
+        .btn-header{background:var(--bg-tertiary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px 16px;border-radius:8px;font-weight:500;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all 0.2s;text-decoration:none}
+        .btn-header:hover{border-color:var(--accent);color:var(--accent)}
+
+        .container{display:grid;grid-template-columns:400px 1fr;gap:20px;padding:20px;max-width:1600px;margin:0 auto}
+        @media(max-width:1000px){.container{grid-template-columns:1fr}}
+
+        .panel{background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;padding:20px}
+        .panel h2{color:var(--accent);margin-bottom:15px;font-size:1.1rem;display:flex;align-items:center;gap:8px}
+
+        .form-group{margin-bottom:16px}
+        .form-label{display:block;font-size:0.85rem;font-weight:500;margin-bottom:8px;color:var(--text-secondary)}
+        .form-input,.form-select,.form-textarea{width:100%;padding:12px 14px;background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:0.95rem;font-family:var(--font-display);transition:all 0.2s}
+        input[type="date"]{cursor:pointer}
+        input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);cursor:pointer;opacity:0.7;padding:4px}
+        input[type="date"]::-webkit-calendar-picker-indicator:hover{opacity:1}
+        .form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+        .form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+        .form-hint{font-size:0.75rem;color:var(--text-muted);margin-top:6px}
+
+        .btn{padding:12px 20px;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.9rem;transition:all 0.2s;font-family:var(--font-display);display:inline-flex;align-items:center;gap:8px}
+        .btn-primary{background:linear-gradient(135deg,var(--accent),#b91c1c);color:#fff;box-shadow:0 4px 15px var(--accent-glow)}
+        .btn-primary:hover{transform:translateY(-1px)}
+        .btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+        .btn-secondary{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color)}
+        .btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+        .btn-success{background:var(--success);color:#fff}
+        .btn-success:hover{background:#0ea66d}
+        .btn-block{width:100%}
+        .btn-sm{padding:8px 14px;font-size:0.85rem}
+
+        .status{padding:12px 15px;border-radius:8px;margin:15px 0;font-size:0.9rem}
+        .status-success{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:var(--success)}
+        .status-error{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:var(--error)}
+        .status-loading{background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:var(--info);display:flex;align-items:center;gap:10px}
+        .status-info{background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:var(--info)}
+
+        .spinner{width:16px;height:16px;border:2px solid var(--border-color);border-top-color:currentColor;border-radius:50%;animation:spin 0.8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+
+        .hidden{display:none!important}
+
+        /* NUP Ativo */
+        .nup-ativo{background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.05));border:2px solid var(--success);border-radius:12px;padding:16px;margin-bottom:20px}
+        .nup-ativo-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+        .nup-ativo-label{font-size:0.8rem;color:var(--success);font-weight:600;display:flex;align-items:center;gap:6px}
+        .nup-ativo-valor{font-family:monospace;font-size:1.3rem;color:var(--text-primary);font-weight:700;letter-spacing:1px}
+        .nup-ativo-tipo{font-size:0.8rem;color:var(--text-muted);margin-top:4px}
+        .nup-ativo-actions{display:flex;gap:8px;margin-top:12px}
+
+        /* Tabs */
+        .tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border-color);padding-bottom:4px}
+        .tab{padding:10px 20px;background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:0.9rem;font-weight:500;border-radius:8px 8px 0 0;transition:all 0.2s;display:flex;align-items:center;gap:8px}
+        .tab:hover{color:var(--text-primary);background:var(--bg-tertiary)}
+        .tab.active{color:var(--accent);background:var(--bg-tertiary);border-bottom:2px solid var(--accent)}
+        .tab.disabled{opacity:0.5;cursor:not-allowed}
+        .tab-badge{font-size:0.65rem;background:var(--warning);color:#000;padding:2px 6px;border-radius:8px;font-weight:600}
+
+        .tab-content{display:none}
+        .tab-content.active{display:block}
+
+        /* Autocomplete */
+        .autocomplete-wrapper{position:relative}
+        .autocomplete-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;max-height:250px;overflow-y:auto;z-index:50;margin-top:4px;box-shadow:0 10px 25px rgba(0,0,0,0.5)}
+        .autocomplete-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border-color);transition:all 0.15s}
+        .autocomplete-item:last-child{border-bottom:none}
+        .autocomplete-item:hover{background:var(--bg-tertiary);border-left:3px solid var(--accent)}
+        .autocomplete-item .nome{font-weight:600;color:var(--text-primary)}
+        .autocomplete-item .detalhe{font-size:0.8rem;color:var(--text-muted)}
+
+        /* Preview */
+        .preview-box{background:var(--bg-tertiary);border-radius:8px;padding:15px;margin:15px 0}
+        .preview-box h4{color:var(--success);font-size:0.9rem;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+        .preview-toolbar{display:flex;gap:4px;flex-wrap:wrap;padding:10px;background:var(--bg-primary);border-radius:8px 8px 0 0;border:1px solid var(--border-color);border-bottom:none}
+        .toolbar-btn{padding:8px 12px;border:1px solid var(--border-color);background:var(--bg-tertiary);color:var(--text-primary);cursor:pointer;border-radius:4px;font-size:0.85rem;transition:all 0.2s;min-width:36px;text-align:center}
+        .toolbar-btn:hover{background:var(--bg-secondary);border-color:var(--accent);color:var(--accent)}
+        .toolbar-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+        .toolbar-separator{width:1px;background:var(--border-color);margin:0 6px}
+        .preview-content{background:#fff;color:#000;border-radius:0 0 8px 8px;padding:20px;font-family:'Times New Roman',serif;font-size:12pt;line-height:1.6;min-height:200px;max-height:350px;overflow-y:auto;border:1px solid var(--border-color)}
+        .preview-content:focus{outline:2px solid var(--success);outline-offset:-2px}
+        .preview-content p{margin:8px 0}
+        .preview-hint{font-size:0.75rem;color:var(--text-muted);margin-top:8px;display:flex;align-items:center;gap:6px}
+
+        /* Divider */
+        .divider{border-top:1px solid var(--border-color);margin:20px 0;position:relative}
+        .divider span{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--bg-card);padding:0 10px;font-size:0.75rem;color:var(--text-muted)}
+
+        /* Campo obrigatório */
+        .required::after{content:" *";color:var(--error)}
+
+        /* Disabled state for panel */
+        .panel-disabled{opacity:0.5;pointer-events:none}
+        .panel-disabled::after{content:"Primeiro, crie ou informe um processo";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,14,20,0.8);border-radius:12px;font-size:0.9rem;color:var(--text-muted)}
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none">
+                    <div class="logo-icon"><i class="fas fa-fire"></i></div>
+                    <div class="logo-text">Platt<span>Argus</span></div>
+                </a>
+                <span class="logo-subtitle">GERAR DOCUMENTO</span>
+            </div>
+            <div style="display:flex;gap:12px">
+                <a href="/" class="btn-header"><i class="fas fa-home"></i> Inicio</a>
+                <a href="/analisar.html" class="btn-header"><i class="fas fa-search"></i> Analisar</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Painel Esquerdo: Processo -->
+        <div class="panel">
+            <h2><i class="fas fa-folder-open"></i> Processo</h2>
+
+            <!-- NUP Ativo (aparece quando tem processo) -->
+            <div id="nupAtivo" class="nup-ativo hidden">
+                <div class="nup-ativo-header">
+                    <span class="nup-ativo-label"><i class="fas fa-check-circle"></i> Processo Ativo</span>
+                    <button class="btn btn-sm btn-secondary" onclick="App.limparProcesso()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="nup-ativo-valor" id="nupAtivoValor">-</div>
+                <div class="nup-ativo-tipo" id="nupAtivoTipo">-</div>
+                <div class="nup-ativo-actions">
+                    <button class="btn btn-sm btn-secondary" onclick="App.copiarNup()"><i class="fas fa-copy"></i> Copiar</button>
+                </div>
+            </div>
+
+            <!-- Formulário Criar/Buscar Processo -->
+            <div id="formProcesso">
+                <div class="form-group">
+                    <label class="form-label">Usar Processo Existente</label>
+                    <input type="text" id="nupExistente" class="form-input" placeholder="Digite o NUP: 0609.012080.00000/2025-00">
+                    <p class="form-hint">Informe o NUP de um processo ja criado</p>
+                </div>
+                <button class="btn btn-secondary btn-block" onclick="App.usarProcessoExistente()">
+                    <i class="fas fa-link"></i> Usar Este Processo
+                </button>
+
+                <div class="divider"><span>ou</span></div>
+
+                <div class="form-group">
+                    <label class="form-label">Criar Novo Processo</label>
+                    <select id="tipoProcesso" class="form-select">
+                        <option value="">Selecione o tipo...</option>
+                        <option value="Acesso à Informação: Boletim Geral">Acesso a Informacao: Boletim Geral</option>
+                        <option value="Diária: No País - Interestadual - Solicitação">Diaria: No Pais - Interestadual - Solicitacao</option>
+                        <option value="Diária: No País - Intermunicipal - Solicitação">Diaria: No Pais - Intermunicipal - Solicitacao</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-block" id="btnCriarProcesso" onclick="App.criarProcesso()">
+                    <i class="fas fa-plus"></i> Criar Processo no SEI
+                </button>
+            </div>
+
+            <div id="statusProcesso" class="status hidden"></div>
+        </div>
+
+        <!-- Painel Direito: Documentos -->
+        <div class="panel" id="panelDocumentos" style="position:relative">
+            <h2><i class="fas fa-file-alt"></i> Gerar Documento</h2>
+
+            <!-- Aviso quando não tem processo -->
+            <div id="avisoSemProcesso" class="status status-info">
+                <i class="fas fa-info-circle"></i> Primeiro, crie ou informe um processo no painel ao lado.
+            </div>
+
+            <!-- Conteudo (escondido até ter processo) -->
+            <div id="conteudoDocumentos" class="hidden">
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab active" onclick="App.trocarTab('notabg')">
+                        <i class="fas fa-clipboard-list"></i> Nota para BG
+                    </button>
+                    <button class="tab disabled" onclick="App.trocarTab('memo')">
+                        <i class="fas fa-envelope"></i> Memorando <span class="tab-badge">EM BREVE</span>
+                    </button>
+                    <button class="tab disabled" onclick="App.trocarTab('requerimento')">
+                        <i class="fas fa-file-signature"></i> Requerimento <span class="tab-badge">EM BREVE</span>
+                    </button>
+                </div>
+
+                <!-- Tab: Nota para BG -->
+                <div id="tabNotaBG" class="tab-content active">
+                    <div class="form-group">
+                        <label class="form-label required">Tipo de Ato</label>
+                        <select id="tipoAto" class="form-select" onchange="App.atualizarCamposNota()">
+                            <option value="">Selecione o tipo de ato...</option>
+                            <optgroup label="Férias">
+                                <option value="FERIAS_CONCESSAO">FÉRIAS - CONCESSÃO</option>
+                                <option value="FERIAS_APRESENTACAO">FÉRIAS - APRESENTAÇÃO</option>
+                                <option value="FERIAS_SUSTACAO">FÉRIAS - SUSTAÇÃO</option>
+                                <option value="FERIAS_INTERRUPCAO">FÉRIAS - INTERRUPÇÃO</option>
+                            </optgroup>
+                            <optgroup label="Dispensa como Recompensa">
+                                <option value="DISPENSA_RECOMPENSA_CONCESSAO">DISPENSA COMO RECOMPENSA - CONCESSÃO</option>
+                                <option value="DISPENSA_RECOMPENSA_APRESENTACAO">DISPENSA COMO RECOMPENSA - APRESENTAÇÃO</option>
+                            </optgroup>
+                            <optgroup label="Dispensa">
+                                <option value="DISPENSA_CONCESSAO">DISPENSA - CONCESSÃO</option>
+                                <option value="DISPENSA_APRESENTACAO">DISPENSA - APRESENTAÇÃO</option>
+                            </optgroup>
+                            <optgroup label="Licença Especial">
+                                <option value="LICENCA_ESPECIAL_CONCESSAO">LICENÇA ESPECIAL - CONCESSÃO</option>
+                                <option value="LICENCA_ESPECIAL_APRESENTACAO">LICENÇA ESPECIAL - APRESENTAÇÃO</option>
+                            </optgroup>
+                            <optgroup label="Licença Paternidade">
+                                <option value="LICENCA_PATERNIDADE_CONCESSAO">LICENÇA PATERNIDADE - CONCESSÃO</option>
+                                <option value="LICENCA_PATERNIDADE_APRESENTACAO">LICENÇA PATERNIDADE - APRESENTAÇÃO</option>
+                            </optgroup>
+                            <optgroup label="Luto">
+                                <option value="LUTO_CONCESSAO">LUTO - CONCESSÃO</option>
+                                <option value="LUTO_APRESENTACAO">LUTO - APRESENTAÇÃO</option>
+                            </optgroup>
+                            <optgroup label="Núpcias">
+                                <option value="NUPCAS_CONCESSAO">NÚPCIAS - CONCESSÃO</option>
+                                <option value="NUPCAS_APRESENTACAO">NÚPCIAS - APRESENTAÇÃO</option>
+                            </optgroup>
+                            <optgroup label="Viagem">
+                                <option value="VIAGEM_SERVICO">VIAGEM A SERVIÇO DA CORPORAÇÃO - COM ÔNUS</option>
+                            </optgroup>
+                            <optgroup label="Outros">
+                                <option value="ELOGIO">ELOGIO</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Data do Ato (Inicio)</label>
+                        <input type="date" id="dataAto" class="form-input" onchange="App.calcularDataApresentacao()">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Militar</label>
+                        <div class="autocomplete-wrapper">
+                            <input type="text" id="militarBusca" class="form-input" placeholder="Digite matricula ou nome..." autocomplete="off">
+                            <div id="militarDropdown" class="autocomplete-dropdown hidden"></div>
+                        </div>
+                        <div id="militarSelecionado" class="hidden" style="margin-top:8px;padding:10px;background:var(--bg-tertiary);border-radius:8px">
+                            <div style="display:flex;justify-content:space-between;align-items:center">
+                                <div>
+                                    <div id="militarNome" style="font-weight:600;color:var(--success)">-</div>
+                                    <div id="militarDetalhe" style="font-size:0.8rem;color:var(--text-muted)">-</div>
+                                </div>
+                                <button class="btn btn-sm btn-secondary" onclick="App.limparMilitar()"><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Campos dinamicos -->
+                    <div id="campoDias" class="form-group hidden">
+                        <label class="form-label required">Quantidade de Dias</label>
+                        <input type="number" id="dias" class="form-input" min="1" max="90" placeholder="30" onchange="App.calcularDataApresentacao()">
+                    </div>
+
+                    <div id="campoPeriodo" class="form-group hidden">
+                        <label class="form-label required">Periodo Aquisitivo</label>
+                        <input type="text" id="periodoAquisitivo" class="form-input" placeholder="2025/2026">
+                        <p class="form-hint">Formato: ANO/ANO (ex: 2024/2025)</p>
+                    </div>
+
+                    <div id="campoApresentacao" class="form-group hidden">
+                        <label class="form-label required">Data de Apresentacao</label>
+                        <input type="date" id="dataApresentacao" class="form-input">
+                    </div>
+
+                    <div id="campoMotivo" class="form-group hidden">
+                        <label class="form-label">Motivo / Observacao</label>
+                        <textarea id="motivo" class="form-input" rows="2" placeholder="Ex: por bons servicos prestados..." style="resize:vertical"></textarea>
+                    </div>
+
+                    <div id="campoViagem" class="form-group hidden">
+                        <label class="form-label">Origem e Destino</label>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
+                            <input type="text" id="origem" class="form-input" placeholder="Rio Branco - AC">
+                            <input type="text" id="destino" class="form-input" placeholder="Cruzeiro do Sul - AC">
+                        </div>
+                        <label class="form-label">Finalidade</label>
+                        <input type="text" id="finalidade" class="form-input" placeholder="Finalidade da viagem">
+                    </div>
+
+                    <div style="margin-top:20px">
+                        <button class="btn btn-primary btn-block" onclick="App.gerarPreviewNota()">
+                            <i class="fas fa-eye"></i> Gerar Preview do Documento
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab: Memorando -->
+                <div id="tabMemo" class="tab-content">
+                    <div class="status status-info">
+                        <i class="fas fa-tools"></i> Memorando estara disponivel em breve.
+                    </div>
+                </div>
+
+                <!-- Tab: Requerimento -->
+                <div id="tabRequerimento" class="tab-content">
+                    <div class="status status-info">
+                        <i class="fas fa-tools"></i> Requerimento estara disponivel em breve.
+                    </div>
+                </div>
+
+                <!-- Preview -->
+                <div id="previewBox" class="preview-box hidden">
+                    <h4><i class="fas fa-file-alt"></i> Preview do Documento</h4>
+                    <p class="preview-hint"><i class="fas fa-info-circle"></i> Clique no texto para editar. Use a barra de ferramentas para formatar.</p>
+
+                    <div class="preview-toolbar">
+                        <button type="button" class="toolbar-btn" onclick="App.formatDoc('bold')" title="Negrito"><b>N</b></button>
+                        <button type="button" class="toolbar-btn" onclick="App.formatDoc('italic')" title="Italico"><i>I</i></button>
+                        <button type="button" class="toolbar-btn" onclick="App.formatDoc('underline')" title="Sublinhado"><u>S</u></button>
+                        <div class="toolbar-separator"></div>
+                        <button type="button" class="toolbar-btn" onclick="App.formatDoc('justifyLeft')" title="Alinhar Esquerda"><i class="fas fa-align-left"></i></button>
+                        <button type="button" class="toolbar-btn" onclick="App.formatDoc('justifyCenter')" title="Centralizar"><i class="fas fa-align-center"></i></button>
+                        <button type="button" class="toolbar-btn" onclick="App.formatDoc('justifyRight')" title="Alinhar Direita"><i class="fas fa-align-right"></i></button>
+                        <button type="button" class="toolbar-btn" onclick="App.formatDoc('justifyFull')" title="Justificar"><i class="fas fa-align-justify"></i></button>
+                        <div class="toolbar-separator"></div>
+                        <button type="button" class="toolbar-btn" onclick="App.formatDoc('insertUnorderedList')" title="Lista"><i class="fas fa-list-ul"></i></button>
+                        <button type="button" class="toolbar-btn" onclick="App.formatDoc('indent')" title="Aumentar Recuo"><i class="fas fa-indent"></i></button>
+                        <button type="button" class="toolbar-btn" onclick="App.formatDoc('outdent')" title="Diminuir Recuo"><i class="fas fa-outdent"></i></button>
+                        <div class="toolbar-separator"></div>
+                        <button type="button" class="toolbar-btn" onclick="App.desfazerEdicao()" title="Desfazer Edicoes"><i class="fas fa-undo"></i> Desfazer</button>
+                    </div>
+                    <div id="previewContent" class="preview-content" contenteditable="true"></div>
+
+                    <div style="display:flex;gap:10px;margin-top:15px;flex-wrap:wrap">
+                        <button class="btn btn-secondary" onclick="App.gerarPreviewNota()">
+                            <i class="fas fa-sync"></i> Regerar
+                        </button>
+                        <button class="btn btn-success" id="btnInserirNota" onclick="App.inserirNotaSEI()">
+                            <i class="fas fa-paper-plane"></i> Inserir no SEI
+                        </button>
+                    </div>
+                </div>
+
+                <div id="statusDocumento" class="status hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        const API_NOTA = '/api/nota-bg';
+        const MILITAR_API = '/api/nota-bg/militar';
+
+        const App = {
+            token: localStorage.getItem('plattargus_token'),
+            nupAtual: null,
+            tipoProcessoAtual: null,
+            militarSelecionadoData: null,
+            resultadosBusca: [],
+            htmlGerado: null,
+
+            // Campos por tipo de ato (igual ao gerar.html original)
+            camposPorTipo: {
+                // Ferias
+                'FERIAS_CONCESSAO': ['dias', 'periodo', 'apresentacao'],
+                'FERIAS_APRESENTACAO': ['dias', 'periodo'],
+                'FERIAS_SUSTACAO': ['dias', 'periodo', 'apresentacao'],
+                'FERIAS_INTERRUPCAO': ['dias', 'periodo'],
+                // Dispensa Recompensa
+                'DISPENSA_RECOMPENSA_CONCESSAO': ['dias', 'apresentacao', 'motivo'],
+                'DISPENSA_RECOMPENSA_APRESENTACAO': ['dias'],
+                // Dispensa
+                'DISPENSA_CONCESSAO': ['dias', 'apresentacao', 'motivo'],
+                'DISPENSA_APRESENTACAO': ['dias'],
+                // Licenca Especial
+                'LICENCA_ESPECIAL_CONCESSAO': ['dias', 'periodo', 'apresentacao'],
+                'LICENCA_ESPECIAL_APRESENTACAO': ['dias', 'periodo'],
+                // Licenca Paternidade
+                'LICENCA_PATERNIDADE_CONCESSAO': ['dias', 'apresentacao'],
+                'LICENCA_PATERNIDADE_APRESENTACAO': ['dias'],
+                // Luto
+                'LUTO_CONCESSAO': ['dias', 'apresentacao', 'motivo'],
+                'LUTO_APRESENTACAO': ['dias'],
+                // Nupcias
+                'NUPCAS_CONCESSAO': ['dias', 'apresentacao'],
+                'NUPCAS_APRESENTACAO': ['dias'],
+                // Viagem
+                'VIAGEM_SERVICO': ['viagem'],
+                // Outros
+                'ELOGIO': ['motivo']
+            },
+
+            init() {
+                if (!this.token) {
+                    window.location.href = '/';
+                    return;
+                }
+                // Data padrao = hoje
+                document.getElementById('dataAto').valueAsDate = new Date();
+
+                // Verifica se veio NUP na URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const nupUrl = urlParams.get('nup');
+                if (nupUrl) {
+                    document.getElementById('nupExistente').value = nupUrl;
+                    this.usarProcessoExistente();
+                }
+
+                // Autocomplete militar
+                let debounce;
+                document.getElementById('militarBusca').addEventListener('input', (e) => {
+                    clearTimeout(debounce);
+                    debounce = setTimeout(() => this.buscarMilitar(e.target.value), 300);
+                });
+
+                // Fechar dropdown ao clicar fora
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('#militarBusca') && !e.target.closest('#militarDropdown')) {
+                        document.getElementById('militarDropdown').classList.add('hidden');
+                    }
+                });
+            },
+
+            // ==================== PROCESSO ====================
+
+            async criarProcesso() {
+                const tipo = document.getElementById('tipoProcesso').value;
+                const status = document.getElementById('statusProcesso');
+                const btn = document.getElementById('btnCriarProcesso');
+
+                if (!tipo) {
+                    alert('Selecione o tipo de processo');
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> Criando...';
+                status.className = 'status status-loading';
+                status.innerHTML = '<span class="spinner"></span> Criando processo no SEI...';
+                status.classList.remove('hidden');
+
+                try {
+                    const resp = await fetch(API_URL + '/processos/criar', {
+                        method: 'POST',
+                        headers: this.getHeaders(),
+                        body: JSON.stringify({ tipo_processo: tipo })
+                    });
+                    const data = await resp.json();
+
+                    if (data.sucesso || data.ok) {
+                        const nup = data.nup || data.resultado?.nup;
+                        this.setProcessoAtivo(nup, tipo);
+                        status.className = 'status status-success';
+                        status.innerHTML = '<i class="fas fa-check"></i> Processo criado com sucesso!';
+                    } else {
+                        throw new Error(data.erro || data.error || 'Erro ao criar processo');
+                    }
+                } catch (err) {
+                    status.className = 'status status-error';
+                    status.innerHTML = '<i class="fas fa-times"></i> ' + err.message;
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-plus"></i> Criar Processo no SEI';
+                }
+            },
+
+            usarProcessoExistente() {
+                const nup = document.getElementById('nupExistente').value.trim();
+                if (!nup) {
+                    alert('Digite o NUP do processo');
+                    return;
+                }
+                // Valida formato basico
+                if (!nup.match(/\d{4}\.\d{6}\.\d{5}\/\d{4}-\d{2}/)) {
+                    alert('Formato de NUP invalido. Use: 0609.012080.00000/2025-00');
+                    return;
+                }
+                this.setProcessoAtivo(nup, 'Processo Existente');
+            },
+
+            setProcessoAtivo(nup, tipo) {
+                this.nupAtual = nup;
+                this.tipoProcessoAtual = tipo;
+
+                // Mostra NUP ativo
+                document.getElementById('nupAtivoValor').textContent = nup;
+                document.getElementById('nupAtivoTipo').textContent = tipo;
+                document.getElementById('nupAtivo').classList.remove('hidden');
+                document.getElementById('formProcesso').classList.add('hidden');
+
+                // Habilita painel de documentos
+                document.getElementById('avisoSemProcesso').classList.add('hidden');
+                document.getElementById('conteudoDocumentos').classList.remove('hidden');
+            },
+
+            limparProcesso() {
+                this.nupAtual = null;
+                this.tipoProcessoAtual = null;
+
+                document.getElementById('nupAtivo').classList.add('hidden');
+                document.getElementById('formProcesso').classList.remove('hidden');
+                document.getElementById('nupExistente').value = '';
+                document.getElementById('tipoProcesso').value = '';
+                document.getElementById('statusProcesso').classList.add('hidden');
+
+                document.getElementById('avisoSemProcesso').classList.remove('hidden');
+                document.getElementById('conteudoDocumentos').classList.add('hidden');
+            },
+
+            copiarNup() {
+                if (this.nupAtual) {
+                    navigator.clipboard.writeText(this.nupAtual);
+                    alert('NUP copiado!');
+                }
+            },
+
+            // ==================== TABS ====================
+
+            trocarTab(tab) {
+                // Remove active de todas as tabs
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+
+                // Ativa a tab selecionada
+                if (tab === 'notabg') {
+                    document.querySelector('.tab:nth-child(1)').classList.add('active');
+                    document.getElementById('tabNotaBG').classList.add('active');
+                } else if (tab === 'memo') {
+                    // Em breve
+                    alert('Memorando estara disponivel em breve!');
+                    document.querySelector('.tab:nth-child(1)').classList.add('active');
+                    document.getElementById('tabNotaBG').classList.add('active');
+                } else if (tab === 'requerimento') {
+                    // Em breve
+                    alert('Requerimento estara disponivel em breve!');
+                    document.querySelector('.tab:nth-child(1)').classList.add('active');
+                    document.getElementById('tabNotaBG').classList.add('active');
+                }
+            },
+
+            // ==================== NOTA PARA BG ====================
+
+            atualizarCamposNota() {
+                const tipo = document.getElementById('tipoAto').value;
+                const campos = this.camposPorTipo[tipo] || [];
+
+                // Esconde todos
+                ['campoDias', 'campoPeriodo', 'campoApresentacao', 'campoMotivo', 'campoViagem'].forEach(id => {
+                    document.getElementById(id).classList.add('hidden');
+                });
+
+                // Mostra os necessarios
+                if (campos.includes('dias')) document.getElementById('campoDias').classList.remove('hidden');
+                if (campos.includes('periodo')) document.getElementById('campoPeriodo').classList.remove('hidden');
+                if (campos.includes('apresentacao')) document.getElementById('campoApresentacao').classList.remove('hidden');
+                if (campos.includes('motivo')) document.getElementById('campoMotivo').classList.remove('hidden');
+                if (campos.includes('viagem')) document.getElementById('campoViagem').classList.remove('hidden');
+
+                // Calcula data de apresentacao se tiver dias
+                if (campos.includes('apresentacao') && campos.includes('dias')) {
+                    this.calcularDataApresentacao();
+                }
+            },
+
+            calcularDataApresentacao() {
+                const dataAto = document.getElementById('dataAto').value;
+                const dias = parseInt(document.getElementById('dias').value);
+
+                if (dataAto && dias > 0) {
+                    const dataInicio = new Date(dataAto);
+                    const dataApresentacao = new Date(dataInicio);
+                    dataApresentacao.setDate(dataApresentacao.getDate() + dias);
+
+                    // Formata para o input date (YYYY-MM-DD)
+                    const ano = dataApresentacao.getFullYear();
+                    const mes = String(dataApresentacao.getMonth() + 1).padStart(2, '0');
+                    const dia = String(dataApresentacao.getDate()).padStart(2, '0');
+
+                    document.getElementById('dataApresentacao').value = `${ano}-${mes}-${dia}`;
+                }
+            },
+
+            async buscarMilitar(termo) {
+                if (!termo || termo.length < 2) {
+                    document.getElementById('militarDropdown').classList.add('hidden');
+                    return;
+                }
+
+                // Mostra loading
+                document.getElementById('militarBusca').style.backgroundImage = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2394a3b8\' stroke-width=\'2\'%3E%3Ccircle cx=\'12\' cy=\'12\' r=\'10\' stroke-dasharray=\'60\' stroke-dashoffset=\'0\'%3E%3CanimateTransform attributeName=\'transform\' type=\'rotate\' from=\'0 12 12\' to=\'360 12 12\' dur=\'1s\' repeatCount=\'indefinite\'/%3E%3C/circle%3E%3C/svg%3E")';
+                document.getElementById('militarBusca').style.backgroundRepeat = 'no-repeat';
+                document.getElementById('militarBusca').style.backgroundPosition = 'right 12px center';
+                document.getElementById('militarBusca').style.backgroundSize = '20px';
+
+                try {
+                    const resp = await fetch(`${MILITAR_API}/buscar?q=${encodeURIComponent(termo)}&limit=10`);
+                    const data = await resp.json();
+
+                    const dropdown = document.getElementById('militarDropdown');
+
+                    if (data.resultados && data.resultados.length > 0) {
+                        // Guarda resultados para selecao por indice
+                        this.resultadosBusca = data.resultados;
+
+                        dropdown.innerHTML = data.resultados.map((m, i) => `
+                            <div class="autocomplete-item" onclick="App.selecionarMilitar(${i})">
+                                <div class="nome">${m.formatado || m.nome}</div>
+                                <div class="detalhe">${m.lotacao || ''}</div>
+                            </div>
+                        `).join('');
+                        dropdown.classList.remove('hidden');
+                    } else {
+                        dropdown.innerHTML = '<div style="padding:15px;text-align:center;color:var(--text-muted)"><i class="fas fa-search"></i> Nenhum militar encontrado</div>';
+                        dropdown.classList.remove('hidden');
+                    }
+                } catch (err) {
+                    console.error('Erro buscar militar:', err);
+                } finally {
+                    // Remove loading
+                    document.getElementById('militarBusca').style.backgroundImage = '';
+                }
+            },
+
+            selecionarMilitar(index) {
+                const militar = this.resultadosBusca[index];
+                this.militarSelecionadoData = militar;
+
+                // Atualiza UI
+                document.getElementById('militarBusca').value = militar.nome;
+                document.getElementById('militarBusca').classList.add('hidden');
+                document.getElementById('militarDropdown').classList.add('hidden');
+
+                document.getElementById('militarSelecionado').classList.remove('hidden');
+                document.getElementById('militarNome').textContent = militar.formatado || militar.nome;
+                document.getElementById('militarDetalhe').textContent = militar.lotacao || '';
+            },
+
+            limparMilitar() {
+                this.militarSelecionadoData = null;
+                this.resultadosBusca = [];
+                document.getElementById('militarBusca').value = '';
+                document.getElementById('militarBusca').classList.remove('hidden');
+                document.getElementById('militarSelecionado').classList.add('hidden');
+            },
+
+            limparFormularioNota() {
+                // Limpa preview
+                this.htmlGerado = null;
+                document.getElementById('previewBox').classList.add('hidden');
+                document.getElementById('previewContent').innerHTML = '';
+
+                // Limpa campos do formulario
+                document.getElementById('tipoAto').value = '';
+                document.getElementById('dataAto').valueAsDate = new Date();
+                document.getElementById('dias').value = '';
+                document.getElementById('periodoAquisitivo').value = '';
+                document.getElementById('dataApresentacao').value = '';
+                document.getElementById('motivo').value = '';
+                document.getElementById('origem').value = '';
+                document.getElementById('destino').value = '';
+                document.getElementById('finalidade').value = '';
+
+                // Limpa militar
+                this.limparMilitar();
+
+                // Esconde campos dinamicos
+                this.atualizarCamposNota();
+
+                // Scroll para o topo do formulario
+                document.getElementById('tabNotaBG').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            },
+
+            formatarData(dataISO) {
+                if (!dataISO) return null;
+                const [ano, mes, dia] = dataISO.split('-');
+                return `${dia}/${mes}/${ano}`;
+            },
+
+            async gerarPreviewNota() {
+                const tipoAtoValue = document.getElementById('tipoAto').value;
+                const dataAto = document.getElementById('dataAto').value;
+
+                if (!tipoAtoValue || !dataAto || !this.militarSelecionadoData) {
+                    alert('Preencha todos os campos obrigatorios: Tipo de Ato, Data e Militar');
+                    return;
+                }
+
+                // Obtem usuario SEI (obrigatorio para a API)
+                let usuarioSei = localStorage.getItem('usuario_sei');
+                if (!usuarioSei) {
+                    usuarioSei = prompt('Informe seu usuario SEI (usuario que acessa o sistema SEI):');
+                    if (!usuarioSei) {
+                        alert('Usuario SEI e obrigatorio para gerar o documento');
+                        return;
+                    }
+                    localStorage.setItem('usuario_sei', usuarioSei);
+                }
+
+                // Pega o TEXTO do tipo de ato (nao o value)
+                const tipoAtoSelect = document.getElementById('tipoAto');
+                const tipoAtoNome = tipoAtoSelect.options[tipoAtoSelect.selectedIndex].text;
+
+                // Monta payload igual ao gerar.html original
+                const payload = {
+                    tipo_ato: tipoAtoNome,
+                    data_ato: this.formatarData(dataAto),
+                    militar_nome: this.militarSelecionadoData.nome,
+                    militar_matricula: this.militarSelecionadoData.matricula_completa || this.militarSelecionadoData.matricula,
+                    usuario_sei: usuarioSei,
+                    dias: parseInt(document.getElementById('dias').value) || null,
+                    periodo_aquisitivo: document.getElementById('periodoAquisitivo').value || null,
+                    data_apresentacao: document.getElementById('dataApresentacao').value
+                        ? this.formatarData(document.getElementById('dataApresentacao').value)
+                        : null,
+                    motivo: document.getElementById('motivo').value || null,
+                    origem: document.getElementById('origem').value || null,
+                    destino: document.getElementById('destino').value || null
+                };
+
+                const btn = document.querySelector('button[onclick="App.gerarPreviewNota()"]');
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> Gerando...';
+
+                try {
+                    const resp = await fetch(API_NOTA + '/gerar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await resp.json();
+
+                    if (data.sucesso && data.html) {
+                        this.htmlGerado = data.html;
+                        document.getElementById('previewContent').innerHTML = data.html;
+                        document.getElementById('previewBox').classList.remove('hidden');
+
+                        // Scroll para o preview
+                        document.getElementById('previewBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                        // Mostra alertas se houver
+                        if (data.alertas && data.alertas.length > 0) {
+                            console.log('Alertas:', data.alertas);
+                        }
+                    } else {
+                        const erros = data.erros || [data.erro || 'Erro ao gerar nota'];
+                        alert('Erro: ' + erros.join(', '));
+                    }
+                } catch (err) {
+                    alert('Erro de conexao: ' + err.message);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-eye"></i> Gerar Preview do Documento';
+                }
+            },
+
+            async inserirNotaSEI() {
+                const htmlAtual = this.getPreviewHTML();
+                if (!htmlAtual || !this.nupAtual) {
+                    alert('Gere o preview primeiro');
+                    return;
+                }
+
+                const status = document.getElementById('statusDocumento');
+                const btn = document.getElementById('btnInserirNota');
+
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> Inserindo...';
+                status.className = 'status status-loading';
+                status.innerHTML = '<span class="spinner"></span> Inserindo nota no SEI...';
+                status.classList.remove('hidden');
+
+                try {
+                    const resp = await fetch(API_URL + '/nota-bg/inserir', {
+                        method: 'POST',
+                        headers: this.getHeaders(),
+                        body: JSON.stringify({
+                            nup: this.nupAtual,
+                            html: htmlAtual  // Usa o HTML editado
+                        })
+                    });
+                    const data = await resp.json();
+
+                    if (data.sucesso) {
+                        status.className = 'status status-success';
+                        const seiNum = data.sei_numero || data.numero_sei || '-';
+                        status.innerHTML = '<i class="fas fa-check"></i> Nota inserida com sucesso! <strong>SEI: ' + seiNum + '</strong>';
+
+                        // Pergunta se quer criar outra nota no mesmo processo
+                        setTimeout(() => {
+                            if (confirm('Nota inserida! Deseja criar outra nota neste mesmo processo?')) {
+                                this.limparFormularioNota();
+                                status.classList.add('hidden');
+                            }
+                        }, 500);
+                    } else {
+                        throw new Error(data.erro || 'Erro ao inserir');
+                    }
+                } catch (err) {
+                    status.className = 'status status-error';
+                    status.innerHTML = '<i class="fas fa-times"></i> Erro: ' + err.message;
+                }
+
+                // Restaura botao
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Inserir no SEI';
+            },
+
+            // ==================== EDITOR ====================
+
+            formatDoc(command, value = null) {
+                document.execCommand(command, false, value);
+                document.getElementById('previewContent').focus();
+            },
+
+            desfazerEdicao() {
+                if (this.htmlGerado) {
+                    document.getElementById('previewContent').innerHTML = this.htmlGerado;
+                }
+            },
+
+            getPreviewHTML() {
+                return document.getElementById('previewContent').innerHTML;
+            },
+
+            // ==================== UTILS ====================
+
+            getHeaders() {
+                return {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + this.token,
+                    'Accept': 'application/json'
+                };
+            }
+        };
+
+        // Init
+        App.init();
+    </script>
+</body>
+</html>
