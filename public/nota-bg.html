@@ -155,26 +155,6 @@
         <div class="panel">
             <h2><i class="fas fa-plus-circle"></i> Adicionar Publicacao</h2>
 
-            <!-- Unidade -->
-            <div class="form-group">
-                <label class="form-label required">Unidade</label>
-                <select id="unidade" class="form-select">
-                    <option value="">Selecione a unidade...</option>
-                    <option value="CEMAN">CEMAN - Centro de Manutencao</option>
-                    <option value="DRH">DRH - Diretoria de Recursos Humanos</option>
-                    <option value="1BEPCIF">1o BEPCIF - Rio Branco</option>
-                    <option value="2BEPCIF">2o BEPCIF - Cruzeiro do Sul</option>
-                    <option value="3BEPCIF">3o BEPCIF - Tarauaca</option>
-                    <option value="8BEPCIF">8o BEPCIF - Xapuri</option>
-                    <option value="1CIACIAER-RB">1a CIACIAER - Rio Branco</option>
-                    <option value="2CIACIAER-CZS">2a CIACIAER - Cruzeiro do Sul</option>
-                    <option value="DEI">DEI - Diretoria de Ensino</option>
-                    <option value="OUTRA">Outra</option>
-                </select>
-            </div>
-
-            <div class="divider"></div>
-
             <!-- Tipo de Ato -->
             <div class="form-group">
                 <label class="form-label required">Tipo de Ato</label>
@@ -598,15 +578,9 @@
             adicionarPublicacao() {
                 const tipoAto = document.getElementById('tipoAto').value;
                 const dataAto = document.getElementById('dataAto').value;
-                const unidade = document.getElementById('unidade').value;
 
                 if (!tipoAto || !dataAto || !this.militarSelecionado) {
                     this.mostrarStatus('statusForm', 'Preencha: Tipo de Ato, Data e Militar', 'error');
-                    return;
-                }
-
-                if (!unidade) {
-                    this.mostrarStatus('statusForm', 'Selecione a Unidade', 'error');
                     return;
                 }
 
@@ -627,7 +601,6 @@
                         lotacao: m.lotacao
                     },
                     categoria: categoria,
-                    unidade: unidade,
                     dias: parseInt(document.getElementById('dias').value) || null,
                     periodo_aquisitivo: document.getElementById('periodoAquisitivo').value || null,
                     data_apresentacao: document.getElementById('dataApresentacao').value || null,
@@ -689,7 +662,6 @@
                 const p = this.publicacoes[index];
                 this.editandoIndex = index;
 
-                document.getElementById('unidade').value = p.unidade;
                 document.getElementById('tipoAto').value = p.tipo_ato;
                 document.getElementById('dataAto').value = p.data_ato;
                 document.getElementById('dias').value = p.dias || '';
@@ -833,7 +805,6 @@
             gerarNota() {
                 if (this.publicacoes.length === 0) return;
 
-                const unidade = document.getElementById('unidade').value || 'DRH';
                 const grupos = this.agruparPorCategoria();
 
                 let html = `
@@ -844,7 +815,7 @@
                     </div>
 
                     <p style="text-align:center;font-weight:bold;margin:30px 0">
-                        NOTA PARA BOLETIM GERAL - BG - CBMAC N° __/2026/CBMAC - ${unidade}
+                        NOTA PARA BOLETIM GERAL - BG - CBMAC
                     </p>
 
                     <p style="text-align:center;font-weight:bold">1a P A R T E</p>
@@ -1008,8 +979,7 @@
                         method: 'POST',
                         headers: this.getHeaders(),
                         body: JSON.stringify({
-                            html: this.htmlGerado,
-                            unidade: document.getElementById('unidade').value
+                            html: this.htmlGerado
                         })
                     });
                     const data = await resp.json();
