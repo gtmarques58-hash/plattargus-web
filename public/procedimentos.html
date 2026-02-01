@@ -165,6 +165,10 @@
             .tipo-selector{grid-template-columns:1fr 1fr}
             .form-grid{grid-template-columns:1fr}
         }
+
+        .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:9999}
+        .modal-overlay.active{display:flex}
+        .modal-content{background:var(--bg-card);padding:24px;border-radius:12px;box-shadow:0 20px 40px rgba(0,0,0,0.3);max-width:90%}
     </style>
 </head>
 <body>
@@ -1403,10 +1407,39 @@
                 window.open(url, '_blank');
             },
 
-            async assinarDocumento(seiNumero) {
-                if (!confirm(`Deseja assinar o documento SEI no ${seiNumero}?`)) return;
-
+            async assinarDocumento(seiNumero, senhaStepUp = null) {
                 const status = document.getElementById('statusEtapa3');
+
+                // Se tem senha, faz step-up primeiro
+                if (senhaStepUp) {
+                    status.className = 'status status-loading';
+                    status.innerHTML = '<span class="spinner"></span> Autorizando...';
+                    status.classList.remove('hidden');
+
+                    try {
+                        const grantResp = await fetch(API_URL + '/step-up/grant', {
+                            method: 'POST',
+                            headers: this.getHeaders(),
+                            body: JSON.stringify({
+                                senha: senhaStepUp,
+                                action: 'sign',
+                                target_id: seiNumero
+                            })
+                        });
+                        const grantData = await grantResp.json();
+
+                        if (!grantData.success) {
+                            throw new Error(grantData.message || 'Senha incorreta');
+                        }
+                    } catch (err) {
+                        status.className = 'status status-error';
+                        status.innerHTML = '<i class="fas fa-times"></i> ' + err.message;
+                        return;
+                    }
+                }
+
+                if (!senhaStepUp && !confirm(`Deseja assinar o documento SEI nº ${seiNumero}?`)) return;
+
                 status.className = 'status status-loading';
                 status.innerHTML = '<span class="spinner"></span> Assinando documento...';
                 status.classList.remove('hidden');
@@ -1421,7 +1454,16 @@
 
                     if (data.sucesso || data.ok) {
                         status.className = 'status status-success';
-                        status.innerHTML = '<i class="fas fa-check"></i> Documento assinado com sucesso!';
+                        let html = '<i class="fas fa-check"></i> Documento assinado com sucesso!';
+                        if (data.screenshot) {
+                            html += `<br><img src="data:image/png;base64,${data.screenshot}" style="max-width:100%;max-height:300px;border-radius:8px;margin-top:10px;border:1px solid var(--border-color)">`;
+                        }
+                        status.innerHTML = html;
+                        this.fecharModalStepUp();
+                    } else if (data.acao_necessaria === 'step_up') {
+                        // Precisa step-up: mostra modal de senha
+                        this.mostrarModalStepUp(seiNumero);
+                        status.classList.add('hidden');
                     } else {
                         throw new Error(data.erro || data.error || 'Erro ao assinar');
                     }
@@ -1429,6 +1471,53 @@
                     status.className = 'status status-error';
                     status.innerHTML = '<i class="fas fa-times"></i> ' + err.message;
                 }
+            },
+
+            mostrarModalStepUp(seiNumero) {
+                let modal = document.getElementById('modalStepUp');
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.id = 'modalStepUp';
+                    modal.className = 'modal-overlay';
+                    modal.innerHTML = `
+                        <div class="modal-content" style="max-width:400px">
+                            <h3 style="margin-bottom:15px"><i class="fas fa-lock"></i> Confirmacao de Identidade</h3>
+                            <p style="margin-bottom:15px;color:var(--text-secondary)">Para assinar documentos, confirme sua senha do PlattArgus:</p>
+                            <input type="password" id="inputSenhaStepUp" class="input-field" placeholder="Sua senha do PlattArgus" style="width:100%;margin-bottom:15px">
+                            <input type="hidden" id="stepUpSeiNumero">
+                            <div style="display:flex;gap:10px;justify-content:flex-end">
+                                <button class="btn btn-secondary" onclick="App.fecharModalStepUp()">Cancelar</button>
+                                <button class="btn btn-primary" onclick="App.confirmarStepUp()"><i class="fas fa-check"></i> Confirmar</button>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+
+                    // Enter para confirmar
+                    document.getElementById('inputSenhaStepUp').addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') this.confirmarStepUp();
+                    });
+                }
+                document.getElementById('stepUpSeiNumero').value = seiNumero;
+                document.getElementById('inputSenhaStepUp').value = '';
+                modal.classList.add('active');
+                setTimeout(() => document.getElementById('inputSenhaStepUp').focus(), 100);
+            },
+
+            fecharModalStepUp() {
+                const modal = document.getElementById('modalStepUp');
+                if (modal) modal.classList.remove('active');
+            },
+
+            confirmarStepUp() {
+                const senha = document.getElementById('inputSenhaStepUp').value.trim();
+                const seiNumero = document.getElementById('stepUpSeiNumero').value;
+                if (!senha) {
+                    alert('Digite sua senha');
+                    return;
+                }
+                this.fecharModalStepUp();
+                this.assinarDocumento(seiNumero, senha);
             },
 
             getHeaders() {
