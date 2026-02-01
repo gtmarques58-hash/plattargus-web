@@ -396,13 +396,45 @@ class ProcessoController extends Controller
         return response()->json($resultado);
     }
 
+    /**
+     * Cria um novo processo no SEI.
+     *
+     * POST /api/processos/criar
+     */
+    public function criarProcesso(Request $request): JsonResponse
+    {
+        $request->validate([
+            'tipo_processo' => 'required|string|max:255',
+            'interessados' => 'nullable|string|max:500',
+            'observacoes' => 'nullable|string|max:1000',
+        ]);
+
+        $user = $request->user();
+
+        if (!$user->hasCredencialSei()) {
+            return response()->json([
+                'sucesso' => false,
+                'erro' => 'Credencial SEI não vinculada.',
+            ], 400);
+        }
+
+        $resultado = $this->engine->criarProcesso(
+            user: $user,
+            tipoProcesso: $request->tipo_processo,
+            interessados: $request->interessados,
+            observacoes: $request->observacoes
+        );
+
+        return response()->json($resultado);
+    }
+
     // ============================================================
     // MÉTODOS ADICIONAIS PARA COMPATIBILIDADE COM FRONTEND v2.0
     // ============================================================
 
     /**
      * Valida documento antes de inserir.
-     * 
+     *
      * POST /api/validar
      */
     public function validarDocumento(Request $request): JsonResponse

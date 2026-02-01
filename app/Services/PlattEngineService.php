@@ -610,13 +610,69 @@ class PlattEngineService
         return $response;
     }
 
+    /**
+     * Cria um novo processo no SEI.
+     *
+     * @param User $user
+     * @param string $tipoProcesso Nome do tipo de processo
+     * @param string|null $interessados Interessados do processo (opcional)
+     * @param string|null $observacoes Observações (opcional)
+     * @return array
+     */
+    public function criarProcesso(
+        User $user,
+        string $tipoProcesso,
+        ?string $interessados = null,
+        ?string $observacoes = null
+    ): array {
+        $credencial = $user->getCredencialSei();
+
+        if (!$credencial) {
+            return [
+                'sucesso' => false,
+                'erro' => 'Usuário não possui credencial SEI cadastrada',
+            ];
+        }
+
+        $payload = [
+            'mode' => 'criar_processo',
+            'tipo_processo' => $tipoProcesso,
+            'credentials' => [
+                'usuario' => $credencial['usuario'],
+                'senha' => $credencial['senha'],
+                'orgao_id' => $credencial['orgao_id'] ?? '31',
+            ],
+        ];
+
+        if ($interessados) {
+            $payload['interessados'] = $interessados;
+        }
+
+        if ($observacoes) {
+            $payload['observacoes'] = $observacoes;
+        }
+
+        // Limpa senha da memória
+        $credencial['senha'] = str_repeat("\0", strlen($credencial['senha']));
+        unset($credencial);
+
+        $response = $this->postRunner($payload);
+
+        $this->logAction($user, 'criar_processo', $tipoProcesso, $response, [
+            'interessados' => $interessados,
+            'observacoes' => $observacoes,
+        ]);
+
+        return $response;
+    }
+
     // =========================================================================
     // BLOCOS DE ASSINATURA
     // =========================================================================
 
     /**
      * Lista documentos de um bloco de assinatura.
-     * 
+     *
      * @param User $user
      * @param string $blocoId
      * @return array

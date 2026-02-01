@@ -56,6 +56,7 @@ class RunPayload(BaseModel):
     
     # Parâmetros específicos
     tipo_documento: Optional[str] = None  # atuar
+    tipo_processo: Optional[str] = None   # criar_processo
     destinatario: Optional[str] = None    # atuar, enviar
     texto_despacho: Optional[str] = None  # atuar
     apelido: Optional[str] = None         # atribuir
@@ -63,6 +64,8 @@ class RunPayload(BaseModel):
     stage: Optional[str] = None           # enviar (search/preflight/commit)
     labels: Optional[List[str]] = None    # enviar
     token: Optional[str] = None           # enviar
+    interessados: Optional[str] = None    # criar_processo
+    observacoes: Optional[str] = None     # criar_processo
     
     # Flags
     full: Optional[bool] = False
@@ -81,6 +84,7 @@ SCRIPTS = {
     "enviar": "/app/scripts/enviar_processo.py",
     "atribuir": "/app/scripts/sei_atribuir.py",
     "capturar_editor": "/app/scripts/capturar_editor_sei.py",
+    "criar_processo": "/app/scripts/criar_processo.py",
 }
 
 
@@ -399,6 +403,21 @@ def run_job(payload: RunPayload = Body(...)):
             payload.tipo_documento,
         ]
         cmd += auth_args
+
+    # ==========================================
+    # CRIAR PROCESSO
+    # ==========================================
+    elif mode == "criar_processo":
+        if not payload.tipo_processo:
+            return {"ok": False, "error": "Campo 'tipo_processo' é obrigatório para criar_processo"}
+
+        cmd += [payload.tipo_processo]
+        cmd += auth_args
+
+        if payload.interessados:
+            cmd += ["--interessados", payload.interessados]
+        if payload.observacoes:
+            cmd += ["--observacoes", payload.observacoes]
 
     # Executa
     return run_script(cmd)

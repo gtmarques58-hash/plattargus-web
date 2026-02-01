@@ -34,5 +34,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->throttleApi('60,1');
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // Sempre retorna JSON para erros de autenticação em rotas API
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Unauthenticated.',
+                    'error' => 'Token inválido ou expirado. Faça login novamente.'
+                ], 401);
+            }
+        });
     })->create();
