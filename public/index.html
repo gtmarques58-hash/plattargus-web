@@ -186,6 +186,7 @@
             irParaGerar(){if(!this.user.tem_credencial_sei){this.openCredencial();return}window.location.href='/documentos.html'},
             irParaNotaBG(){if(!this.user.tem_credencial_sei){this.openCredencial();return}window.location.href='/nota-bg.html'},
             irParaDispensaRecompensa(){if(!this.user.tem_credencial_sei){this.openCredencial();return}window.location.href='/dispensa-recompensa.html'},
+            irParaProcedimentos(){if(!this.user.tem_credencial_sei){this.openCredencial();return}window.location.href='/procedimentos.html'},
             irParaLegislacao(){window.location.href='/legislacao.html'},
             renderLogin(){
                 document.getElementById('app').innerHTML=`
@@ -385,11 +386,11 @@
                                 <p class="card-subtitle">Múltiplas publicações</p>
                                 <p class="card-description">Crie notas para Boletim Geral com várias publicações (férias, viagens, etc.) organizadas por categoria.</p>
                             </div>
-                            <div class="card" onclick="PlattArgus.irParaDispensaRecompensa()">
-                                <div class="card-icon">🎖️</div>
-                                <h3 class="card-title">Dispensa Recompensa</h3>
-                                <p class="card-subtitle">Workflow completo</p>
-                                <p class="card-description">Gera 3 documentos no mesmo NUP: Requerimento, Nota BG e Memorando de encaminhamento.</p>
+                            <div class="card" onclick="PlattArgus.irParaProcedimentos()">
+                                <div class="card-icon">📝</div>
+                                <h3 class="card-title">Procedimentos</h3>
+                                <p class="card-subtitle">Dispensas, Licenças e mais</p>
+                                <p class="card-description">Gera 3 documentos (Req, Nota BG, Memo) para: recompensa, luto, nupcias, maternidade, paternidade, etc.</p>
                             </div>
                             <div class="card" onclick="PlattArgus.irParaLegislacao()">
                                 <div class="card-icon">⚖️</div>
