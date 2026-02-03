@@ -159,48 +159,30 @@
     <div class="container">
         <!-- Painel Esquerdo: Formulario -->
         <div class="panel">
-            <h2><i class="fas fa-plus-circle"></i> Adicionar Publicacao</h2>
+            <h2><i class="fas fa-plus-circle"></i> Adicionar Publicação</h2>
 
             <!-- Tipo de Ato -->
             <div class="form-group">
                 <label class="form-label required">Tipo de Ato</label>
                 <select id="tipoAto" class="form-select" onchange="App.atualizarCampos()">
                     <option value="">Selecione o tipo...</option>
-                    <optgroup label="Ferias">
-                        <option value="FERIAS_CONCESSAO">FERIAS - CONCESSAO</option>
-                        <option value="FERIAS_APRESENTACAO">FERIAS - APRESENTACAO</option>
-                        <option value="FERIAS_SUSTACAO">FERIAS - SUSTACAO</option>
-                        <option value="FERIAS_INTERRUPCAO">FERIAS - INTERRUPCAO</option>
-                    </optgroup>
-                    <optgroup label="Dispensa como Recompensa">
-                        <option value="DISPENSA_RECOMPENSA_CONCESSAO">DISPENSA COMO RECOMPENSA - CONCESSAO</option>
-                        <option value="DISPENSA_RECOMPENSA_APRESENTACAO">DISPENSA COMO RECOMPENSA - APRESENTACAO</option>
-                    </optgroup>
-                    <optgroup label="Dispensa">
-                        <option value="DISPENSA_CONCESSAO">DISPENSA - CONCESSAO</option>
-                        <option value="DISPENSA_APRESENTACAO">DISPENSA - APRESENTACAO</option>
-                    </optgroup>
-                    <optgroup label="Licenca Especial">
-                        <option value="LICENCA_ESPECIAL_CONCESSAO">LICENCA ESPECIAL - CONCESSAO</option>
-                        <option value="LICENCA_ESPECIAL_APRESENTACAO">LICENCA ESPECIAL - APRESENTACAO</option>
-                    </optgroup>
-                    <optgroup label="Licenca Paternidade">
-                        <option value="LICENCA_PATERNIDADE_CONCESSAO">LICENCA PATERNIDADE - CONCESSAO</option>
-                        <option value="LICENCA_PATERNIDADE_APRESENTACAO">LICENCA PATERNIDADE - APRESENTACAO</option>
-                    </optgroup>
-                    <optgroup label="Luto">
-                        <option value="LUTO_CONCESSAO">LUTO - CONCESSAO</option>
-                        <option value="LUTO_APRESENTACAO">LUTO - APRESENTACAO</option>
-                    </optgroup>
-                    <optgroup label="Nupcias">
-                        <option value="NUPCIAS_CONCESSAO">NUPCIAS - CONCESSAO</option>
-                        <option value="NUPCIAS_APRESENTACAO">NUPCIAS - APRESENTACAO</option>
+                    <optgroup label="Férias">
+                        <option value="FERIAS_CONCESSAO">FÉRIAS - CONCESSÃO</option>
+                        <option value="FERIAS_APRESENTACAO">FÉRIAS - APRESENTAÇÃO</option>
+                        <option value="FERIAS_SUSTACAO">FÉRIAS - SUSTAÇÃO</option>
+                        <option value="FERIAS_INTERRUPCAO">FÉRIAS - INTERRUPÇÃO</option>
                     </optgroup>
                     <optgroup label="Viagem">
-                        <option value="VIAGEM_SERVICO">VIAGEM A SERVICO DA CORPORACAO - COM ONUS</option>
+                        <option value="VIAGEM_COM_ONUS">VIAGEM A SERVIÇO - COM ÔNUS</option>
+                        <option value="VIAGEM_SEM_ONUS">VIAGEM A SERVIÇO - SEM ÔNUS</option>
                     </optgroup>
-                    <optgroup label="Outros">
-                        <option value="ELOGIO">ELOGIO</option>
+                    <optgroup label="Transferência">
+                        <option value="TRANSFERENCIA_COM_ONUS">TRANSFERÊNCIA DE MILITAR - COM ÔNUS</option>
+                        <option value="TRANSFERENCIA_SEM_ONUS">TRANSFERÊNCIA DE MILITAR - SEM ÔNUS</option>
+                    </optgroup>
+                    <optgroup label="Dispensa Médica">
+                        <option value="DISPENSA_MEDICA_CONCESSAO">DISPENSA MÉDICA - CONCESSÃO</option>
+                        <option value="DISPENSA_MEDICA_APRESENTACAO">DISPENSA MÉDICA - APRESENTAÇÃO</option>
                     </optgroup>
                 </select>
             </div>
@@ -238,12 +220,12 @@
 
             <!-- Campos Condicionais -->
             <div id="campoPeriodo" class="form-group hidden">
-                <label class="form-label">Periodo Aquisitivo</label>
+                <label class="form-label">Período Aquisitivo</label>
                 <input type="text" id="periodoAquisitivo" class="form-input" placeholder="2024/2025">
             </div>
 
             <div id="campoApresentacao" class="form-group hidden">
-                <label class="form-label">Data Apresentacao</label>
+                <label class="form-label">Data Apresentação</label>
                 <input type="date" id="dataApresentacao" class="form-input">
             </div>
 
@@ -256,7 +238,7 @@
             <div id="campoViagem" class="viagem-fields hidden">
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Hora Saida</label>
+                        <label class="form-label">Hora Saída</label>
                         <input type="time" id="horaSaida" class="form-input" value="06:00">
                     </div>
                     <div class="form-group">
@@ -275,12 +257,12 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Missao/Finalidade</label>
+                    <label class="form-label">Missão/Finalidade</label>
                     <textarea id="missao" class="form-input" rows="2" placeholder="Ex: transportar materiais..." style="resize:vertical"></textarea>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Veiculo</label>
+                        <label class="form-label">Veículo</label>
                         <input type="text" id="veiculo" class="form-input" placeholder="Van Renault Master">
                     </div>
                     <div class="form-group">
@@ -291,6 +273,46 @@
                 <div class="form-group">
                     <label class="form-label">Data Retorno</label>
                     <input type="date" id="dataRetorno" class="form-input">
+                </div>
+            </div>
+
+            <!-- Campos Transferência -->
+            <div id="campoTransferencia" class="viagem-fields hidden">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Unidade Origem</label>
+                        <input type="text" id="unidadeOrigem" class="form-input" placeholder="1º GBM">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Unidade Destino</label>
+                        <input type="text" id="unidadeDestino" class="form-input" placeholder="2º GBM">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Motivo da Transferência</label>
+                    <textarea id="motivoTransferencia" class="form-input" rows="2" placeholder="Ex: por necessidade do serviço..." style="resize:vertical"></textarea>
+                </div>
+            </div>
+
+            <!-- Campos Dispensa Médica -->
+            <div id="campoDispensaMedica" class="viagem-fields hidden">
+                <div class="form-group">
+                    <label class="form-label">CID (opcional)</label>
+                    <input type="text" id="cid" class="form-input" placeholder="Ex: Z76.3">
+                    <p class="form-hint">Código Internacional de Doenças (opcional)</p>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Justificativa para Memorando -->
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-file-alt"></i> Justificativa para Memorando (opcional)</label>
+                <textarea id="justificativaMemo" class="form-input" rows="3" placeholder="Contexto adicional para o memorando de encaminhamento..." style="resize:vertical"></textarea>
+                <div style="display:flex;gap:8px;margin-top:8px">
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="App.sugerirTextoMemo()" id="btnSugerirMemo">
+                        <i class="fas fa-magic"></i> Sugerir com IA
+                    </button>
                 </div>
             </div>
 
@@ -341,10 +363,10 @@
             <div class="divider"></div>
 
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
-                <h2 style="margin:0"><i class="fas fa-list"></i> Publicacoes <span class="pub-count" id="pubCount">0</span></h2>
+                <h2 style="margin:0"><i class="fas fa-list"></i> Publicações <span class="pub-count" id="pubCount">0</span></h2>
                 <div style="display:flex;gap:8px">
                     <button class="btn btn-sm btn-secondary" onclick="App.limparTudo()"><i class="fas fa-trash"></i> Limpar</button>
-                    <button class="btn btn-sm btn-success" onclick="App.gerarNota()" id="btnGerar" disabled><i class="fas fa-file-alt"></i> Gerar Nota</button>
+                    <button class="btn btn-sm btn-success" onclick="App.gerarNota()" id="btnGerar" disabled><i class="fas fa-file-alt"></i> Gerar Documentos</button>
                 </div>
             </div>
 
@@ -369,6 +391,17 @@
             <!-- Aba Preview -->
             <div id="abaPreview" class="tab-content hidden">
                 <p class="preview-hint"><i class="fas fa-info-circle"></i> Clique no texto para editar. Use a barra de ferramentas para formatar.</p>
+
+                <!-- Sub-tabs para Memo e Nota -->
+                <div class="tabs" style="margin-bottom:10px">
+                    <button class="tab active" onclick="App.trocarDocumento('memo')" id="tabMemo">
+                        <i class="fas fa-file-alt"></i> 1. Memorando
+                    </button>
+                    <button class="tab" onclick="App.trocarDocumento('nota')" id="tabNota">
+                        <i class="fas fa-newspaper"></i> 2. Nota para BG
+                    </button>
+                </div>
+
                 <div class="preview-toolbar">
                     <button type="button" class="toolbar-btn" onclick="App.formatDoc('bold')" title="Negrito"><b>N</b></button>
                     <button type="button" class="toolbar-btn" onclick="App.formatDoc('italic')" title="Italico"><i>I</i></button>
@@ -381,7 +414,7 @@
                     <button type="button" class="toolbar-btn" onclick="App.desfazerEdicao()" title="Desfazer"><i class="fas fa-undo"></i></button>
                 </div>
                 <div id="previewDoc" class="preview-doc" contenteditable="true">
-                    <p style="text-align:center;color:#999;padding:50px">Adicione publicacoes e clique em "Gerar Nota" para visualizar</p>
+                    <p style="text-align:center;color:#999;padding:50px">Adicione publicações e clique em "Gerar Documentos" para visualizar o Memorando e a Nota para BG</p>
                 </div>
                 <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap">
                     <button class="btn btn-secondary" onclick="App.gerarNota()">
@@ -427,6 +460,9 @@
             resultadosBusca: [],
             editandoIndex: null,
             htmlGerado: null,
+            htmlMemoGerado: null,
+            htmlNotaGerado: null,
+            docAtual: 'memo', // 'memo' ou 'nota'
 
             // Mapeamento de postos/graduacoes para categorias
             CATEGORIAS: {
@@ -448,31 +484,23 @@
             },
 
             CATEGORIA_NOMES: {
-                'OFICIAIS': '1. ALTERACOES DE OFICIAIS',
-                'ST_SGT': '2.1. ALTERACOES DE SUBTENENTES E SARGENTOS',
-                'CB_SD': '2.2. ALTERACOES DE CABOS E SOLDADOS',
-                'CIVIS': '3. ALTERACOES DE SERVIDORES CIVIS'
+                'OFICIAIS': '1. ALTERAÇÕES DE OFICIAIS',
+                'ST_SGT': '2.1. ALTERAÇÕES DE SUBTENENTES E SARGENTOS',
+                'CB_SD': '2.2. ALTERAÇÕES DE CABOS E SOLDADOS',
+                'CIVIS': '3. ALTERAÇÕES DE SERVIDORES CIVIS'
             },
 
             TIPO_ATO_TEXTO: {
-                'FERIAS_CONCESSAO': 'FERIAS - CONCESSAO',
-                'FERIAS_APRESENTACAO': 'FERIAS - APRESENTACAO',
-                'FERIAS_SUSTACAO': 'FERIAS - SUSTACAO',
-                'FERIAS_INTERRUPCAO': 'FERIAS - INTERRUPCAO',
-                'DISPENSA_RECOMPENSA_CONCESSAO': 'DISPENSA COMO RECOMPENSA - CONCESSAO',
-                'DISPENSA_RECOMPENSA_APRESENTACAO': 'DISPENSA COMO RECOMPENSA - APRESENTACAO',
-                'DISPENSA_CONCESSAO': 'DISPENSA - CONCESSAO',
-                'DISPENSA_APRESENTACAO': 'DISPENSA - APRESENTACAO',
-                'LICENCA_ESPECIAL_CONCESSAO': 'LICENCA ESPECIAL - CONCESSAO',
-                'LICENCA_ESPECIAL_APRESENTACAO': 'LICENCA ESPECIAL - APRESENTACAO',
-                'LICENCA_PATERNIDADE_CONCESSAO': 'LICENCA PATERNIDADE - CONCESSAO',
-                'LICENCA_PATERNIDADE_APRESENTACAO': 'LICENCA PATERNIDADE - APRESENTACAO',
-                'LUTO_CONCESSAO': 'LUTO - CONCESSAO',
-                'LUTO_APRESENTACAO': 'LUTO - APRESENTACAO',
-                'NUPCIAS_CONCESSAO': 'NUPCIAS - CONCESSAO',
-                'NUPCIAS_APRESENTACAO': 'NUPCIAS - APRESENTACAO',
-                'VIAGEM_SERVICO': 'VIAGEM A SERVICO DA CORPORACAO - COM ONUS',
-                'ELOGIO': 'ELOGIO'
+                'FERIAS_CONCESSAO': 'FÉRIAS - CONCESSÃO',
+                'FERIAS_APRESENTACAO': 'FÉRIAS - APRESENTAÇÃO',
+                'FERIAS_SUSTACAO': 'FÉRIAS - SUSTAÇÃO',
+                'FERIAS_INTERRUPCAO': 'FÉRIAS - INTERRUPÇÃO',
+                'VIAGEM_COM_ONUS': 'VIAGEM A SERVIÇO DA CORPORAÇÃO - COM ÔNUS',
+                'VIAGEM_SEM_ONUS': 'VIAGEM A SERVIÇO DA CORPORAÇÃO - SEM ÔNUS',
+                'TRANSFERENCIA_COM_ONUS': 'TRANSFERÊNCIA DE MILITAR - COM ÔNUS',
+                'TRANSFERENCIA_SEM_ONUS': 'TRANSFERÊNCIA DE MILITAR - SEM ÔNUS',
+                'DISPENSA_MEDICA_CONCESSAO': 'DISPENSA MÉDICA - CONCESSÃO',
+                'DISPENSA_MEDICA_APRESENTACAO': 'DISPENSA MÉDICA - APRESENTAÇÃO'
             },
 
             // Campos por tipo
@@ -481,20 +509,12 @@
                 'FERIAS_APRESENTACAO': ['dias', 'periodo'],
                 'FERIAS_SUSTACAO': ['dias', 'periodo', 'motivo'],
                 'FERIAS_INTERRUPCAO': ['dias', 'periodo'],
-                'DISPENSA_RECOMPENSA_CONCESSAO': ['dias', 'apresentacao', 'motivo'],
-                'DISPENSA_RECOMPENSA_APRESENTACAO': ['dias'],
-                'DISPENSA_CONCESSAO': ['dias', 'apresentacao', 'motivo'],
-                'DISPENSA_APRESENTACAO': ['dias'],
-                'LICENCA_ESPECIAL_CONCESSAO': ['dias', 'periodo', 'apresentacao'],
-                'LICENCA_ESPECIAL_APRESENTACAO': ['dias', 'periodo'],
-                'LICENCA_PATERNIDADE_CONCESSAO': ['dias', 'apresentacao'],
-                'LICENCA_PATERNIDADE_APRESENTACAO': ['dias'],
-                'LUTO_CONCESSAO': ['dias', 'apresentacao', 'motivo'],
-                'LUTO_APRESENTACAO': ['dias'],
-                'NUPCIAS_CONCESSAO': ['dias', 'apresentacao'],
-                'NUPCIAS_APRESENTACAO': ['dias'],
-                'VIAGEM_SERVICO': ['viagem'],
-                'ELOGIO': ['motivo']
+                'VIAGEM_COM_ONUS': ['viagem'],
+                'VIAGEM_SEM_ONUS': ['viagem'],
+                'TRANSFERENCIA_COM_ONUS': ['transferencia'],
+                'TRANSFERENCIA_SEM_ONUS': ['transferencia'],
+                'DISPENSA_MEDICA_CONCESSAO': ['dias', 'apresentacao', 'dispensaMedica'],
+                'DISPENSA_MEDICA_APRESENTACAO': ['dias', 'dispensaMedica']
             },
 
             init() {
@@ -614,7 +634,7 @@
                 const campos = this.CAMPOS_TIPO[tipo] || [];
 
                 // Esconde todos
-                ['campoDias', 'campoPeriodo', 'campoApresentacao', 'campoMotivo', 'campoViagem'].forEach(id => {
+                ['campoDias', 'campoPeriodo', 'campoApresentacao', 'campoMotivo', 'campoViagem', 'campoTransferencia', 'campoDispensaMedica'].forEach(id => {
                     document.getElementById(id).classList.add('hidden');
                 });
 
@@ -624,6 +644,8 @@
                 if (campos.includes('apresentacao')) document.getElementById('campoApresentacao').classList.remove('hidden');
                 if (campos.includes('motivo')) document.getElementById('campoMotivo').classList.remove('hidden');
                 if (campos.includes('viagem')) document.getElementById('campoViagem').classList.remove('hidden');
+                if (campos.includes('transferencia')) document.getElementById('campoTransferencia').classList.remove('hidden');
+                if (campos.includes('dispensaMedica')) document.getElementById('campoDispensaMedica').classList.remove('hidden');
 
                 this.calcularApresentacao();
             },
@@ -736,7 +758,13 @@
                     missao: document.getElementById('missao').value || null,
                     veiculo: document.getElementById('veiculo').value || null,
                     placa: document.getElementById('placa').value || null,
-                    data_retorno: document.getElementById('dataRetorno').value || null
+                    data_retorno: document.getElementById('dataRetorno').value || null,
+                    // Transferencia
+                    unidade_origem: document.getElementById('unidadeOrigem').value || null,
+                    unidade_destino: document.getElementById('unidadeDestino').value || null,
+                    motivo_transferencia: document.getElementById('motivoTransferencia').value || null,
+                    // Dispensa Medica
+                    cid: document.getElementById('cid').value || null
                 };
 
                 if (this.editandoIndex !== null) {
@@ -750,7 +778,7 @@
                 this.renderizarLista();
                 this.atualizarEstrutura();
                 this.limparFormulario();
-                this.mostrarStatus('statusForm', 'Publicacao adicionada!', 'success');
+                this.mostrarStatus('statusForm', 'Publicação adicionada!', 'success');
             },
 
             limparFormulario() {
@@ -768,12 +796,18 @@
                 document.getElementById('veiculo').value = '';
                 document.getElementById('placa').value = '';
                 document.getElementById('dataRetorno').value = '';
+                // Transferencia
+                document.getElementById('unidadeOrigem').value = '';
+                document.getElementById('unidadeDestino').value = '';
+                document.getElementById('motivoTransferencia').value = '';
+                // Dispensa Medica
+                document.getElementById('cid').value = '';
                 this.limparMilitar();
                 this.atualizarCampos();
             },
 
             removerPublicacao(index) {
-                if (confirm('Remover esta publicacao?')) {
+                if (confirm('Remover esta publicação?')) {
                     this.publicacoes.splice(index, 1);
                     this.salvarLocal();
                     this.renderizarLista();
@@ -799,6 +833,12 @@
                 document.getElementById('veiculo').value = p.veiculo || '';
                 document.getElementById('placa').value = p.placa || '';
                 document.getElementById('dataRetorno').value = p.data_retorno || '';
+                // Transferencia
+                document.getElementById('unidadeOrigem').value = p.unidade_origem || '';
+                document.getElementById('unidadeDestino').value = p.unidade_destino || '';
+                document.getElementById('motivoTransferencia').value = p.motivo_transferencia || '';
+                // Dispensa Medica
+                document.getElementById('cid').value = p.cid || '';
 
                 // Militar
                 this.militarSelecionado = p.militar;
@@ -823,8 +863,8 @@
                     container.innerHTML = `
                         <div class="pub-empty">
                             <i class="fas fa-inbox"></i>
-                            <div>Nenhuma publicacao adicionada</div>
-                            <div style="font-size:0.8rem;margin-top:5px">Use o formulario ao lado para adicionar</div>
+                            <div>Nenhuma publicação adicionada</div>
+                            <div style="font-size:0.8rem;margin-top:5px">Use o formulário ao lado para adicionar</div>
                         </div>
                     `;
                     return;
@@ -857,7 +897,7 @@
                 const container = document.getElementById('estruturaDoc');
 
                 if (this.publicacoes.length === 0) {
-                    container.innerHTML = '<p style="color:var(--text-muted);padding:20px;text-align:center">A estrutura sera exibida apos adicionar publicacoes</p>';
+                    container.innerHTML = '<p style="color:var(--text-muted);padding:20px;text-align:center">A estrutura será exibida após adicionar publicações</p>';
                     return;
                 }
 
@@ -865,11 +905,11 @@
                 const grupos = this.agruparPorCategoria();
                 let html = '<div style="padding:10px">';
 
-                html += '<div class="categoria-header">3a PARTE (ASSUNTOS GERAIS E ADMINISTRATIVOS)</div>';
+                html += '<div class="categoria-header">3ª PARTE (ASSUNTOS GERAIS E ADMINISTRATIVOS)</div>';
 
                 // Oficiais
                 if (grupos.OFICIAIS && grupos.OFICIAIS.length > 0) {
-                    html += '<div class="subcategoria-header">1. ALTERACOES DE OFICIAIS</div>';
+                    html += '<div class="subcategoria-header">1. ALTERAÇÕES DE OFICIAIS</div>';
                     grupos.OFICIAIS.forEach((p, i) => {
                         html += `<div style="margin-left:30px;padding:5px 0;font-size:0.85rem">
                             <span style="color:var(--accent)">${String.fromCharCode(97 + i)})</span> ${p.tipo_ato_texto} - ${p.militar.nome}
@@ -877,13 +917,13 @@
                     });
                 }
 
-                // Pracas
+                // Praças
                 const temPracas = (grupos.ST_SGT && grupos.ST_SGT.length > 0) || (grupos.CB_SD && grupos.CB_SD.length > 0);
                 if (temPracas) {
-                    html += '<div class="subcategoria-header">2. ALTERACOES DE PRACAS</div>';
+                    html += '<div class="subcategoria-header">2. ALTERAÇÕES DE PRAÇAS</div>';
 
                     if (grupos.ST_SGT && grupos.ST_SGT.length > 0) {
-                        html += '<div style="margin-left:20px;color:var(--text-secondary);font-weight:600;font-size:0.85rem;margin-top:10px">2.1. ALTERACOES DE SUBTENENTES E SARGENTOS</div>';
+                        html += '<div style="margin-left:20px;color:var(--text-secondary);font-weight:600;font-size:0.85rem;margin-top:10px">2.1. ALTERAÇÕES DE SUBTENENTES E SARGENTOS</div>';
                         grupos.ST_SGT.forEach((p, i) => {
                             html += `<div style="margin-left:40px;padding:5px 0;font-size:0.85rem">
                                 <span style="color:var(--accent)">${String.fromCharCode(97 + i)})</span> ${p.tipo_ato_texto} - ${p.militar.nome}
@@ -892,7 +932,7 @@
                     }
 
                     if (grupos.CB_SD && grupos.CB_SD.length > 0) {
-                        html += '<div style="margin-left:20px;color:var(--text-secondary);font-weight:600;font-size:0.85rem;margin-top:10px">2.2. ALTERACOES DE CABOS E SOLDADOS</div>';
+                        html += '<div style="margin-left:20px;color:var(--text-secondary);font-weight:600;font-size:0.85rem;margin-top:10px">2.2. ALTERAÇÕES DE CABOS E SOLDADOS</div>';
                         grupos.CB_SD.forEach((p, i) => {
                             html += `<div style="margin-left:40px;padding:5px 0;font-size:0.85rem">
                                 <span style="color:var(--accent)">${String.fromCharCode(97 + i)})</span> ${p.tipo_ato_texto} - ${p.militar.nome}
@@ -903,7 +943,7 @@
 
                 // Civis
                 if (grupos.CIVIS && grupos.CIVIS.length > 0) {
-                    html += '<div class="subcategoria-header">3. ALTERACOES DE SERVIDORES CIVIS</div>';
+                    html += '<div class="subcategoria-header">3. ALTERAÇÕES DE SERVIDORES CIVIS</div>';
                     grupos.CIVIS.forEach((p, i) => {
                         html += `<div style="margin-left:30px;padding:5px 0;font-size:0.85rem">
                             <span style="color:var(--accent)">${String.fromCharCode(97 + i)})</span> ${p.tipo_ato_texto} - ${p.militar.nome}
@@ -928,6 +968,90 @@
             gerarNota() {
                 if (this.publicacoes.length === 0) return;
 
+                // Gera o Memorando
+                this.htmlMemoGerado = this.gerarMemorando();
+
+                // Gera a Nota para BG
+                this.htmlNotaGerado = this.gerarNotaBG();
+
+                // Mostra o memorando primeiro
+                this.docAtual = 'memo';
+                document.getElementById('previewDoc').innerHTML = this.htmlMemoGerado;
+                document.getElementById('tabMemo').classList.add('active');
+                document.getElementById('tabNota').classList.remove('active');
+
+                document.getElementById('btnInserir').disabled = false;
+                this.trocarAba('preview');
+            },
+
+            gerarMemorando() {
+                const justificativa = document.getElementById('justificativaMemo').value.trim();
+                const ano = new Date().getFullYear();
+
+                // Conta tipos de publicações
+                const resumo = this.gerarResumoPublicacoes();
+
+                let html = `
+                    <div style="text-align:center;margin-bottom:20px">
+                        <p style="font-weight:bold">ESTADO DO ACRE</p>
+                        <p style="font-weight:bold">CORPO DE BOMBEIROS MILITAR</p>
+                        <p style="font-weight:bold">COMANDO GERAL</p>
+                    </div>
+
+                    <p style="text-align:center;font-weight:bold;margin:20px 0">MEMORANDO Nº ___/${ano} - SEÇÃO</p>
+
+                    <p style="margin-top:20px"><strong>Para:</strong> Subcomandante-Geral do CBMAC</p>
+                    <p><strong>Assunto:</strong> Encaminhamento de Nota para Boletim Geral</p>
+
+                    <p style="text-align:justify;text-indent:1.5cm;margin-top:20px">
+                        Senhor Subcomandante-Geral,
+                    </p>
+
+                    <p style="text-align:justify;text-indent:1.5cm;margin-top:15px">
+                        Encaminho a Vossa Senhoria a Nota para Boletim Geral anexa, contendo ${this.publicacoes.length} (${this.numeroPorExtenso(this.publicacoes.length)}) alteração(ões) referente(s) a ${resumo}, para apreciação e posterior publicação.
+                    </p>
+                `;
+
+                if (justificativa) {
+                    html += `<p style="text-align:justify;text-indent:1.5cm;margin-top:15px">${justificativa}</p>`;
+                }
+
+                html += `
+                    <p style="text-align:justify;margin-top:20px">Atenciosamente,</p>
+
+                    <div style="text-align:center;margin-top:50px">
+                        <p><strong>Nome do Remetente</strong></p>
+                        <p>Posto/Graduação - Função</p>
+                        <p style="font-style:italic">Matrícula XXXXXXX-X</p>
+                    </div>
+                `;
+
+                return html;
+            },
+
+            gerarResumoPublicacoes() {
+                const contagem = {};
+                this.publicacoes.forEach(p => {
+                    const tipo = this.getTipoResumo(p.tipo_ato);
+                    contagem[tipo] = (contagem[tipo] || 0) + 1;
+                });
+
+                const partes = [];
+                for (const [tipo, qtd] of Object.entries(contagem)) {
+                    partes.push(`${qtd} ${tipo}`);
+                }
+                return partes.join(', ');
+            },
+
+            getTipoResumo(tipoAto) {
+                if (tipoAto.includes('FERIAS')) return 'férias';
+                if (tipoAto.includes('VIAGEM')) return 'viagem(ns)';
+                if (tipoAto.includes('TRANSFERENCIA')) return 'transferência(s)';
+                if (tipoAto.includes('DISPENSA_MEDICA')) return 'dispensa(s) médica(s)';
+                return 'alteração(ões)';
+            },
+
+            gerarNotaBG() {
                 const grupos = this.agruparPorCategoria();
 
                 let html = `
@@ -941,82 +1065,142 @@
                         NOTA PARA BOLETIM GERAL - BG - CBMAC
                     </p>
 
-                    <p style="text-align:center;font-weight:bold">1a P A R T E</p>
-                    <p style="text-align:center">(ESCALA DE SERVICO)</p>
-                    <p style="text-align:center;font-style:italic;margin-bottom:20px">Sem Alteracao</p>
+                    <p style="text-align:center;font-weight:bold">1ª P A R T E</p>
+                    <p style="text-align:center">(ESCALA DE SERVIÇO)</p>
+                    <p style="text-align:center;font-style:italic;margin-bottom:20px">Sem Alteração</p>
 
-                    <p style="text-align:center;font-weight:bold">2a P A R T E</p>
-                    <p style="text-align:center">(INSTRUCAO)</p>
-                    <p style="text-align:center;font-style:italic;margin-bottom:20px">Sem Alteracao</p>
+                    <p style="text-align:center;font-weight:bold">2ª P A R T E</p>
+                    <p style="text-align:center">(INSTRUÇÃO)</p>
+                    <p style="text-align:center;font-style:italic;margin-bottom:20px">Sem Alteração</p>
 
-                    <p style="text-align:center;font-weight:bold">3a P A R T E</p>
+                    <p style="text-align:center;font-weight:bold">3ª P A R T E</p>
                     <p style="text-align:center;margin-bottom:20px">(ASSUNTOS GERAIS E ADMINISTRATIVOS)</p>
                 `;
 
                 // 1. OFICIAIS
                 if (grupos.OFICIAIS && grupos.OFICIAIS.length > 0) {
-                    html += '<p style="font-weight:bold">1. ALTERACOES DE OFICIAIS</p>';
+                    html += '<p style="font-weight:bold">1. ALTERAÇÕES DE OFICIAIS</p>';
                     grupos.OFICIAIS.forEach((p, i) => {
                         html += this.gerarTextoPublicacao(p, i);
                     });
                 } else {
-                    html += '<p style="font-weight:bold">1. ALTERACOES DE OFICIAIS - Nao Houve</p>';
+                    html += '<p style="font-weight:bold">1. ALTERAÇÕES DE OFICIAIS - Não Houve</p>';
                 }
 
-                // 2. PRACAS
-                const temPracas = (grupos.ST_SGT?.length > 0) || (grupos.CB_SD?.length > 0);
-                html += '<p style="font-weight:bold;margin-top:15px">2. ALTERACOES DE PRACAS</p>';
+                // 2. PRAÇAS
+                html += '<p style="font-weight:bold;margin-top:15px">2. ALTERAÇÕES DE PRAÇAS</p>';
 
                 // 2.1 ST/SGT
                 if (grupos.ST_SGT && grupos.ST_SGT.length > 0) {
-                    html += '<p style="font-weight:bold;margin-left:20px">2.1. ALTERACOES DE SUBTENENTES E SARGENTOS</p>';
+                    html += '<p style="font-weight:bold;margin-left:20px">2.1. ALTERAÇÕES DE SUBTENENTES E SARGENTOS</p>';
                     grupos.ST_SGT.forEach((p, i) => {
                         html += this.gerarTextoPublicacao(p, i);
                     });
                 } else {
-                    html += '<p style="margin-left:20px">2.1. ALTERACOES DE SUBTENENTES E SARGENTOS - Nao Houve</p>';
+                    html += '<p style="margin-left:20px">2.1. ALTERAÇÕES DE SUBTENENTES E SARGENTOS - Não Houve</p>';
                 }
 
                 // 2.2 CB/SD
                 if (grupos.CB_SD && grupos.CB_SD.length > 0) {
-                    html += '<p style="font-weight:bold;margin-left:20px;margin-top:10px">2.2. ALTERACOES DE CABOS E SOLDADOS</p>';
+                    html += '<p style="font-weight:bold;margin-left:20px;margin-top:10px">2.2. ALTERAÇÕES DE CABOS E SOLDADOS</p>';
                     grupos.CB_SD.forEach((p, i) => {
                         html += this.gerarTextoPublicacao(p, i);
                     });
                 } else {
-                    html += '<p style="margin-left:20px">2.2. ALTERACOES DE CABOS E SOLDADOS - Nao Houve</p>';
+                    html += '<p style="margin-left:20px">2.2. ALTERAÇÕES DE CABOS E SOLDADOS - Não Houve</p>';
                 }
 
                 // 3. CIVIS
                 if (grupos.CIVIS && grupos.CIVIS.length > 0) {
-                    html += '<p style="font-weight:bold;margin-top:15px">3. ALTERACOES DE SERVIDORES CIVIS</p>';
+                    html += '<p style="font-weight:bold;margin-top:15px">3. ALTERAÇÕES DE SERVIDORES CIVIS</p>';
                     grupos.CIVIS.forEach((p, i) => {
                         html += this.gerarTextoPublicacao(p, i);
                     });
                 } else {
-                    html += '<p style="font-weight:bold;margin-top:15px">3. ALTERACOES DE SERVIDORES CIVIS - Nao Houve</p>';
+                    html += '<p style="font-weight:bold;margin-top:15px">3. ALTERAÇÕES DE SERVIDORES CIVIS - Não Houve</p>';
                 }
 
                 // 4. ASSUNTOS GERAIS
-                html += '<p style="font-weight:bold;margin-top:15px">4. ASSUNTOS GERAIS - Nao Houve</p>';
+                html += '<p style="font-weight:bold;margin-top:15px">4. ASSUNTOS GERAIS - Não Houve</p>';
 
-                // 4a PARTE
+                // 4ª PARTE
                 html += `
-                    <p style="text-align:center;font-weight:bold;margin-top:30px">4a P A R T E</p>
-                    <p style="text-align:center">(JUSTICA E DISCIPLINA)</p>
-                    <p style="text-align:center;font-style:italic">Sem Alteracao</p>
+                    <p style="text-align:center;font-weight:bold;margin-top:30px">4ª P A R T E</p>
+                    <p style="text-align:center">(JUSTIÇA E DISCIPLINA)</p>
+                    <p style="text-align:center;font-style:italic">Sem Alteração</p>
 
                     <div style="text-align:center;margin-top:50px">
                         <p><strong>Nome do Comandante</strong></p>
-                        <p>Funcao</p>
-                        <p style="font-style:italic">Matricula XXXXXXX-X</p>
+                        <p>Comandante-Geral do CBMAC</p>
+                        <p style="font-style:italic">Matrícula XXXXXXX-X</p>
                     </div>
                 `;
 
-                this.htmlGerado = html;
-                document.getElementById('previewDoc').innerHTML = html;
-                document.getElementById('btnInserir').disabled = false;
-                this.trocarAba('preview');
+                return html;
+            },
+
+            trocarDocumento(doc) {
+                this.docAtual = doc;
+
+                // Atualiza tabs
+                document.getElementById('tabMemo').classList.toggle('active', doc === 'memo');
+                document.getElementById('tabNota').classList.toggle('active', doc === 'nota');
+
+                // Mostra documento correto
+                if (doc === 'memo') {
+                    document.getElementById('previewDoc').innerHTML = this.htmlMemoGerado || '<p style="text-align:center;color:#999;padding:50px">Gere os documentos primeiro</p>';
+                } else {
+                    document.getElementById('previewDoc').innerHTML = this.htmlNotaGerado || '<p style="text-align:center;color:#999;padding:50px">Gere os documentos primeiro</p>';
+                }
+            },
+
+            async sugerirTextoMemo() {
+                if (this.publicacoes.length === 0) {
+                    alert('Adicione pelo menos uma publicação antes de gerar sugestão.');
+                    return;
+                }
+
+                const btn = document.getElementById('btnSugerirMemo');
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> Gerando...';
+
+                try {
+                    const resumo = this.gerarResumoPublicacoes();
+                    const prompt = `Gere um texto formal e conciso para o corpo de um memorando de encaminhamento de Nota para Boletim Geral do Corpo de Bombeiros Militar do Acre (CBMAC).
+
+O memorando encaminha uma nota contendo ${this.publicacoes.length} alteração(ões): ${resumo}.
+
+O texto deve:
+- Ser formal e institucional
+- Ter no máximo 3 parágrafos
+- Mencionar que segue em anexo a Nota para Boletim Geral
+- Solicitar a apreciação e publicação
+
+Retorne apenas o texto do corpo do memorando, sem cabeçalho ou assinatura.`;
+
+                    const resp = await fetch(API_URL + '/chat', {
+                        method: 'POST',
+                        headers: this.getHeaders(),
+                        body: JSON.stringify({
+                            mensagem: prompt,
+                            modo: 'redacao'
+                        })
+                    });
+
+                    const data = await resp.json();
+                    if (data.resposta || data.mensagem) {
+                        document.getElementById('justificativaMemo').value = data.resposta || data.mensagem;
+                        this.mostrarStatus('statusForm', 'Sugestão gerada com sucesso!', 'success');
+                    } else {
+                        throw new Error(data.erro || 'Erro ao gerar sugestão');
+                    }
+                } catch (err) {
+                    console.error('Erro sugestão IA:', err);
+                    this.mostrarStatus('statusForm', 'Erro ao gerar sugestão: ' + err.message, 'error');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-magic"></i> Sugerir com IA';
+                }
             },
 
             gerarTextoPublicacao(p, index) {
@@ -1029,39 +1213,59 @@
 
                 // Gera texto baseado no tipo
                 if (p.tipo_ato.includes('VIAGEM')) {
+                    const tipoOnus = p.tipo_ato === 'VIAGEM_COM_ONUS' ? 'com ônus para o Estado' : 'sem ônus para o Estado';
                     texto += `<p style="margin-left:20px;text-align:justify">
-                        Viajara, as ${p.hora_saida || '06h'} na data acima, o ${m.posto_grad} mat. ${m.matricula} <strong>${m.nome}</strong>,
-                        autorizado pelo Comandante-Geral do CBMAC, com destino ao municipio de ${p.destino || '___'},
-                        ${p.missao ? 'com a missao de ' + p.missao : 'para realizar atividades de servico'}.
-                        A viagem sera realizada em veiculo oficial${p.veiculo ? ', ' + p.veiculo : ''}${p.placa ? ', placa ' + p.placa : ''},
-                        conduzido pelo mesmo. Retorno previsto para as ${p.hora_retorno || '18h'}${p.data_retorno ? ' do dia ' + this.formatarDataBR(p.data_retorno) : ''}.
+                        Viajará, às ${p.hora_saida || '06:00'}h na data acima, o ${m.posto_grad} BM mat. ${m.matricula} <strong>${m.nome}</strong>,
+                        autorizado pelo Comandante-Geral do CBMAC, ${tipoOnus}, com destino ao município de ${p.destino || '___'},
+                        ${p.missao ? 'com a missão de ' + p.missao : 'para realizar atividades de serviço'}.
+                        ${p.veiculo ? 'A viagem será realizada em veículo oficial, ' + p.veiculo + (p.placa ? ', placa ' + p.placa : '') + ', conduzido pelo mesmo.' : ''}
+                        Retorno previsto para às ${p.hora_retorno || '18:00'}h${p.data_retorno ? ' do dia ' + this.formatarDataBR(p.data_retorno) : ' do mesmo dia'}.
+                    </p>`;
+                } else if (p.tipo_ato.includes('TRANSFERENCIA')) {
+                    const tipoOnus = p.tipo_ato === 'TRANSFERENCIA_COM_ONUS' ? ', com ônus para o Estado' : ', sem ônus para o Estado';
+                    texto += `<p style="margin-left:20px;text-align:justify">
+                        Transferir, a contar da data acima, o ${m.posto_grad} BM mat. ${m.matricula} <strong>${m.nome}</strong>,
+                        do(a) ${p.unidade_origem || '___'} para o(a) ${p.unidade_destino || '___'}${tipoOnus}${p.motivo_transferencia ? ', ' + p.motivo_transferencia : ', por necessidade do serviço'},
+                        devendo apresentar-se na nova unidade${p.data_apresentacao ? ' em ' + this.formatarDataExtenso(p.data_apresentacao) : ' na data acima'}.
                     </p>`;
                 } else if (p.tipo_ato.includes('CONCESSAO')) {
                     const diasTexto = p.dias ? `${p.dias} (${this.numeroPorExtenso(p.dias)}) dias` : '__ (__) dias';
+                    const tipoBase = this.getTipoBase(p.tipo_ato);
+                    let textoComplemento = '';
+
+                    if (p.tipo_ato.includes('FERIAS')) {
+                        textoComplemento = p.periodo_aquisitivo ? `, referente ao período aquisitivo de ${p.periodo_aquisitivo}` : '';
+                    } else if (p.tipo_ato.includes('DISPENSA_MEDICA')) {
+                        textoComplemento = p.cid ? `, CID ${p.cid}` : '';
+                    }
+
                     texto += `<p style="margin-left:20px;text-align:justify">
-                        Concedo, a contar da data acima, ${diasTexto} de ${this.getTipoBase(p.tipo_ato)},
-                        ao ${m.posto_grad} mat. ${m.matricula} <strong>${m.nome}</strong>
-                        ${p.periodo_aquisitivo ? ', relativo ao periodo aquisitivo ' + p.periodo_aquisitivo : ''}
-                        ${p.data_apresentacao ? ', devendo apresentar-se no dia ' + this.formatarDataBR(p.data_apresentacao) : ''}.
+                        Concedo, a contar da data acima, ${diasTexto} de ${tipoBase},
+                        ao ${m.posto_grad} BM mat. ${m.matricula} <strong>${m.nome}</strong>${textoComplemento}${p.data_apresentacao ? ', devendo apresentar-se em ' + this.formatarDataExtenso(p.data_apresentacao) : ''}.
                     </p>`;
                 } else if (p.tipo_ato.includes('SUSTACAO')) {
                     const diasTexto = p.dias ? `${p.dias} (${this.numeroPorExtenso(p.dias)}) dias` : '__ (__) dias';
                     texto += `<p style="margin-left:20px;text-align:justify">
-                        Autorizo sustar na data acima, ${diasTexto} de ${this.getTipoBase(p.tipo_ato)},
-                        do ${m.posto_grad} mat. ${m.matricula} <strong>${m.nome}</strong>
-                        ${p.periodo_aquisitivo ? ', relativo ao periodo aquisitivo ' + p.periodo_aquisitivo : ''}
-                        ${p.motivo ? ', ' + p.motivo : ', por extrema necessidade do servico'}.
+                        Autorizo a sustação, a contar da data acima, de ${diasTexto} de ${this.getTipoBase(p.tipo_ato)},
+                        do ${m.posto_grad} BM mat. ${m.matricula} <strong>${m.nome}</strong>${p.periodo_aquisitivo ? ', referente ao período aquisitivo de ' + p.periodo_aquisitivo : ''}${p.motivo ? ', ' + p.motivo : ', por necessidade do serviço'}.
+                    </p>`;
+                } else if (p.tipo_ato.includes('INTERRUPCAO')) {
+                    texto += `<p style="margin-left:20px;text-align:justify">
+                        Interrompo, a contar da data acima, as férias do ${m.posto_grad} BM mat. ${m.matricula} <strong>${m.nome}</strong>${p.periodo_aquisitivo ? ', referente ao período aquisitivo de ' + p.periodo_aquisitivo : ''}, por necessidade do serviço.
                     </p>`;
                 } else if (p.tipo_ato.includes('APRESENTACAO')) {
+                    const tipoBase = this.getTipoBase(p.tipo_ato);
+                    let textoComplemento = '';
+
+                    if (p.tipo_ato.includes('FERIAS')) {
+                        textoComplemento = p.periodo_aquisitivo ? `, referente ao período aquisitivo de ${p.periodo_aquisitivo}` : '';
+                    } else if (p.tipo_ato.includes('DISPENSA_MEDICA')) {
+                        textoComplemento = p.cid ? `, CID ${p.cid}` : '';
+                    }
+
                     texto += `<p style="margin-left:20px;text-align:justify">
-                        Apresentou-se na data acima, o ${m.posto_grad} mat. ${m.matricula} <strong>${m.nome}</strong>,
-                        apos usufruir ${p.dias || '__'} dias de ${this.getTipoBase(p.tipo_ato)}
-                        ${p.periodo_aquisitivo ? ', relativo ao periodo aquisitivo ' + p.periodo_aquisitivo : ''}.
-                    </p>`;
-                } else if (p.tipo_ato === 'ELOGIO') {
-                    texto += `<p style="margin-left:20px;text-align:justify">
-                        Elogio o ${m.posto_grad} mat. ${m.matricula} <strong>${m.nome}</strong>,
-                        ${p.motivo || 'pelos bons servicos prestados a esta Corporacao'}.
+                        Apresentou-se na data acima, o ${m.posto_grad} BM mat. ${m.matricula} <strong>${m.nome}</strong>,
+                        após usufruir ${p.dias || '__'} (${this.numeroPorExtenso(p.dias || 0)}) dias de ${tipoBase}${textoComplemento}.
                     </p>`;
                 }
 
@@ -1069,14 +1273,16 @@
             },
 
             getTipoBase(tipoAto) {
-                if (tipoAto.includes('FERIAS')) return 'ferias';
-                if (tipoAto.includes('DISPENSA_RECOMPENSA')) return 'dispensa como recompensa';
-                if (tipoAto.includes('DISPENSA')) return 'dispensa';
-                if (tipoAto.includes('LICENCA_ESPECIAL')) return 'licenca especial';
-                if (tipoAto.includes('LICENCA_PATERNIDADE')) return 'licenca paternidade';
-                if (tipoAto.includes('LUTO')) return 'luto';
-                if (tipoAto.includes('NUPCIAS')) return 'nupcias';
+                if (tipoAto.includes('FERIAS')) return 'férias';
+                if (tipoAto.includes('DISPENSA_MEDICA')) return 'dispensa médica';
                 return '';
+            },
+
+            formatarDataExtenso(dataISO) {
+                if (!dataISO) return '';
+                const meses = ['janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+                const [ano, mes, dia] = dataISO.split('-');
+                return `${parseInt(dia)} de ${meses[parseInt(mes) - 1]} de ${ano}`;
             },
 
             numeroPorExtenso(n) {
@@ -1087,11 +1293,13 @@
             },
 
             async inserirSEI() {
-                const htmlAtual = this.getPreviewHTML();
-                if (!htmlAtual || htmlAtual.includes('Adicione publicacoes')) return;
+                if (!this.htmlMemoGerado || !this.htmlNotaGerado) {
+                    alert('Gere os documentos primeiro.');
+                    return;
+                }
 
                 if (!this.nupAtual) {
-                    alert('Primeiro, informe ou crie um processo (NUP) para inserir a nota.');
+                    alert('Primeiro, informe ou crie um processo (NUP) para inserir os documentos.');
                     return;
                 }
 
@@ -1101,32 +1309,52 @@
                 btn.disabled = true;
                 btn.innerHTML = '<span class="spinner"></span> Inserindo...';
 
-                this.mostrarStatus('statusNota', '<span class="spinner"></span> Inserindo nota no SEI...', 'loading');
-
                 try {
-                    const resp = await fetch(API_URL + '/nota-bg/inserir', {
+                    // 1. Inserir Memorando primeiro
+                    this.mostrarStatus('statusNota', '<span class="spinner"></span> Inserindo Memorando no SEI...', 'loading');
+
+                    const respMemo = await fetch(API_URL + '/processos/inserir-sei', {
                         method: 'POST',
                         headers: this.getHeaders(),
                         body: JSON.stringify({
                             nup: this.nupAtual,
-                            html: htmlAtual
+                            tipo_documento: 'Memorando',
+                            html: this.htmlMemoGerado
                         })
                     });
-                    const data = await resp.json();
+                    const dataMemo = await respMemo.json();
 
-                    if (data.sucesso) {
-                        document.getElementById('nupValor').textContent = data.nup || '-';
-                        document.getElementById('seiNumero').textContent = 'SEI: ' + (data.sei_numero || data.numero_sei || '-');
+                    if (!dataMemo.sucesso && !dataMemo.ok) {
+                        throw new Error(dataMemo.erro || 'Erro ao inserir Memorando');
+                    }
+
+                    // 2. Inserir Nota para BG
+                    this.mostrarStatus('statusNota', '<span class="spinner"></span> Inserindo Nota para BG no SEI...', 'loading');
+
+                    const respNota = await fetch(API_URL + '/nota-bg/inserir', {
+                        method: 'POST',
+                        headers: this.getHeaders(),
+                        body: JSON.stringify({
+                            nup: this.nupAtual,
+                            html: this.htmlNotaGerado
+                        })
+                    });
+                    const dataNota = await respNota.json();
+
+                    if (dataNota.sucesso) {
+                        document.getElementById('nupValor').textContent = dataNota.nup || this.nupAtual;
+                        document.getElementById('seiNumero').textContent = 'SEI: ' + (dataNota.sei_numero || dataNota.numero_sei || '-');
                         document.getElementById('nupGerado').classList.remove('hidden');
 
-                        this.mostrarStatus('statusNota', '<i class="fas fa-check"></i> Nota inserida com sucesso!', 'success');
+                        this.mostrarStatus('statusNota', '<i class="fas fa-check"></i> Memorando e Nota inseridos com sucesso!', 'success');
 
                         // Limpa publicacoes
                         this.publicacoes = [];
                         this.salvarLocal();
                         this.renderizarLista();
+                        document.getElementById('justificativaMemo').value = '';
                     } else {
-                        throw new Error(data.erro || 'Erro ao inserir');
+                        throw new Error(dataNota.erro || 'Erro ao inserir Nota');
                     }
                 } catch (err) {
                     this.mostrarStatus('statusNota', '<i class="fas fa-times"></i> ' + err.message, 'error');
@@ -1138,9 +1366,10 @@
 
             copiarHTML() {
                 const html = this.getPreviewHTML();
-                if (html && !html.includes('Adicione publicacoes')) {
+                if (html && !html.includes('Adicione publicacoes') && !html.includes('Gere os documentos')) {
                     navigator.clipboard.writeText(html);
-                    alert('HTML copiado!');
+                    const doc = this.docAtual === 'memo' ? 'Memorando' : 'Nota para BG';
+                    alert(`HTML do ${doc} copiado!`);
                 }
             },
 
@@ -1161,13 +1390,16 @@
             },
 
             limparTudo() {
-                if (confirm('Limpar todas as publicacoes?')) {
+                if (confirm('Limpar todas as publicações?')) {
                     this.publicacoes = [];
+                    this.htmlMemoGerado = null;
+                    this.htmlNotaGerado = null;
                     this.salvarLocal();
                     this.renderizarLista();
                     this.atualizarEstrutura();
-                    document.getElementById('previewDoc').innerHTML = '<p style="text-align:center;color:#999;padding:50px">Adicione publicacoes e clique em "Gerar Nota" para visualizar</p>';
+                    document.getElementById('previewDoc').innerHTML = '<p style="text-align:center;color:#999;padding:50px">Adicione publicacoes e clique em "Gerar Documentos" para visualizar</p>';
                     document.getElementById('btnInserir').disabled = true;
+                    document.getElementById('justificativaMemo').value = '';
                 }
             },
 
@@ -1200,8 +1432,10 @@
             },
 
             desfazerEdicao() {
-                if (this.htmlGerado) {
-                    document.getElementById('previewDoc').innerHTML = this.htmlGerado;
+                if (this.docAtual === 'memo' && this.htmlMemoGerado) {
+                    document.getElementById('previewDoc').innerHTML = this.htmlMemoGerado;
+                } else if (this.docAtual === 'nota' && this.htmlNotaGerado) {
+                    document.getElementById('previewDoc').innerHTML = this.htmlNotaGerado;
                 }
             },
 

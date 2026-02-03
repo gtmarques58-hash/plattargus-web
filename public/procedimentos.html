@@ -524,34 +524,6 @@
                 notaBGTexto: (m, dias, diasExtenso, dataInicio, dataApresentacao) =>
                     `Concedo, a contar da data acima, ${dias} (${diasExtenso}) dias de licenca maternidade, a ${m.posto_grad || m.posto} mat. ${m.matricula_completa || m.matricula} <strong>${m.nome}</strong>, devendo apresentar-se no dia ${dataApresentacao}.`
             },
-            SUSTACAO_FERIAS: {
-                id: 'SUSTACAO_FERIAS',
-                nome: 'Sustacao de Ferias',
-                icone: '⏸️',
-                descricao: 'Interromper e reagendar',
-                legislacao: 'Art. 63, LC 164/2006',
-                legislacaoCompleta: 'Art. 63 da Lei Complementar no 164/2006 (Estatuto dos Militares do Estado do Acre)',
-                diasPadrao: 0,
-                ocultarDias: true,
-                requerimento: 'nao_aplica',
-                camposExtras: [
-                    { id: 'dataSustacao', label: 'Data da Sustacao', type: 'date', required: true },
-                    { id: 'diasGozados', label: 'Dias Gozados', type: 'number', required: true },
-                    { id: 'diasRestantes', label: 'Dias Restantes a Gozar', type: 'number', required: true },
-                    { id: 'motivoSustacao', label: 'Motivo da Sustacao', type: 'text', placeholder: 'Ex: necessidade do servico', required: true },
-                    { id: 'novoInicio', label: 'Novo Periodo - Data Inicio', type: 'date', required: true },
-                    { id: 'novoFim', label: 'Novo Periodo - Data Fim', type: 'date', required: true }
-                ],
-                notaBGTitulo: 'SUSTACAO E CONCESSAO DE FERIAS',
-                notaBGTexto: (m, dias, diasExtenso, dataInicio, dataApresentacao, extras) => {
-                    const formatarData = (d) => d ? d.split('-').reverse().join('/') : '___';
-                    return `<p style="margin-bottom:10px"><strong><u>a) SUSTACAO DE FERIAS</u></strong></p>
-                    <p>Determino a sustacao das ferias do ${m.posto_grad || m.posto} mat. ${m.matricula_completa || m.matricula} <strong>${m.nome}</strong>, a partir de ${formatarData(extras.dataSustacao)}, por ${extras.motivoSustacao || 'necessidade do servico'}.</p>
-                    <p>Dias gozados: ${extras.diasGozados || '0'}. Dias restantes: ${extras.diasRestantes || '0'}.</p>
-                    <p style="margin-top:15px"><strong><u>b) CONCESSAO DE FERIAS (dias restantes)</u></strong></p>
-                    <p>Concedo ao ${m.posto_grad || m.posto} mat. ${m.matricula_completa || m.matricula} <strong>${m.nome}</strong>, ${extras.diasRestantes || '0'} (${App.numeroPorExtenso(parseInt(extras.diasRestantes) || 0)}) dias de ferias, referente aos dias restantes sustados, no periodo de ${formatarData(extras.novoInicio)} a ${formatarData(extras.novoFim)}.`;
-                }
-            },
             INCLUSAO_DEPENDENTE: {
                 id: 'INCLUSAO_DEPENDENTE',
                 nome: 'Inclusao de Dependente',
@@ -590,23 +562,26 @@
                 notaBGTexto: (m, dias, diasExtenso, dataInicio, dataApresentacao, extras) =>
                     `Concedo, a contar da data acima, ${dias} (${diasExtenso}) dias de licenca especial, referente ao ${extras.quinquenio || '___'}, ao ${m.posto_grad || m.posto} mat. ${m.matricula_completa || m.matricula} <strong>${m.nome}</strong>, devendo apresentar-se no dia ${dataApresentacao}.`
             },
-            FERIAS: {
-                id: 'FERIAS',
-                nome: 'Ferias',
-                icone: '🌴',
-                descricao: '30 dias anuais',
-                legislacao: '',
-                legislacaoCompleta: '',
-                ocultarLegislacao: true,
-                diasPadrao: 30,
-                requerimento: 'nao_aplica',
+            MUDANCA_NOME: {
+                id: 'MUDANCA_NOME',
+                nome: 'Mudanca de Nome',
+                icone: '📝',
+                descricao: 'Alteracao de nome civil',
+                legislacao: 'Lei 6.015/73',
+                legislacaoCompleta: 'Lei no 6.015/1973 (Lei de Registros Publicos) e Portaria do Comando-Geral do CBMAC',
+                diasPadrao: 0,
+                ocultarDias: true,
+                ocultarDatas: true,
+                requerimento: 'obrigatorio',
                 camposExtras: [
-                    { id: 'exercicio', label: 'Exercicio/Ano', type: 'text', placeholder: 'Ex: 2025', required: true },
-                    { id: 'parcela', label: 'Parcela', type: 'select', options: ['Unica (30 dias)', '1a Parcela (15 dias)', '2a Parcela (15 dias)', '1a Parcela (10 dias)', '2a Parcela (10 dias)', '3a Parcela (10 dias)'], required: true }
+                    { id: 'nomeAnterior', label: 'Nome Anterior', type: 'text', required: true },
+                    { id: 'nomeNovo', label: 'Nome Novo', type: 'text', required: true },
+                    { id: 'motivoMudanca', label: 'Motivo da Mudanca', type: 'select', options: ['Casamento', 'Divorcio', 'Retificacao', 'Outro'], required: true },
+                    { id: 'docComprobatorio', label: 'Documento Comprobatorio', type: 'text', placeholder: 'Ex: Certidao de Casamento no XXX', required: true }
                 ],
-                notaBGTitulo: 'FERIAS - CONCESSAO',
+                notaBGTitulo: 'ALTERACAO DE NOME',
                 notaBGTexto: (m, dias, diasExtenso, dataInicio, dataApresentacao, extras) =>
-                    `Concedo, a contar da data acima, ${dias} (${diasExtenso}) dias de ferias, referente ao exercicio ${extras.exercicio || '___'} (${extras.parcela || 'parcela unica'}), ao ${m.posto_grad || m.posto} mat. ${m.matricula_completa || m.matricula} <strong>${m.nome}</strong>, devendo apresentar-se no dia ${dataApresentacao}.`
+                    `Alterar, nos assentamentos funcionais do ${m.posto_grad || m.posto} mat. ${m.matricula_completa || m.matricula}, o nome de <strong>${extras.nomeAnterior || '___'}</strong> para <strong>${extras.nomeNovo || '___'}</strong>, em virtude de ${extras.motivoMudanca || '___'}, conforme ${extras.docComprobatorio || 'documento comprobatorio apresentado'}.`
             }
         };
 
