@@ -829,10 +829,10 @@ def preencher_template(
         if len(destinatarios) == 1:
             # Um destinatário
             d = destinatarios[0]
-            nome_dest = d.get('nome', '')
-            posto_dest = d.get('posto_grad', '')
-            cargo_dest = d.get('cargo', '')
-            sigla_dest = d.get('sigla_sei', '') or d.get('sigla', '')
+            nome_dest = d.get('nome') or ''
+            posto_dest = d.get('posto_grad') or ''
+            cargo_dest = d.get('cargo') or ''
+            sigla_dest = d.get('sigla_sei') or d.get('sigla') or ''
 
             # Define vocativo
             if 'Comandante' in cargo_dest:
@@ -846,10 +846,10 @@ def preencher_template(
             linhas = []
             siglas = []
             for d in destinatarios:
-                nome = d.get('nome', '')
-                posto = d.get('posto_grad', '')
-                cargo = d.get('cargo', '')
-                sigla = d.get('sigla_sei', '') or d.get('sigla', '')
+                nome = d.get('nome') or ''
+                posto = d.get('posto_grad') or ''
+                cargo = d.get('cargo') or ''
+                sigla = d.get('sigla_sei') or d.get('sigla') or ''
                 linhas.append(f"{posto} {nome} - {cargo}".strip())
                 siglas.append(sigla)
 
@@ -863,9 +863,9 @@ def preencher_template(
     elif destinatario:
         nome_dest = destinatario
     elif interessado:
-        nome_dest = interessado.get('nome', '')
-        posto_dest = interessado.get('posto_grad', '')
-        cargo_dest = interessado.get('cargo', '')
+        nome_dest = interessado.get('nome') or ''
+        posto_dest = interessado.get('posto_grad') or ''
+        cargo_dest = interessado.get('cargo') or ''
 
         if 'Comandante' in cargo_dest:
             vocativo = "Senhor Comandante"
@@ -875,11 +875,11 @@ def preencher_template(
             vocativo = "Senhor Chefe"
 
     # Monta dados do remetente
-    nome_rem = remetente.get('nome', '') if remetente else ''
-    posto_rem = remetente.get('posto_grad', '') if remetente else ''
-    cargo_rem = remetente.get('cargo', '') if remetente else ''
-    sigla_rem = remetente.get('unidade', '') if remetente else ''
-    portaria_rem = remetente.get('portaria', '') if remetente else ''
+    nome_rem = (remetente.get('nome') or '') if remetente else ''
+    posto_rem = (remetente.get('posto_grad') or '') if remetente else ''
+    cargo_rem = (remetente.get('cargo') or '') if remetente else ''
+    sigla_rem = (remetente.get('unidade') or '') if remetente else ''
+    portaria_rem = (remetente.get('portaria') or '') if remetente else ''
 
     # Extrai assunto
     assunto = analise.get('assunto', '') or pedido.get('descricao', '') or analise.get('tipo_demanda', '')
@@ -1068,22 +1068,26 @@ async def gerar_documento_com_ia(
             if len(destinatarios) == 1:
                 # Um destinatário
                 d = destinatarios[0]
-                nome_dest = d.get('nome', '')
-                posto_dest = d.get('posto_grad', '')
-                cargo_dest = d.get('cargo', '')
-                sigla_dest = d.get('sigla', '')
-                sigla_sei = d.get('sigla_sei', f'CBMAC-{sigla_dest}')
+                nome_dest = d.get('nome') or ''
+                posto_dest = d.get('posto_grad') or ''
+                cargo_dest = d.get('cargo') or ''
+                sigla_dest = d.get('sigla') or ''
+                sigla_sei = d.get('sigla_sei') or f'CBMAC-{sigla_dest}'
+
+                # Converte nome para Title Case (Primeira Letra Maiúscula)
+                nome_formatado = nome_dest.title() if nome_dest else ''
 
                 # Determina gênero
                 genero = determinar_genero(nome_dest, cargo_dest)
 
                 # Monta destinatário com pronome correto
+                # Formato: Ao Sr. Nome Completo - POSTO/GRAD
                 if genero == 'F':
                     pronome_dest = "À Sra."
                 else:
                     pronome_dest = "Ao Sr."
 
-                html_destinatario = f'<p style="text-align: left;">{pronome_dest} <b>{posto_dest} {nome_dest}</b><br>{cargo_dest} - {sigla_sei}</p>'
+                html_destinatario = f'<p style="text-align: left;">{pronome_dest} {nome_formatado} - {posto_dest}<br>{cargo_dest} - {sigla_sei}</p>'
 
                 # Define vocativo baseado no cargo e gênero
                 if 'Comandante' in cargo_dest:
@@ -1101,22 +1105,25 @@ async def gerar_documento_com_ia(
                 partes_dest = []
                 generos = []
                 for d in destinatarios:
-                    nome = d.get('nome', '')
-                    posto = d.get('posto_grad', '')
-                    cargo = d.get('cargo', '')
-                    sigla = d.get('sigla', '')
-                    sigla_sei = d.get('sigla_sei', f'CBMAC-{sigla}')
+                    nome = d.get('nome') or ''
+                    posto = d.get('posto_grad') or ''
+                    cargo = d.get('cargo') or ''
+                    sigla = d.get('sigla') or ''
+                    sigla_sei = d.get('sigla_sei') or f'CBMAC-{sigla}'
+
+                    # Converte nome para Title Case
+                    nome_formatado = nome.title() if nome else ''
 
                     genero = determinar_genero(nome, cargo)
                     generos.append(genero)
                     pronome = "À Sra." if genero == 'F' else "Ao Sr."
 
-                    partes_dest.append(f'<p style="text-align: left;">{pronome} <b>{posto} {nome}</b><br>{cargo} - {sigla_sei}</p>')
+                    partes_dest.append(f'<p style="text-align: left;">{pronome} {nome_formatado} - {posto}<br>{cargo} - {sigla_sei}</p>')
 
                 html_destinatario = '\n'.join(partes_dest)
 
                 # Determina vocativo para circular (usa masculino plural se misto)
-                cargos = [d.get('cargo', '') for d in destinatarios]
+                cargos = [d.get('cargo') or '' for d in destinatarios]
                 todos_femininos = all(g == 'F' for g in generos)
 
                 if all('Comandante' in c for c in cargos):
@@ -1133,9 +1140,9 @@ async def gerar_documento_com_ia(
             vocativo = "Senhora," if genero == 'F' else "Senhor,"
         elif interessado and interessado.get('nome'):
             # Fallback: usa dados do interessado da análise
-            nome_int = interessado.get('nome', '')
-            cargo_int = interessado.get('cargo', '')
-            posto_int = interessado.get('posto_grad', '')
+            nome_int = interessado.get('nome') or ''
+            cargo_int = interessado.get('cargo') or ''
+            posto_int = interessado.get('posto_grad') or ''
 
             genero = determinar_genero(nome_int, cargo_int)
             pronome = "À Sra." if genero == 'F' else "Ao Sr."
@@ -1185,15 +1192,19 @@ async def gerar_documento_com_ia(
         # =========================================================
         html_assinatura = ""
         if remetente:
-            nome_rem = remetente.get('nome', '')
-            posto_rem = remetente.get('posto_grad', '')
-            cargo_rem = remetente.get('cargo', '')
-            unidade_rem = remetente.get('unidade', '')
-            portaria = remetente.get('portaria', '')
+            nome_rem = remetente.get('nome') or ''
+            posto_rem = remetente.get('posto_grad') or ''
+            cargo_rem = remetente.get('cargo') or ''
+            unidade_rem = remetente.get('unidade') or ''
+            portaria = remetente.get('portaria') or ''
 
-            html_assinatura = f'<p style="text-align: center;"><b>{nome_rem} - {posto_rem}</b><br>{cargo_rem}'
-            if unidade_rem and unidade_rem not in cargo_rem:
-                html_assinatura += f' - {unidade_rem}'
+            # Converte nome para Title Case (Ex: Fulano de Tal)
+            nome_formatado = nome_rem.title() if nome_rem else ''
+
+            # Linha 1: Nome - Posto/Grad
+            # Linha 2: Cargo
+            # Linha 3: Portaria (se houver)
+            html_assinatura = f'<p style="text-align: center;">{nome_formatado} - {posto_rem}<br>{cargo_rem}'
             if portaria:
                 html_assinatura += f'<br>{portaria}'
             html_assinatura += '</p>'
@@ -1352,12 +1363,18 @@ Gere apenas os parágrafos do corpo, nada mais."""
 
             # Assinatura especial para Termo (inclui matrícula)
             if remetente:
-                nome_rem = remetente.get('nome', '')
-                posto_rem = remetente.get('posto_grad', '')
-                cargo_rem = remetente.get('cargo', '')
-                matricula = remetente.get('matricula', '')
+                nome_rem = remetente.get('nome') or ''
+                posto_rem = remetente.get('posto_grad') or ''
+                cargo_rem = remetente.get('cargo') or ''
+                matricula = remetente.get('matricula') or ''
 
-                html_assinatura_termo = f'<p style="text-align: center;"><b>{nome_rem} - {posto_rem}</b><br>{cargo_rem}'
+                # Converte nome para Title Case (Ex: Fulano de Tal)
+                nome_formatado = nome_rem.title() if nome_rem else ''
+
+                # Linha 1: Nome - Posto/Grad
+                # Linha 2: Cargo
+                # Linha 3: mat. XXX (se houver)
+                html_assinatura_termo = f'<p style="text-align: center;">{nome_formatado} - {posto_rem}<br>{cargo_rem}'
                 if matricula:
                     html_assinatura_termo += f'<br>mat. {matricula}'
                 html_assinatura_termo += '</p>'
