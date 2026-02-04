@@ -40,6 +40,23 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from openai import OpenAI
 
+# Módulo centralizado de formatação
+try:
+    from formato_documentos import (
+        formatar_destinatario,
+        formatar_destinatario_simples,
+        formatar_remetente,
+        determinar_genero,
+        formatar_nome,
+        formatar_posto_grad,
+        _determinar_vocativo
+    )
+    FORMATO_CENTRALIZADO = True
+    print("[NOTA_BG] Módulo formato_documentos carregado", file=__import__('sys').stderr)
+except ImportError as e:
+    FORMATO_CENTRALIZADO = False
+    print(f"[NOTA_BG] Módulo formato_documentos não disponível: {e}", file=__import__('sys').stderr)
+
 # =============================================================================
 # CONFIGURAÇÃO
 # =============================================================================
@@ -512,37 +529,65 @@ async def gerar_memorando_llm(
         resumo = gerar_resumo_publicacoes(publicacoes)
         qtd_pubs = len(publicacoes)
 
-        # Monta contexto do destinatário
-        dest_nome = ""
+        # Monta contexto do destinatário (formato: Nome - POSTO)
+        dest_nome_raw = ""
+        dest_posto = ""
         dest_cargo = ""
         if autoridade:
-            dest_nome = f"{autoridade.get('posto_grad', '')} {autoridade.get('nome_atual', '')}".strip()
+            dest_nome_raw = autoridade.get('nome_atual', '')
+            dest_posto = autoridade.get('posto_grad', '')
             dest_cargo = autoridade.get('unidade_destino', '')
 
-        # Monta contexto do remetente
-        rem_nome = ""
+        # Formata nome do destinatário
+        if FORMATO_CENTRALIZADO:
+            dest_nome = formatar_nome(dest_nome_raw)
+            if dest_posto:
+                dest_nome = f"{dest_nome} - {formatar_posto_grad(dest_posto)}"
+        else:
+            dest_nome = dest_nome_raw.title() if dest_nome_raw else ''
+            if dest_posto:
+                dest_nome = f"{dest_nome} - {dest_posto.upper()}"
+
+        # Monta contexto do remetente (formato: Nome - POSTO)
+        rem_nome_raw = ""
+        rem_posto = ""
         rem_cargo = ""
         rem_matricula = ""
         if remetente:
-            rem_nome = f"{remetente.get('posto', '')} {remetente.get('nome', '')}".strip()
+            rem_nome_raw = remetente.get('nome', '')
+            rem_posto = remetente.get('posto', '') or remetente.get('posto_grad', '')
             rem_cargo = remetente.get('cargo', '')
             rem_matricula = remetente.get('matricula', '')
 
-        # Determina vocativo baseado no cargo
-        if dest_cargo:
-            cargo_lower = dest_cargo.lower()
-            if 'comandante' in cargo_lower:
-                vocativo_sugerido = f"Senhor Comandante"
-            elif 'diretor' in cargo_lower:
-                vocativo_sugerido = f"Senhor Diretor"
-            elif 'subcomandante' in cargo_lower:
-                vocativo_sugerido = f"Senhor Subcomandante-Geral"
-            elif 'chefe' in cargo_lower:
-                vocativo_sugerido = f"Senhor Chefe"
-            else:
-                vocativo_sugerido = f"Senhor(a)"
+        # Formata nome do remetente
+        if FORMATO_CENTRALIZADO:
+            rem_nome = formatar_nome(rem_nome_raw)
+            if rem_posto:
+                rem_nome = f"{rem_nome} - {formatar_posto_grad(rem_posto)}"
         else:
-            vocativo_sugerido = "Senhor(a)"
+            rem_nome = rem_nome_raw.title() if rem_nome_raw else ''
+            if rem_posto:
+                rem_nome = f"{rem_nome} - {rem_posto.upper()}"
+
+        # Determina vocativo baseado no cargo e gênero
+        if FORMATO_CENTRALIZADO:
+            genero = determinar_genero(dest_nome_raw, dest_cargo)
+            vocativo_sugerido = _determinar_vocativo(dest_cargo, genero)
+        else:
+            if dest_cargo:
+                cargo_lower = dest_cargo.lower()
+                if 'comandante' in cargo_lower:
+                    vocativo_sugerido = "Senhor Comandante"
+                elif 'diretor' in cargo_lower:
+                    vocativo_sugerido = "Senhor Diretor"
+                elif 'subcomandante' in cargo_lower:
+                    vocativo_sugerido = "Senhor Subcomandante-Geral"
+                elif 'chefe' in cargo_lower:
+                    vocativo_sugerido = "Senhor Chefe"
+                else:
+                    vocativo_sugerido = "Senhor"
+            else:
+                vocativo_sugerido = "Senhor"
 
         prompt = f"""Você é um redator oficial do Corpo de Bombeiros Militar do Acre (CBMAC).
 Gere o CORPO de um memorando formal de encaminhamento de Nota para Boletim Geral.
@@ -609,7 +654,8 @@ Responda APENAS com o JSON, sem explicações."""
             remetente_nome=rem_nome,
             remetente_cargo=rem_cargo,
             remetente_matricula=rem_matricula,
-            ano=ano
+            ano=ano,
+            remetente_posto=rem_posto
         )
 
         return {
@@ -642,35 +688,65 @@ def gerar_memorando_template(
     resumo = gerar_resumo_publicacoes(publicacoes)
     qtd_pubs = len(publicacoes)
 
-    dest_nome = ""
+    # Extrai dados do destinatário
+    dest_nome_raw = ""
+    dest_posto = ""
     dest_cargo = ""
     if autoridade:
-        dest_nome = f"{autoridade.get('posto_grad', '')} {autoridade.get('nome_atual', '')}".strip()
+        dest_nome_raw = autoridade.get('nome_atual', '')
+        dest_posto = autoridade.get('posto_grad', '')
         dest_cargo = autoridade.get('unidade_destino', '')
 
-    rem_nome = ""
+    # Formata nome do destinatário: Nome - POSTO
+    if FORMATO_CENTRALIZADO:
+        dest_nome = formatar_nome(dest_nome_raw)
+        if dest_posto:
+            dest_nome = f"{dest_nome} - {formatar_posto_grad(dest_posto)}"
+    else:
+        dest_nome = dest_nome_raw.title() if dest_nome_raw else ''
+        if dest_posto:
+            dest_nome = f"{dest_nome} - {dest_posto.upper()}"
+
+    # Extrai dados do remetente
+    rem_nome_raw = ""
+    rem_posto = ""
     rem_cargo = ""
     rem_matricula = ""
     if remetente:
-        rem_nome = f"{remetente.get('posto', '')} {remetente.get('nome', '')}".strip()
+        rem_nome_raw = remetente.get('nome', '')
+        rem_posto = remetente.get('posto', '') or remetente.get('posto_grad', '')
         rem_cargo = remetente.get('cargo', '')
         rem_matricula = remetente.get('matricula', '')
 
-    # Vocativo baseado no cargo
-    if dest_cargo:
-        cargo_lower = dest_cargo.lower()
-        if 'comandante' in cargo_lower:
-            vocativo = "Senhor Comandante"
-        elif 'diretor' in cargo_lower:
-            vocativo = "Senhor Diretor"
-        elif 'subcomandante' in cargo_lower:
-            vocativo = "Senhor Subcomandante-Geral"
-        elif 'chefe' in cargo_lower:
-            vocativo = "Senhor Chefe"
-        else:
-            vocativo = "Senhor(a)"
+    # Formata nome do remetente: Nome - POSTO
+    if FORMATO_CENTRALIZADO:
+        rem_nome = formatar_nome(rem_nome_raw)
+        if rem_posto:
+            rem_nome = f"{rem_nome} - {formatar_posto_grad(rem_posto)}"
     else:
-        vocativo = "Senhor Comandante"
+        rem_nome = rem_nome_raw.title() if rem_nome_raw else ''
+        if rem_posto:
+            rem_nome = f"{rem_nome} - {rem_posto.upper()}"
+
+    # Vocativo baseado no cargo e gênero
+    if FORMATO_CENTRALIZADO:
+        genero = determinar_genero(dest_nome_raw, dest_cargo)
+        vocativo = _determinar_vocativo(dest_cargo, genero)
+    else:
+        if dest_cargo:
+            cargo_lower = dest_cargo.lower()
+            if 'comandante' in cargo_lower:
+                vocativo = "Senhor Comandante"
+            elif 'diretor' in cargo_lower:
+                vocativo = "Senhor Diretor"
+            elif 'subcomandante' in cargo_lower:
+                vocativo = "Senhor Subcomandante-Geral"
+            elif 'chefe' in cargo_lower:
+                vocativo = "Senhor Chefe"
+            else:
+                vocativo = "Senhor"
+        else:
+            vocativo = "Senhor Comandante"
 
     corpo = f"""Com os cumprimentos de estilo, encaminho a Vossa Senhoria a Nota para Boletim Geral anexa, contendo {qtd_pubs} ({numero_por_extenso(qtd_pubs)}) alteração(ões) referente(s) a {resumo}, para apreciação e posterior publicação."""
 
@@ -685,7 +761,8 @@ def gerar_memorando_template(
         remetente_nome=rem_nome,
         remetente_cargo=rem_cargo,
         remetente_matricula=rem_matricula,
-        ano=ano
+        ano=ano,
+        remetente_posto=rem_posto
     )
 
     return {
@@ -715,37 +792,48 @@ def gerar_html_memorando(
     remetente_matricula: str,
     ano: int,
     sigla_remetente: str = "",
-    portaria: str = ""
+    portaria: str = "",
+    remetente_posto: str = ""
 ) -> str:
     """
     Gera HTML formatado do memorando no padrão SEI.
 
     IMPORTANTE: O SEI já adiciona o cabeçalho (Estado/CBMAC) e numeração,
     então o HTML deve conter apenas o corpo do documento.
+
+    Formato:
+        Destinatário: Ao Sr./À Sra. Nome - POSTO
+                      Cargo
+        Remetente:    Nome - POSTO
+                      Cargo
+                      Portaria/Matrícula
     """
+    if FORMATO_CENTRALIZADO:
+        # Usa módulo centralizado para formatação consistente
 
-    # Formata destinatário
-    dest_linha = destinatario_nome or '[Nome do Destinatário]'
-    if destinatario_cargo:
-        dest_linha = f"{dest_linha}<br>\n{destinatario_cargo}"
+        # Formata destinatário
+        genero_dest = determinar_genero(destinatario_nome, destinatario_cargo)
+        pronome = "À Sra." if genero_dest == 'F' else "Ao Sr."
+        nome_dest_formatado = formatar_nome(destinatario_nome) if destinatario_nome else '[Nome do Destinatário]'
 
-    # Formata remetente
-    rem_nome = remetente_nome or '[Nome do Remetente]'
-    rem_cargo = remetente_cargo or '[Cargo/Função]'
+        # Monta linha do destinatário
+        dest_linha = nome_dest_formatado
+        if destinatario_cargo:
+            dest_linha += f"<br>{destinatario_cargo}"
 
-    # Linha final do remetente (sigla ou matrícula)
-    if sigla_remetente:
-        rem_linha_final = f"{sigla_remetente}/CBMAC"
-    elif remetente_matricula:
-        rem_linha_final = f"Matrícula {remetente_matricula}"
-    else:
-        rem_linha_final = ""
+        html_dest = f'<p style="text-align: left;">{pronome} {dest_linha}</p>'
 
-    # Portaria (se houver)
-    if portaria:
-        rem_linha_final = f"Port. nº {portaria}"
+        # Formata remetente usando módulo centralizado
+        html_rem = formatar_remetente(
+            nome=remetente_nome,
+            posto_grad=remetente_posto,
+            cargo=remetente_cargo,
+            portaria=portaria,
+            matricula=remetente_matricula,
+            sigla=sigla_remetente
+        )
 
-    html = f"""<p style="text-align: left;">Ao(À) Sr(a). <b>{dest_linha}</b></p>
+        html = f"""{html_dest}
 
 <p style="text-align: left;">Assunto: <b>Encaminhamento de Nota para Boletim Geral</b></p>
 
@@ -755,7 +843,49 @@ def gerar_html_memorando(
 
 <p style="text-align: left; text-indent: 1.5cm;">{fechamento},</p>
 
-<p style="text-align: center;"><b>{rem_nome}</b><br>
+{html_rem}"""
+
+        return html
+
+    # Fallback: formato anterior (caso módulo não disponível)
+    dest_linha = destinatario_nome or '[Nome do Destinatário]'
+    if destinatario_cargo:
+        dest_linha = f"{dest_linha}<br>\n{destinatario_cargo}"
+
+    rem_nome = remetente_nome or '[Nome do Remetente]'
+    rem_cargo = remetente_cargo or '[Cargo/Função]'
+
+    if sigla_remetente:
+        rem_linha_final = f"{sigla_remetente}/CBMAC"
+    elif remetente_matricula:
+        rem_linha_final = f"Matrícula {remetente_matricula}"
+    else:
+        rem_linha_final = ""
+
+    if portaria:
+        rem_linha_final = f"Port. nº {portaria}"
+
+    # Determina gênero para pronome
+    genero = 'M'
+    if destinatario_nome:
+        primeiro_nome = destinatario_nome.split()[0].upper() if destinatario_nome.split() else ''
+        nomes_femininos = ['MARIA', 'ANA', 'FRANCISCA', 'ANTONIA', 'ADRIANA', 'JULIANA']
+        if primeiro_nome in nomes_femininos or primeiro_nome.endswith('A'):
+            genero = 'F'
+
+    pronome = "À Sra." if genero == 'F' else "Ao Sr."
+
+    html = f"""<p style="text-align: left;">{pronome} {dest_linha}</p>
+
+<p style="text-align: left;">Assunto: <b>Encaminhamento de Nota para Boletim Geral</b></p>
+
+<p style="text-align: left; text-indent: 1.5cm;">{vocativo},</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">{corpo}</p>
+
+<p style="text-align: left; text-indent: 1.5cm;">{fechamento},</p>
+
+<p style="text-align: center;">{rem_nome}<br>
 {rem_cargo}"""
 
     if rem_linha_final:

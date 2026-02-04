@@ -13,6 +13,22 @@ from typing import List
 sys.path.insert(0, '/app/scripts')
 sys.path.insert(0, '/app')
 
+# Módulo centralizado de formatação de documentos
+try:
+    from formato_documentos import (
+        formatar_destinatario,
+        formatar_destinatarios_multiplos,
+        formatar_remetente,
+        determinar_genero,
+        formatar_nome,
+        formatar_posto_grad
+    )
+    FORMATO_CENTRALIZADO = True
+    print("[INIT] Módulo formato_documentos carregado", file=sys.stderr)
+except ImportError as e:
+    FORMATO_CENTRALIZADO = False
+    print(f"[INIT] Módulo formato_documentos não disponível: {e}", file=sys.stderr)
+
 # Pipeline v2 integrado
 try:
     from pipeline_v2.orquestrador import processar_pipeline_v2, formatar_analise_para_contexto
@@ -1059,49 +1075,45 @@ async def gerar_documento_com_ia(
             return 'M'
 
         # =========================================================
-        # 1. MONTA HTML DO DESTINATÁRIO
+        # 1. MONTA HTML DO DESTINATÁRIO (usando módulo centralizado)
         # =========================================================
         html_destinatario = ""
-        vocativo = "Senhor,"
+        vocativo = "Senhor"
 
-        if destinatarios and len(destinatarios) > 0:
+        if FORMATO_CENTRALIZADO and destinatarios and len(destinatarios) > 0:
+            # Usa módulo centralizado para formatação consistente
+            html_destinatario, vocativo = formatar_destinatarios_multiplos(destinatarios)
+        elif FORMATO_CENTRALIZADO and destinatario:
+            # Destinatário como string simples
+            html_destinatario, vocativo = formatar_destinatario(nome=destinatario)
+        elif FORMATO_CENTRALIZADO and interessado and interessado.get('nome'):
+            # Usa dados do interessado
+            html_destinatario, vocativo = formatar_destinatario(
+                nome=interessado.get('nome', ''),
+                posto_grad=interessado.get('posto_grad', ''),
+                cargo=interessado.get('cargo', '')
+            )
+        elif destinatarios and len(destinatarios) > 0:
+            # Fallback sem módulo centralizado
             if len(destinatarios) == 1:
-                # Um destinatário
                 d = destinatarios[0]
                 nome_dest = d.get('nome') or ''
                 posto_dest = d.get('posto_grad') or ''
                 cargo_dest = d.get('cargo') or ''
                 sigla_dest = d.get('sigla') or ''
                 sigla_sei = d.get('sigla_sei') or f'CBMAC-{sigla_dest}'
-
-                # Converte nome para Title Case (Primeira Letra Maiúscula)
                 nome_formatado = nome_dest.title() if nome_dest else ''
-
-                # Determina gênero
+                posto_formatado = posto_dest.upper() if posto_dest else ''
                 genero = determinar_genero(nome_dest, cargo_dest)
-
-                # Monta destinatário com pronome correto
-                # Formato: Ao Sr. Nome Completo - POSTO/GRAD
-                if genero == 'F':
-                    pronome_dest = "À Sra."
-                else:
-                    pronome_dest = "Ao Sr."
-
-                html_destinatario = f'<p style="text-align: left;">{pronome_dest} {nome_formatado} - {posto_dest}<br>{cargo_dest} - {sigla_sei}</p>'
-
-                # Define vocativo baseado no cargo e gênero
+                pronome_dest = "À Sra." if genero == 'F' else "Ao Sr."
+                html_destinatario = f'<p style="text-align: left;">{pronome_dest} {nome_formatado} - {posto_formatado}<br>{cargo_dest} - {sigla_sei}</p>'
                 if 'Comandante' in cargo_dest:
-                    vocativo = "Senhora Comandante," if genero == 'F' else "Senhor Comandante,"
+                    vocativo = "Senhora Comandante" if genero == 'F' else "Senhor Comandante"
                 elif 'Diretor' in cargo_dest:
-                    vocativo = "Senhora Diretora," if genero == 'F' else "Senhor Diretor,"
-                elif 'Chefe' in cargo_dest:
-                    vocativo = "Senhora Chefe," if genero == 'F' else "Senhor Chefe,"
-                elif 'Subcomandante' in cargo_dest:
-                    vocativo = "Senhora Subcomandante," if genero == 'F' else "Senhor Subcomandante,"
+                    vocativo = "Senhora Diretora" if genero == 'F' else "Senhor Diretor"
                 else:
-                    vocativo = "Senhora," if genero == 'F' else "Senhor,"
+                    vocativo = "Senhora" if genero == 'F' else "Senhor"
             else:
-                # Múltiplos destinatários (circular)
                 partes_dest = []
                 generos = []
                 for d in destinatarios:
@@ -1110,60 +1122,47 @@ async def gerar_documento_com_ia(
                     cargo = d.get('cargo') or ''
                     sigla = d.get('sigla') or ''
                     sigla_sei = d.get('sigla_sei') or f'CBMAC-{sigla}'
-
-                    # Converte nome para Title Case
                     nome_formatado = nome.title() if nome else ''
-
+                    posto_formatado = posto.upper() if posto else ''
                     genero = determinar_genero(nome, cargo)
                     generos.append(genero)
                     pronome = "À Sra." if genero == 'F' else "Ao Sr."
-
-                    partes_dest.append(f'<p style="text-align: left;">{pronome} {nome_formatado} - {posto}<br>{cargo} - {sigla_sei}</p>')
-
+                    partes_dest.append(f'<p style="text-align: left;">{pronome} {nome_formatado} - {posto_formatado}<br>{cargo} - {sigla_sei}</p>')
                 html_destinatario = '\n'.join(partes_dest)
-
-                # Determina vocativo para circular (usa masculino plural se misto)
                 cargos = [d.get('cargo') or '' for d in destinatarios]
                 todos_femininos = all(g == 'F' for g in generos)
-
                 if all('Comandante' in c for c in cargos):
-                    vocativo = "Senhoras Comandantes," if todos_femininos else "Senhores Comandantes,"
+                    vocativo = "Senhoras Comandantes" if todos_femininos else "Senhores Comandantes"
                 elif all('Diretor' in c for c in cargos):
-                    vocativo = "Senhoras Diretoras," if todos_femininos else "Senhores Diretores,"
+                    vocativo = "Senhoras Diretoras" if todos_femininos else "Senhores Diretores"
                 else:
-                    vocativo = "Senhoras," if todos_femininos else "Senhores,"
+                    vocativo = "Senhoras" if todos_femininos else "Senhores"
         elif destinatario:
-            # Fallback: destinatário como string simples
             genero = determinar_genero(destinatario, '')
             pronome = "À Sra." if genero == 'F' else "Ao Sr."
-            html_destinatario = f'<p style="text-align: left;">{pronome} <b>{destinatario}</b></p>'
-            vocativo = "Senhora," if genero == 'F' else "Senhor,"
+            html_destinatario = f'<p style="text-align: left;">{pronome} {destinatario}</p>'
+            vocativo = "Senhora" if genero == 'F' else "Senhor"
         elif interessado and interessado.get('nome'):
-            # Fallback: usa dados do interessado da análise
             nome_int = interessado.get('nome') or ''
             cargo_int = interessado.get('cargo') or ''
             posto_int = interessado.get('posto_grad') or ''
-
+            nome_formatado = nome_int.title() if nome_int else ''
+            posto_formatado = posto_int.upper() if posto_int else ''
             genero = determinar_genero(nome_int, cargo_int)
             pronome = "À Sra." if genero == 'F' else "Ao Sr."
-
-            if posto_int:
-                html_destinatario = f'<p style="text-align: left;">{pronome} <b>{posto_int} {nome_int}</b>'
+            if posto_formatado:
+                html_destinatario = f'<p style="text-align: left;">{pronome} {nome_formatado} - {posto_formatado}'
             else:
-                html_destinatario = f'<p style="text-align: left;">{pronome} <b>{nome_int}</b>'
+                html_destinatario = f'<p style="text-align: left;">{pronome} {nome_formatado}'
             if cargo_int:
                 html_destinatario += f'<br>{cargo_int}'
             html_destinatario += '</p>'
-
-            # Define vocativo baseado no cargo e gênero do interessado
             if cargo_int and 'Comandante' in cargo_int:
-                vocativo = "Senhora Comandante," if genero == 'F' else "Senhor Comandante,"
+                vocativo = "Senhora Comandante" if genero == 'F' else "Senhor Comandante"
             elif cargo_int and 'Diretor' in cargo_int:
-                vocativo = "Senhora Diretora," if genero == 'F' else "Senhor Diretor,"
-            elif cargo_int and 'Chefe' in cargo_int:
-                vocativo = "Senhora Chefe," if genero == 'F' else "Senhor Chefe,"
+                vocativo = "Senhora Diretora" if genero == 'F' else "Senhor Diretor"
             else:
-                vocativo = "Senhora," if genero == 'F' else "Senhor,"
+                vocativo = "Senhora" if genero == 'F' else "Senhor"
 
         # =========================================================
         # 2. MONTA HTML DO VOCATIVO
@@ -1188,26 +1187,32 @@ async def gerar_documento_com_ia(
         html_fecho = '<p style="text-align: left; text-indent: 1.5cm;">Atenciosamente,</p>'
 
         # =========================================================
-        # 4. MONTA HTML DA ASSINATURA
+        # 4. MONTA HTML DA ASSINATURA (usando módulo centralizado)
         # =========================================================
         html_assinatura = ""
         if remetente:
-            nome_rem = remetente.get('nome') or ''
-            posto_rem = remetente.get('posto_grad') or ''
-            cargo_rem = remetente.get('cargo') or ''
-            unidade_rem = remetente.get('unidade') or ''
-            portaria = remetente.get('portaria') or ''
-
-            # Converte nome para Title Case (Ex: Fulano de Tal)
-            nome_formatado = nome_rem.title() if nome_rem else ''
-
-            # Linha 1: Nome - Posto/Grad
-            # Linha 2: Cargo
-            # Linha 3: Portaria (se houver)
-            html_assinatura = f'<p style="text-align: center;">{nome_formatado} - {posto_rem}<br>{cargo_rem}'
-            if portaria:
-                html_assinatura += f'<br>{portaria}'
-            html_assinatura += '</p>'
+            if FORMATO_CENTRALIZADO:
+                # Usa módulo centralizado para formatação consistente
+                html_assinatura = formatar_remetente(
+                    nome=remetente.get('nome', ''),
+                    posto_grad=remetente.get('posto_grad', ''),
+                    cargo=remetente.get('cargo', ''),
+                    portaria=remetente.get('portaria', ''),
+                    matricula=remetente.get('matricula', ''),
+                    sigla=remetente.get('sigla', '')
+                )
+            else:
+                # Fallback sem módulo centralizado
+                nome_rem = remetente.get('nome') or ''
+                posto_rem = remetente.get('posto_grad') or ''
+                cargo_rem = remetente.get('cargo') or ''
+                portaria = remetente.get('portaria') or ''
+                nome_formatado = nome_rem.title() if nome_rem else ''
+                posto_formatado = posto_rem.upper() if posto_rem else ''
+                html_assinatura = f'<p style="text-align: center;">{nome_formatado} - {posto_formatado}<br>{cargo_rem}'
+                if portaria:
+                    html_assinatura += f'<br>Port. nº {portaria}'
+                html_assinatura += '</p>'
 
         # =========================================================
         # 5. MONTA CONTEXTO PARA A IA GERAR APENAS O CORPO
