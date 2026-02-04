@@ -538,15 +538,14 @@ async def gerar_memorando_llm(
             dest_posto = autoridade.get('posto_grad', '')
             dest_cargo = autoridade.get('unidade_destino', '')
 
-        # Formata nome do destinatário
+        # Formata nome do destinatário (mantém separado do posto para gerar_html_memorando)
         if FORMATO_CENTRALIZADO:
             dest_nome = formatar_nome(dest_nome_raw)
-            if dest_posto:
-                dest_nome = f"{dest_nome} - {formatar_posto_grad(dest_posto)}"
+            # Versão para prompt com posto incluído
+            dest_display = f"{dest_nome} - {formatar_posto_grad(dest_posto)}" if dest_posto else dest_nome
         else:
             dest_nome = dest_nome_raw.title() if dest_nome_raw else ''
-            if dest_posto:
-                dest_nome = f"{dest_nome} - {dest_posto.upper()}"
+            dest_display = f"{dest_nome} - {dest_posto.upper()}" if dest_posto else dest_nome
 
         # Monta contexto do remetente (formato: Nome - POSTO)
         rem_nome_raw = ""
@@ -559,15 +558,11 @@ async def gerar_memorando_llm(
             rem_cargo = remetente.get('cargo', '')
             rem_matricula = remetente.get('matricula', '')
 
-        # Formata nome do remetente
+        # Formata nome do remetente (sem posto - será adicionado por gerar_html_memorando)
         if FORMATO_CENTRALIZADO:
             rem_nome = formatar_nome(rem_nome_raw)
-            if rem_posto:
-                rem_nome = f"{rem_nome} - {formatar_posto_grad(rem_posto)}"
         else:
             rem_nome = rem_nome_raw.title() if rem_nome_raw else ''
-            if rem_posto:
-                rem_nome = f"{rem_nome} - {rem_posto.upper()}"
 
         # Determina vocativo baseado no cargo e gênero
         if FORMATO_CENTRALIZADO:
@@ -593,7 +588,7 @@ async def gerar_memorando_llm(
 Gere o CORPO de um memorando formal de encaminhamento de Nota para Boletim Geral.
 
 CONTEXTO:
-- Destinatário: {dest_nome or '[a ser definido]'} - {dest_cargo or '[cargo]'}
+- Destinatário: {dest_display or '[a ser definido]'} - {dest_cargo or '[cargo]'}
 - Remetente: {rem_nome or '[remetente]'} - {rem_cargo or '[cargo]'}
 - A nota contém {qtd_pubs} alteração(ões): {resumo}
 - Instrução do usuário: "{mensagem}"
@@ -655,8 +650,17 @@ Responda APENAS com o JSON, sem explicações."""
             remetente_cargo=rem_cargo,
             remetente_matricula=rem_matricula,
             ano=ano,
-            remetente_posto=rem_posto
+            remetente_posto=rem_posto,
+            destinatario_posto=dest_posto
         )
+
+        # Formata nome para retorno
+        dest_nome_retorno = dest_nome
+        if dest_posto:
+            if FORMATO_CENTRALIZADO:
+                dest_nome_retorno = f"{dest_nome} - {formatar_posto_grad(dest_posto)}"
+            else:
+                dest_nome_retorno = f"{dest_nome} - {dest_posto.upper()}"
 
         return {
             "sucesso": True,
@@ -665,7 +669,7 @@ Responda APENAS com o JSON, sem explicações."""
             "corpo": corpo,
             "fechamento": fechamento,
             "destinatario": {
-                "nome": dest_nome,
+                "nome": dest_nome_retorno,
                 "cargo": dest_cargo,
                 "chave": autoridade.get('chave_busca') if autoridade else None
             },
@@ -697,15 +701,11 @@ def gerar_memorando_template(
         dest_posto = autoridade.get('posto_grad', '')
         dest_cargo = autoridade.get('unidade_destino', '')
 
-    # Formata nome do destinatário: Nome - POSTO
+    # Formata nome do destinatário (sem posto - será adicionado por gerar_html_memorando)
     if FORMATO_CENTRALIZADO:
         dest_nome = formatar_nome(dest_nome_raw)
-        if dest_posto:
-            dest_nome = f"{dest_nome} - {formatar_posto_grad(dest_posto)}"
     else:
         dest_nome = dest_nome_raw.title() if dest_nome_raw else ''
-        if dest_posto:
-            dest_nome = f"{dest_nome} - {dest_posto.upper()}"
 
     # Extrai dados do remetente
     rem_nome_raw = ""
@@ -718,15 +718,11 @@ def gerar_memorando_template(
         rem_cargo = remetente.get('cargo', '')
         rem_matricula = remetente.get('matricula', '')
 
-    # Formata nome do remetente: Nome - POSTO
+    # Formata nome do remetente (sem posto - será adicionado por gerar_html_memorando)
     if FORMATO_CENTRALIZADO:
         rem_nome = formatar_nome(rem_nome_raw)
-        if rem_posto:
-            rem_nome = f"{rem_nome} - {formatar_posto_grad(rem_posto)}"
     else:
         rem_nome = rem_nome_raw.title() if rem_nome_raw else ''
-        if rem_posto:
-            rem_nome = f"{rem_nome} - {rem_posto.upper()}"
 
     # Vocativo baseado no cargo e gênero
     if FORMATO_CENTRALIZADO:
@@ -762,8 +758,17 @@ def gerar_memorando_template(
         remetente_cargo=rem_cargo,
         remetente_matricula=rem_matricula,
         ano=ano,
-        remetente_posto=rem_posto
+        remetente_posto=rem_posto,
+        destinatario_posto=dest_posto
     )
+
+    # Formata nome para retorno
+    dest_nome_retorno = dest_nome
+    if dest_posto:
+        if FORMATO_CENTRALIZADO:
+            dest_nome_retorno = f"{dest_nome} - {formatar_posto_grad(dest_posto)}"
+        else:
+            dest_nome_retorno = f"{dest_nome} - {dest_posto.upper()}"
 
     return {
         "sucesso": True,
@@ -772,7 +777,7 @@ def gerar_memorando_template(
         "corpo": corpo,
         "fechamento": fechamento,
         "destinatario": {
-            "nome": dest_nome,
+            "nome": dest_nome_retorno,
             "cargo": dest_cargo,
             "chave": autoridade.get('chave_busca') if autoridade else None
         },
@@ -793,7 +798,8 @@ def gerar_html_memorando(
     ano: int,
     sigla_remetente: str = "",
     portaria: str = "",
-    remetente_posto: str = ""
+    remetente_posto: str = "",
+    destinatario_posto: str = ""
 ) -> str:
     """
     Gera HTML formatado do memorando no padrão SEI.
@@ -816,8 +822,12 @@ def gerar_html_memorando(
         pronome = "À Sra." if genero_dest == 'F' else "Ao Sr."
         nome_dest_formatado = formatar_nome(destinatario_nome) if destinatario_nome else '[Nome do Destinatário]'
 
-        # Monta linha do destinatário
-        dest_linha = nome_dest_formatado
+        # Monta linha do destinatário: Nome - POSTO
+        if destinatario_posto:
+            dest_linha = f"{nome_dest_formatado} - {formatar_posto_grad(destinatario_posto)}"
+        else:
+            dest_linha = nome_dest_formatado
+
         if destinatario_cargo:
             dest_linha += f"<br>{destinatario_cargo}"
 
