@@ -231,7 +231,16 @@
 
             <div id="campoMotivo" class="form-group hidden">
                 <label class="form-label">Motivo</label>
-                <textarea id="motivo" class="form-input" rows="2" placeholder="Ex: por necessidade do servico..." style="resize:vertical"></textarea>
+                <textarea id="motivo" class="form-input" rows="2" placeholder="Ex: por necessidade do serviço..." style="resize:vertical"></textarea>
+            </div>
+
+            <!-- Campo Novo Período (para Sustação) -->
+            <div id="campoNovoPeriodo" class="viagem-fields hidden">
+                <div class="form-group">
+                    <label class="form-label required">Data Novo Gozo das Férias</label>
+                    <input type="date" id="dataNovoGozo" class="form-input">
+                    <p class="form-hint">Data em que as férias sustadas serão usufruídas</p>
+                </div>
             </div>
 
             <!-- Campos Viagem -->
@@ -507,7 +516,7 @@
             CAMPOS_TIPO: {
                 'FERIAS_CONCESSAO': ['dias', 'periodo', 'apresentacao'],
                 'FERIAS_APRESENTACAO': ['dias', 'periodo'],
-                'FERIAS_SUSTACAO': ['dias', 'periodo', 'motivo'],
+                'FERIAS_SUSTACAO': ['dias', 'periodo', 'motivo', 'novoPeriodo'],
                 'FERIAS_INTERRUPCAO': ['dias', 'periodo'],
                 'VIAGEM_COM_ONUS': ['viagem'],
                 'VIAGEM_SEM_ONUS': ['viagem'],
@@ -634,7 +643,7 @@
                 const campos = this.CAMPOS_TIPO[tipo] || [];
 
                 // Esconde todos
-                ['campoDias', 'campoPeriodo', 'campoApresentacao', 'campoMotivo', 'campoViagem', 'campoTransferencia', 'campoDispensaMedica'].forEach(id => {
+                ['campoDias', 'campoPeriodo', 'campoApresentacao', 'campoMotivo', 'campoViagem', 'campoTransferencia', 'campoDispensaMedica', 'campoNovoPeriodo'].forEach(id => {
                     document.getElementById(id).classList.add('hidden');
                 });
 
@@ -646,6 +655,7 @@
                 if (campos.includes('viagem')) document.getElementById('campoViagem').classList.remove('hidden');
                 if (campos.includes('transferencia')) document.getElementById('campoTransferencia').classList.remove('hidden');
                 if (campos.includes('dispensaMedica')) document.getElementById('campoDispensaMedica').classList.remove('hidden');
+                if (campos.includes('novoPeriodo')) document.getElementById('campoNovoPeriodo').classList.remove('hidden');
 
                 this.calcularApresentacao();
             },
@@ -764,7 +774,9 @@
                     unidade_destino: document.getElementById('unidadeDestino').value || null,
                     motivo_transferencia: document.getElementById('motivoTransferencia').value || null,
                     // Dispensa Medica
-                    cid: document.getElementById('cid').value || null
+                    cid: document.getElementById('cid').value || null,
+                    // Sustação - novo período
+                    data_novo_gozo: document.getElementById('dataNovoGozo').value || null
                 };
 
                 if (this.editandoIndex !== null) {
@@ -802,6 +814,8 @@
                 document.getElementById('motivoTransferencia').value = '';
                 // Dispensa Medica
                 document.getElementById('cid').value = '';
+                // Sustação - novo período
+                document.getElementById('dataNovoGozo').value = '';
                 this.limparMilitar();
                 this.atualizarCampos();
             },
@@ -839,6 +853,8 @@
                 document.getElementById('motivoTransferencia').value = p.motivo_transferencia || '';
                 // Dispensa Medica
                 document.getElementById('cid').value = p.cid || '';
+                // Sustação - novo período
+                document.getElementById('dataNovoGozo').value = p.data_novo_gozo || '';
 
                 // Militar
                 this.militarSelecionado = p.militar;
@@ -1245,9 +1261,10 @@ Retorne apenas o texto do corpo do memorando, sem cabeçalho ou assinatura.`;
                     </p>`;
                 } else if (p.tipo_ato.includes('SUSTACAO')) {
                     const diasTexto = p.dias ? `${p.dias} (${this.numeroPorExtenso(p.dias)}) dias` : '__ (__) dias';
+                    const novoGozo = p.data_novo_gozo ? ', devendo ser usufruídas a partir do dia ' + this.formatarDataExtenso(p.data_novo_gozo) : '';
                     texto += `<p style="margin-left:20px;text-align:justify">
-                        Autorizo a sustação, a contar da data acima, de ${diasTexto} de ${this.getTipoBase(p.tipo_ato)},
-                        do ${m.posto_grad} BM mat. ${m.matricula} <strong>${m.nome}</strong>${p.periodo_aquisitivo ? ', referente ao período aquisitivo de ' + p.periodo_aquisitivo : ''}${p.motivo ? ', ' + p.motivo : ', por necessidade do serviço'}.
+                        Autorizo sustar na data acima, ${diasTexto} de ${this.getTipoBase(p.tipo_ato)},
+                        do ${m.posto_grad} BM mat. ${m.matricula} <strong>${m.nome}</strong>${p.periodo_aquisitivo ? ', referente ao período aquisitivo de ' + p.periodo_aquisitivo : ''}${p.motivo ? ', ' + p.motivo : ', por necessidade do serviço'}${novoGozo}.
                     </p>`;
                 } else if (p.tipo_ato.includes('INTERRUPCAO')) {
                     texto += `<p style="margin-left:20px;text-align:justify">
