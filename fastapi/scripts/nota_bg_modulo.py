@@ -3,11 +3,11 @@
 """
 nota_bg_modulo.py - Módulo de Notas para Boletim Geral
 PlattArgus WEB - CBMAC
-Versão: 1.0
+Versão: 2.0 (com Memorando Inteligente)
 
 INTEGRAÇÃO:
     No final do api.py, antes do `if __name__ == "__main__":`, adicione:
-    
+
     # Módulo Nota BG
     from nota_bg_modulo import registrar_endpoints_nota_bg
     registrar_endpoints_nota_bg(app)
@@ -18,6 +18,8 @@ Endpoints criados:
     GET  /api/nota-bg/militar/{mat}      - Busca por matrícula
     POST /api/nota-bg/gerar              - Gera HTML da nota
     POST /api/nota-bg/inserir            - Insere no SEI
+    GET  /api/nota-bg/autoridades        - Lista autoridades disponíveis
+    POST /api/nota-bg/gerar-memorando    - Gera memorando inteligente com LLM
 
 Formato padrão:
     [POSTO/GRAD] Mat. [MATRÍCULA] [NOME COMPLETO]
@@ -36,12 +38,14 @@ import httpx
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from openai import OpenAI
 
 # =============================================================================
 # CONFIGURAÇÃO
 # =============================================================================
 
 EFETIVO_API_URL = os.getenv("EFETIVO_API_URL", "http://efetivo-api:3001")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 EFETIVO_API_KEY = os.getenv("EFETIVO_API_KEY", "gw_PlattArgusWeb2025_CBMAC")
 SEI_RUNNER_URL = os.getenv("SEI_RUNNER_URL", "http://runner:8001")
 
@@ -130,6 +134,81 @@ class NotaBGInserirRequest(BaseModel):
     nup: str
     html: str
     usuario_sei: str
+
+
+class MemorandoInteligenteRequest(BaseModel):
+    """Request para gerar memorando inteligente com LLM"""
+    mensagem: str  # Ex: "ao COC informando que seguem as alterações de férias"
+    publicacoes: List[Dict]  # Lista de publicações da nota BG
+    remetente: Optional[Dict] = None  # Dados do remetente (nome, posto, cargo, matricula)
+    ano: Optional[int] = None
+
+
+# =============================================================================
+# ALIASES DE AUTORIDADES (sinônimos para busca natural)
+# =============================================================================
+
+AUTORIDADES_ALIASES = {
+    # COMANDO GERAL
+    "CMDGER": ["CMDGER", "COMANDO GERAL", "COMANDANTE GERAL", "CG", "COMANDANTE", "CMD GERAL"],
+    "SUBCMD": ["SUBCMD", "SUBCOMANDO", "SUBCOMANDANTE", "SUBCOMANDO GERAL", "SUB COMANDO", "SUB CMD"],
+
+    # COMANDOS OPERACIONAIS
+    "COC": ["COC", "COMANDO OPERACIONAL DA CAPITAL", "OPERACIONAL CAPITAL", "CMD OPERACIONAL CAPITAL"],
+    "COI": ["COI", "COMANDO OPERACIONAL DO INTERIOR", "OPERACIONAL INTERIOR", "CMD OPERACIONAL INTERIOR"],
+    "COA": ["COA", "COMANDO DE OPERACOES AEREAS", "OPERACOES AEREAS", "CMD AEREO"],
+    "GOA": ["GOA", "GRUPAMENTO DE OPERACOES AEREAS", "1 GRUPAMENTO AEREO", "GRUPAMENTO AEREO"],
+
+    # BATALHOES
+    "1BEPCIF": ["1BEPCIF", "PRIMEIRO BATALHAO", "1 BATALHAO", "1 BEPCIF", "1BEP", "1º BATALHÃO", "1º BEP"],
+    "2BEPCIF": ["2BEPCIF", "SEGUNDO BATALHAO", "2 BATALHAO", "2 BEPCIF", "2BEP", "2º BATALHÃO", "2º BEP"],
+    "3BEPCIF": ["3BEPCIF", "TERCEIRO BATALHAO", "3 BATALHAO", "3 BEPCIF", "3BEP", "3º BATALHÃO", "3º BEP"],
+    "4BEPCIF": ["4BEPCIF", "QUARTO BATALHAO", "4 BATALHAO", "4 BEPCIF", "4BEP", "4º BATALHÃO", "4º BEP"],
+    "5BEPCIF": ["5BEPCIF", "QUINTO BATALHAO", "5 BATALHAO", "5 BEPCIF", "5BEP", "5º BATALHÃO", "5º BEP"],
+    "6BEPCIF": ["6BEPCIF", "SEXTO BATALHAO", "6 BATALHAO", "6 BEPCIF", "6BEP", "6º BATALHÃO", "6º BEP"],
+    "7BEPCIF": ["7BEPCIF", "SETIMO BATALHAO", "7 BATALHAO", "7 BEPCIF", "7BEP", "7º BATALHÃO", "7º BEP"],
+    "8BEPCIF": ["8BEPCIF", "OITAVO BATALHAO", "8 BATALHAO", "8 BEPCIF", "8BEP", "8º BATALHÃO", "8º BEP"],
+    "9BEPCIF": ["9BEPCIF", "NONO BATALHAO", "9 BATALHAO", "9 BEPCIF", "9BEP", "9º BATALHÃO", "9º BEP"],
+
+    # DIRETORIAS
+    "DRH": ["DRH", "RECURSOS HUMANOS", "DIRETORIA DE RH", "DIRETORIA DE RECURSOS HUMANOS", "DIRETOR DE RH"],
+    "DEI": ["DEI", "DIRETORIA DE ENSINO", "ENSINO E INSTRUCAO", "DIRETORIA DE ENSINO E INSTRUCAO", "ENSINO"],
+    "DLPF": ["DLPF", "DIRETORIA DE LOGISTICA", "LOGISTICA PATRIMONIO E FINANCAS", "LOGISTICA", "DAL"],
+    "DSAU": ["DSAU", "DS", "DIRETORIA DE SAUDE", "SAUDE"],
+    "DATOP": ["DATOP", "DIRETORIA DE ATIVIDADES TECNICAS", "ATIVIDADES TECNICAS E OPERACIONAIS"],
+    "DPLAN": ["DPLAN", "DIRETORIA DE PLANEJAMENTO", "PLANEJAMENTO"],
+
+    # ASSESSORIAS
+    "AJGER": ["AJGER", "AJUDANCIA GERAL", "AJUDANCIA"],
+    "ASSJUR": ["ASSJUR", "ASSESSORIA JURIDICA", "JURIDICO"],
+    "ASCOM": ["ASCOM", "ASSESSORIA DE COMUNICACAO", "COMUNICACAO"],
+    "ASSINT": ["ASSINT", "ASSESSORIA DE INTELIGENCIA", "INTELIGENCIA"],
+
+    # OUTROS
+    "CORGER": ["CORGER", "CORREGEDORIA", "CORREGEDOR"],
+    "CNTINT": ["CNTINT", "CONTROLADORIA INTERNA", "CONTROLADORIA"],
+    "DEPTIC": ["DEPTIC", "TECNOLOGIA DA INFORMACAO", "TI", "TIC", "INFORMATICA"],
+    "CEMAN": ["CEMAN", "CENTRO DE MANUTENCAO", "MANUTENCAO"],
+}
+
+
+def identificar_autoridade_por_texto(texto: str) -> Optional[str]:
+    """
+    Identifica a chave de autoridade a partir de texto natural.
+    Ex: "ao COC" -> "COC", "para o Comandante Geral" -> "CMDGER"
+    """
+    texto_upper = normalize_text(texto)
+
+    # Remove preposições comuns
+    texto_limpo = re.sub(r'\b(AO|A|PARA|PARA O|PARA A|DO|DA|AOS|AS)\b', '', texto_upper).strip()
+
+    for chave, aliases in AUTORIDADES_ALIASES.items():
+        for alias in aliases:
+            alias_norm = normalize_text(alias)
+            if alias_norm in texto_limpo or texto_limpo in alias_norm:
+                return chave
+
+    return None
 
 
 # =============================================================================
@@ -340,11 +419,350 @@ def gerar_texto_nota(
 
 def gerar_html_nota(tipo_ato: str, data_ato: str, texto_corpo: str) -> str:
     """Gera HTML completo da nota no formato SEI"""
-    
+
     html = f"""<p style="text-align: left;"><strong>{tipo_ato}</strong></p>
 <p style="text-align: left;"><strong>Em {data_ato},</strong></p>
 <p style="text-align: justify;">{texto_corpo}</p>"""
-    
+
+    return html
+
+
+# =============================================================================
+# MEMORANDO INTELIGENTE (LLM)
+# =============================================================================
+
+async def buscar_autoridade_db(chave: str) -> Optional[Dict]:
+    """Busca autoridade no banco SQLite."""
+    try:
+        from autoridades_db import AutoridadesDB
+        db = AutoridadesDB()
+        return db.buscar(chave)
+    except Exception as e:
+        print(f"Erro ao buscar autoridade {chave}: {e}")
+        return None
+
+
+async def listar_autoridades_db() -> List[Dict]:
+    """Lista todas as autoridades ativas."""
+    try:
+        from autoridades_db import AutoridadesDB
+        db = AutoridadesDB()
+        return db.listar_todas(apenas_ativas=True)
+    except Exception as e:
+        print(f"Erro ao listar autoridades: {e}")
+        return []
+
+
+def gerar_resumo_publicacoes(publicacoes: List[Dict]) -> str:
+    """Gera resumo das publicações para o memorando."""
+    if not publicacoes:
+        return "alterações diversas"
+
+    contagem = {}
+    for pub in publicacoes:
+        tipo = pub.get('tipo_ato', '') or pub.get('tipo_ato_texto', '')
+        if 'FERIAS' in tipo.upper() or 'FÉRIAS' in tipo.upper():
+            contagem['férias'] = contagem.get('férias', 0) + 1
+        elif 'VIAGEM' in tipo.upper():
+            contagem['viagem'] = contagem.get('viagem', 0) + 1
+        elif 'TRANSFERENCIA' in tipo.upper() or 'TRANSFERÊNCIA' in tipo.upper():
+            contagem['transferência'] = contagem.get('transferência', 0) + 1
+        elif 'DISPENSA' in tipo.upper():
+            contagem['dispensa médica'] = contagem.get('dispensa médica', 0) + 1
+        else:
+            contagem['outras alterações'] = contagem.get('outras alterações', 0) + 1
+
+    partes = []
+    for tipo, qtd in contagem.items():
+        if qtd == 1:
+            partes.append(f"1 (uma) {tipo}")
+        else:
+            partes.append(f"{qtd} ({numero_por_extenso(qtd)}) {tipo}{'s' if not tipo.endswith('s') else ''}")
+
+    return ', '.join(partes)
+
+
+async def gerar_memorando_llm(
+    mensagem: str,
+    publicacoes: List[Dict],
+    autoridade: Optional[Dict],
+    remetente: Optional[Dict],
+    ano: int
+) -> Dict:
+    """
+    Usa LLM para gerar texto formal do memorando.
+
+    Args:
+        mensagem: Descrição natural do usuário
+        publicacoes: Lista de publicações da nota BG
+        autoridade: Dados da autoridade destinatária
+        remetente: Dados do remetente
+        ano: Ano do memorando
+
+    Returns:
+        Dict com html, texto_plano, destinatario
+    """
+    if not OPENAI_API_KEY:
+        # Fallback sem LLM
+        return gerar_memorando_template(publicacoes, autoridade, remetente, ano)
+
+    try:
+        client = OpenAI(api_key=OPENAI_API_KEY)
+
+        resumo = gerar_resumo_publicacoes(publicacoes)
+        qtd_pubs = len(publicacoes)
+
+        # Monta contexto do destinatário
+        dest_nome = ""
+        dest_cargo = ""
+        if autoridade:
+            dest_nome = f"{autoridade.get('posto_grad', '')} {autoridade.get('nome_atual', '')}".strip()
+            dest_cargo = autoridade.get('unidade_destino', '')
+
+        # Monta contexto do remetente
+        rem_nome = ""
+        rem_cargo = ""
+        rem_matricula = ""
+        if remetente:
+            rem_nome = f"{remetente.get('posto', '')} {remetente.get('nome', '')}".strip()
+            rem_cargo = remetente.get('cargo', '')
+            rem_matricula = remetente.get('matricula', '')
+
+        # Determina vocativo baseado no cargo
+        if dest_cargo:
+            cargo_lower = dest_cargo.lower()
+            if 'comandante' in cargo_lower:
+                vocativo_sugerido = f"Senhor Comandante"
+            elif 'diretor' in cargo_lower:
+                vocativo_sugerido = f"Senhor Diretor"
+            elif 'subcomandante' in cargo_lower:
+                vocativo_sugerido = f"Senhor Subcomandante-Geral"
+            elif 'chefe' in cargo_lower:
+                vocativo_sugerido = f"Senhor Chefe"
+            else:
+                vocativo_sugerido = f"Senhor(a)"
+        else:
+            vocativo_sugerido = "Senhor(a)"
+
+        prompt = f"""Você é um redator oficial do Corpo de Bombeiros Militar do Acre (CBMAC).
+Gere o CORPO de um memorando formal de encaminhamento de Nota para Boletim Geral.
+
+CONTEXTO:
+- Destinatário: {dest_nome or '[a ser definido]'} - {dest_cargo or '[cargo]'}
+- Remetente: {rem_nome or '[remetente]'} - {rem_cargo or '[cargo]'}
+- A nota contém {qtd_pubs} alteração(ões): {resumo}
+- Instrução do usuário: "{mensagem}"
+
+REGRAS IMPORTANTES:
+1. Texto FORMAL, CONCISO, OBJETIVO - estilo militar
+2. O corpo deve ter 1-2 parágrafos CURTOS (máximo 3 linhas cada)
+3. Inicie com "Com os cumprimentos de estilo, encaminho..." ou similar
+4. Mencione que segue anexa a Nota para Boletim Geral
+5. Solicite apreciação e publicação
+6. NÃO seja prolixo - vá direto ao ponto
+7. Se a instrução mencionar contexto específico (urgência, prazo), inclua de forma breve
+
+VOCATIVO SUGERIDO: {vocativo_sugerido}
+
+FORMATO DE SAÍDA (JSON):
+{{
+    "vocativo": "{vocativo_sugerido}",
+    "corpo": "Com os cumprimentos de estilo, encaminho a Vossa Senhoria...",
+    "fechamento": "Atenciosamente"
+}}
+
+Responda APENAS com o JSON, sem explicações."""
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=500
+        )
+
+        texto_resposta = response.choices[0].message.content.strip()
+
+        # Tenta parsear JSON
+        try:
+            # Remove markdown code blocks se houver
+            if texto_resposta.startswith("```"):
+                texto_resposta = re.sub(r'^```json?\n?', '', texto_resposta)
+                texto_resposta = re.sub(r'\n?```$', '', texto_resposta)
+
+            dados = json.loads(texto_resposta)
+            vocativo = dados.get('vocativo', 'Senhor Comandante')
+            corpo = dados.get('corpo', '')
+            fechamento = dados.get('fechamento', 'Atenciosamente')
+        except json.JSONDecodeError:
+            # Fallback: usa texto direto
+            vocativo = "Senhor Comandante"
+            corpo = texto_resposta
+            fechamento = "Atenciosamente"
+
+        # Gera HTML do memorando
+        html = gerar_html_memorando(
+            destinatario_nome=dest_nome,
+            destinatario_cargo=dest_cargo,
+            vocativo=vocativo,
+            corpo=corpo,
+            fechamento=fechamento,
+            remetente_nome=rem_nome,
+            remetente_cargo=rem_cargo,
+            remetente_matricula=rem_matricula,
+            ano=ano
+        )
+
+        return {
+            "sucesso": True,
+            "html": html,
+            "vocativo": vocativo,
+            "corpo": corpo,
+            "fechamento": fechamento,
+            "destinatario": {
+                "nome": dest_nome,
+                "cargo": dest_cargo,
+                "chave": autoridade.get('chave_busca') if autoridade else None
+            },
+            "remetente": remetente,
+            "usou_llm": True
+        }
+
+    except Exception as e:
+        print(f"Erro ao gerar memorando com LLM: {e}")
+        return gerar_memorando_template(publicacoes, autoridade, remetente, ano)
+
+
+def gerar_memorando_template(
+    publicacoes: List[Dict],
+    autoridade: Optional[Dict],
+    remetente: Optional[Dict],
+    ano: int
+) -> Dict:
+    """Gera memorando usando template (fallback sem LLM)."""
+    resumo = gerar_resumo_publicacoes(publicacoes)
+    qtd_pubs = len(publicacoes)
+
+    dest_nome = ""
+    dest_cargo = ""
+    if autoridade:
+        dest_nome = f"{autoridade.get('posto_grad', '')} {autoridade.get('nome_atual', '')}".strip()
+        dest_cargo = autoridade.get('unidade_destino', '')
+
+    rem_nome = ""
+    rem_cargo = ""
+    rem_matricula = ""
+    if remetente:
+        rem_nome = f"{remetente.get('posto', '')} {remetente.get('nome', '')}".strip()
+        rem_cargo = remetente.get('cargo', '')
+        rem_matricula = remetente.get('matricula', '')
+
+    # Vocativo baseado no cargo
+    if dest_cargo:
+        cargo_lower = dest_cargo.lower()
+        if 'comandante' in cargo_lower:
+            vocativo = "Senhor Comandante"
+        elif 'diretor' in cargo_lower:
+            vocativo = "Senhor Diretor"
+        elif 'subcomandante' in cargo_lower:
+            vocativo = "Senhor Subcomandante-Geral"
+        elif 'chefe' in cargo_lower:
+            vocativo = "Senhor Chefe"
+        else:
+            vocativo = "Senhor(a)"
+    else:
+        vocativo = "Senhor Comandante"
+
+    corpo = f"""Com os cumprimentos de estilo, encaminho a Vossa Senhoria a Nota para Boletim Geral anexa, contendo {qtd_pubs} ({numero_por_extenso(qtd_pubs)}) alteração(ões) referente(s) a {resumo}, para apreciação e posterior publicação."""
+
+    fechamento = "Atenciosamente"
+
+    html = gerar_html_memorando(
+        destinatario_nome=dest_nome,
+        destinatario_cargo=dest_cargo,
+        vocativo=vocativo,
+        corpo=corpo,
+        fechamento=fechamento,
+        remetente_nome=rem_nome,
+        remetente_cargo=rem_cargo,
+        remetente_matricula=rem_matricula,
+        ano=ano
+    )
+
+    return {
+        "sucesso": True,
+        "html": html,
+        "vocativo": vocativo,
+        "corpo": corpo,
+        "fechamento": fechamento,
+        "destinatario": {
+            "nome": dest_nome,
+            "cargo": dest_cargo,
+            "chave": autoridade.get('chave_busca') if autoridade else None
+        },
+        "remetente": remetente,
+        "usou_llm": False
+    }
+
+
+def gerar_html_memorando(
+    destinatario_nome: str,
+    destinatario_cargo: str,
+    vocativo: str,
+    corpo: str,
+    fechamento: str,
+    remetente_nome: str,
+    remetente_cargo: str,
+    remetente_matricula: str,
+    ano: int,
+    sigla_remetente: str = "",
+    portaria: str = ""
+) -> str:
+    """
+    Gera HTML formatado do memorando no padrão SEI.
+
+    IMPORTANTE: O SEI já adiciona o cabeçalho (Estado/CBMAC) e numeração,
+    então o HTML deve conter apenas o corpo do documento.
+    """
+
+    # Formata destinatário
+    dest_linha = destinatario_nome or '[Nome do Destinatário]'
+    if destinatario_cargo:
+        dest_linha = f"{dest_linha}<br>\n{destinatario_cargo}"
+
+    # Formata remetente
+    rem_nome = remetente_nome or '[Nome do Remetente]'
+    rem_cargo = remetente_cargo or '[Cargo/Função]'
+
+    # Linha final do remetente (sigla ou matrícula)
+    if sigla_remetente:
+        rem_linha_final = f"{sigla_remetente}/CBMAC"
+    elif remetente_matricula:
+        rem_linha_final = f"Matrícula {remetente_matricula}"
+    else:
+        rem_linha_final = ""
+
+    # Portaria (se houver)
+    if portaria:
+        rem_linha_final = f"Port. nº {portaria}"
+
+    html = f"""<p style="text-align: left;">Ao(À) Sr(a). <b>{dest_linha}</b></p>
+
+<p style="text-align: left;">Assunto: <b>Encaminhamento de Nota para Boletim Geral</b></p>
+
+<p style="text-align: left; text-indent: 1.5cm;">{vocativo},</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">{corpo}</p>
+
+<p style="text-align: left; text-indent: 1.5cm;">{fechamento},</p>
+
+<p style="text-align: center;"><b>{rem_nome}</b><br>
+{rem_cargo}"""
+
+    if rem_linha_final:
+        html += f"<br>\n{rem_linha_final}"
+
+    html += "</p>"
+
     return html
 
 
@@ -598,5 +1016,149 @@ def registrar_endpoints_nota_bg(app: FastAPI):
             "exemplo": "MAJ QOBMEC Mat. 9268863-3 Gilmar Torres Marques Moura",
             "efetivo_api": EFETIVO_API_URL,
         }
-    
-    print("✅ Módulo Nota BG registrado: /api/nota-bg/*")
+
+    # -----------------------------------------------------------------
+    # GET /api/nota-bg/autoridades - Lista autoridades
+    # -----------------------------------------------------------------
+    @app.get("/api/nota-bg/autoridades")
+    async def listar_autoridades_endpoint():
+        """Lista todas as autoridades disponíveis para destinatário do memorando."""
+        autoridades = await listar_autoridades_db()
+
+        # Agrupa por categoria
+        categorias = {
+            "Comando Geral": [],
+            "Comandos Operacionais": [],
+            "Diretorias": [],
+            "Assessorias": [],
+            "Batalhões": [],
+            "Outros": []
+        }
+
+        for a in autoridades:
+            chave = a.get('chave_busca', '')
+            item = {
+                "chave": chave,
+                "nome": a.get('nome_atual', ''),
+                "posto": a.get('posto_grad', ''),
+                "unidade": a.get('unidade_destino', ''),
+                "sigla": a.get('sigla_unidade', ''),
+                "formatado": f"{a.get('posto_grad', '')} {a.get('nome_atual', '')}".strip()
+            }
+
+            if chave in ['CMDGER', 'SUBCMD']:
+                categorias["Comando Geral"].append(item)
+            elif chave in ['COC', 'COI', 'COA', 'GOA']:
+                categorias["Comandos Operacionais"].append(item)
+            elif chave.startswith('D') or chave in ['DRH', 'DEI', 'DLPF', 'DSAU', 'DATOP', 'DPLAN']:
+                categorias["Diretorias"].append(item)
+            elif chave.startswith('ASS') or chave == 'AJGER':
+                categorias["Assessorias"].append(item)
+            elif 'BEP' in chave or 'BATALHAO' in chave.upper():
+                categorias["Batalhões"].append(item)
+            else:
+                categorias["Outros"].append(item)
+
+        return {
+            "autoridades": autoridades,
+            "categorias": categorias,
+            "total": len(autoridades)
+        }
+
+    # -----------------------------------------------------------------
+    # POST /api/nota-bg/gerar-memorando - Memorando Inteligente
+    # -----------------------------------------------------------------
+    @app.post("/api/nota-bg/gerar-memorando")
+    async def gerar_memorando_inteligente_endpoint(req: MemorandoInteligenteRequest, request: Request):
+        """
+        Gera memorando inteligente usando LLM.
+
+        O usuário pode digitar algo como:
+        - "ao COC informando que seguem as alterações de férias"
+        - "para o Subcomandante com urgência"
+        - "Memorando ao DRH sobre férias do mês"
+
+        O sistema:
+        1. Identifica a autoridade pelo texto natural
+        2. Busca dados da autoridade no banco
+        3. Usa LLM para gerar texto formal
+        4. Retorna HTML pronto para o SEI
+        """
+        ip = request.client.host if request.client else "unknown"
+        ano = req.ano or datetime.now().year
+
+        # 1. Identifica autoridade pelo texto
+        chave_autoridade = identificar_autoridade_por_texto(req.mensagem)
+
+        autoridade = None
+        if chave_autoridade:
+            autoridade = await buscar_autoridade_db(chave_autoridade)
+
+        # 2. Gera memorando com LLM
+        resultado = await gerar_memorando_llm(
+            mensagem=req.mensagem,
+            publicacoes=req.publicacoes,
+            autoridade=autoridade,
+            remetente=req.remetente,
+            ano=ano
+        )
+
+        # 3. Adiciona info de autoridade detectada
+        resultado["autoridade_detectada"] = chave_autoridade
+        resultado["autoridade_encontrada"] = autoridade is not None
+
+        # Se não encontrou autoridade, sugere opções
+        if not autoridade:
+            autoridades_disponiveis = await listar_autoridades_db()
+            resultado["sugestoes"] = [
+                {
+                    "chave": a.get('chave_busca'),
+                    "nome": f"{a.get('posto_grad', '')} {a.get('nome_atual', '')}".strip(),
+                    "unidade": a.get('unidade_destino', '')
+                }
+                for a in autoridades_disponiveis[:10]
+            ]
+            resultado["mensagem"] = "Autoridade não identificada. Selecione uma das sugestões ou digite novamente."
+
+        # 4. Auditoria
+        registrar_auditoria(
+            req.remetente.get('matricula', 'desconhecido') if req.remetente else 'desconhecido',
+            "NOTA_BG_MEMO_INTELIGENTE",
+            f"Autoridade: {chave_autoridade or 'não detectada'}, Pubs: {len(req.publicacoes)}",
+            ip
+        )
+
+        return JSONResponse(resultado)
+
+    # -----------------------------------------------------------------
+    # POST /api/nota-bg/gerar-memorando-simples - Sem LLM
+    # -----------------------------------------------------------------
+    @app.post("/api/nota-bg/gerar-memorando-simples")
+    async def gerar_memorando_simples_endpoint(req: MemorandoInteligenteRequest):
+        """
+        Gera memorando usando template (sem LLM).
+        Útil quando LLM não está disponível ou para respostas mais rápidas.
+        """
+        ano = req.ano or datetime.now().year
+
+        # Identifica autoridade
+        chave_autoridade = identificar_autoridade_por_texto(req.mensagem)
+
+        autoridade = None
+        if chave_autoridade:
+            autoridade = await buscar_autoridade_db(chave_autoridade)
+
+        # Gera memorando com template
+        resultado = gerar_memorando_template(
+            publicacoes=req.publicacoes,
+            autoridade=autoridade,
+            remetente=req.remetente,
+            ano=ano
+        )
+
+        resultado["autoridade_detectada"] = chave_autoridade
+        resultado["autoridade_encontrada"] = autoridade is not None
+
+        return JSONResponse(resultado)
+
+    print("✅ Módulo Nota BG v2.0 registrado: /api/nota-bg/* (com Memorando Inteligente)")

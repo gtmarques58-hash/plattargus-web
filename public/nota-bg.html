@@ -314,15 +314,33 @@
 
             <div class="divider"></div>
 
-            <!-- Justificativa para Memorando -->
+            <!-- Memorando Inteligente -->
             <div class="form-group">
-                <label class="form-label"><i class="fas fa-file-alt"></i> Justificativa para Memorando (opcional)</label>
-                <textarea id="justificativaMemo" class="form-input" rows="3" placeholder="Contexto adicional para o memorando de encaminhamento..." style="resize:vertical"></textarea>
-                <div style="display:flex;gap:8px;margin-top:8px">
-                    <button type="button" class="btn btn-sm btn-secondary" onclick="App.sugerirTextoMemo()" id="btnSugerirMemo">
-                        <i class="fas fa-magic"></i> Sugerir com IA
-                    </button>
+                <label class="form-label"><i class="fas fa-robot"></i> Memorando Inteligente</label>
+                <textarea id="descricaoMemo" class="form-input" rows="3" placeholder="Ex: ao COC informando que seguem as alterações de férias do mês para publicação..." style="resize:vertical"></textarea>
+                <p class="form-hint">Digite naturalmente: "ao COC", "para o Subcomandante", "Memorando ao DRH sobre..."</p>
+            </div>
+
+            <!-- Autoridade Detectada -->
+            <div id="autoridadeDetectada" class="hidden" style="margin-bottom:14px">
+                <div style="background:var(--bg-tertiary);border:1px solid var(--success);border-radius:8px;padding:10px">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div>
+                            <div style="font-size:0.75rem;color:var(--success);font-weight:600"><i class="fas fa-check-circle"></i> Destinatário Identificado</div>
+                            <div id="autoridadeNome" style="font-weight:600;color:var(--text-primary);font-size:0.9rem">-</div>
+                            <div id="autoridadeCargo" style="font-size:0.8rem;color:var(--text-muted)">-</div>
+                        </div>
+                        <button class="btn btn-sm btn-secondary" onclick="App.limparAutoridade()"><i class="fas fa-times"></i></button>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Seletor de Autoridades (alternativo) -->
+            <div id="seletorAutoridades" class="form-group">
+                <label class="form-label">Ou selecione o destinatário:</label>
+                <select id="selectAutoridade" class="form-select" onchange="App.selecionarAutoridadeDropdown()">
+                    <option value="">Selecione...</option>
+                </select>
             </div>
 
             <div style="margin-top:20px">
@@ -472,6 +490,8 @@
             htmlMemoGerado: null,
             htmlNotaGerado: null,
             docAtual: 'memo', // 'memo' ou 'nota'
+            autoridades: [],
+            autoridadeSelecionada: null,
 
             // Mapeamento de postos/graduacoes para categorias
             CATEGORIAS: {
@@ -535,7 +555,7 @@
                 // Data padrao
                 document.getElementById('dataAto').valueAsDate = new Date();
 
-                // Autocomplete
+                // Autocomplete militar
                 let debounce;
                 document.getElementById('militarBusca').addEventListener('input', (e) => {
                     clearTimeout(debounce);
@@ -560,6 +580,72 @@
                 }
 
                 this.atualizarCampos();
+
+                // Carregar autoridades
+                this.carregarAutoridades();
+            },
+
+            // ==================== AUTORIDADES ====================
+
+            async carregarAutoridades() {
+                try {
+                    const resp = await fetch(API_URL + '/nota-bg/autoridades', {
+                        headers: this.getHeaders()
+                    });
+                    const data = await resp.json();
+                    this.autoridades = data.autoridades || [];
+
+                    // Popula o dropdown
+                    const select = document.getElementById('selectAutoridade');
+                    select.innerHTML = '<option value="">Selecione o destinatário...</option>';
+
+                    const categorias = data.categorias || {};
+                    for (const [cat, items] of Object.entries(categorias)) {
+                        if (items.length === 0) continue;
+                        const optgroup = document.createElement('optgroup');
+                        optgroup.label = cat;
+                        for (const item of items) {
+                            const opt = document.createElement('option');
+                            opt.value = item.chave;
+                            opt.textContent = `${item.formatado} - ${item.unidade}`;
+                            optgroup.appendChild(opt);
+                        }
+                        select.appendChild(optgroup);
+                    }
+                } catch (err) {
+                    console.error('Erro ao carregar autoridades:', err);
+                }
+            },
+
+            selecionarAutoridadeDropdown() {
+                const select = document.getElementById('selectAutoridade');
+                const chave = select.value;
+
+                if (!chave) {
+                    this.limparAutoridade();
+                    return;
+                }
+
+                const autoridade = this.autoridades.find(a => a.chave_busca === chave);
+                if (autoridade) {
+                    this.autoridadeSelecionada = autoridade;
+                    this.mostrarAutoridadeDetectada(autoridade);
+                }
+            },
+
+            mostrarAutoridadeDetectada(autoridade) {
+                const container = document.getElementById('autoridadeDetectada');
+                document.getElementById('autoridadeNome').textContent =
+                    `${autoridade.posto_grad || ''} ${autoridade.nome_atual || ''}`.trim();
+                document.getElementById('autoridadeCargo').textContent =
+                    autoridade.unidade_destino || autoridade.sigla_unidade || '';
+                container.classList.remove('hidden');
+            },
+
+            limparAutoridade() {
+                this.autoridadeSelecionada = null;
+                document.getElementById('autoridadeDetectada').classList.add('hidden');
+                document.getElementById('selectAutoridade').value = '';
             },
 
             // ==================== PROCESSO/NUP ====================
@@ -981,69 +1067,175 @@
                 return grupos;
             },
 
-            gerarNota() {
+            async gerarNota() {
                 if (this.publicacoes.length === 0) return;
 
-                // Gera o Memorando
-                this.htmlMemoGerado = this.gerarMemorando();
+                const btnGerar = document.getElementById('btnGerar');
+                btnGerar.disabled = true;
+                btnGerar.innerHTML = '<span class="spinner"></span> Gerando...';
 
-                // Gera a Nota para BG
-                this.htmlNotaGerado = this.gerarNotaBG();
+                try {
+                    // Gera o Memorando Inteligente
+                    await this.gerarMemorandoInteligente();
 
-                // Mostra o memorando primeiro
-                this.docAtual = 'memo';
-                document.getElementById('previewDoc').innerHTML = this.htmlMemoGerado;
-                document.getElementById('tabMemo').classList.add('active');
-                document.getElementById('tabNota').classList.remove('active');
+                    // Gera a Nota para BG
+                    this.htmlNotaGerado = this.gerarNotaBG();
 
-                document.getElementById('btnInserir').disabled = false;
-                this.trocarAba('preview');
+                    // Mostra o memorando primeiro
+                    this.docAtual = 'memo';
+                    document.getElementById('previewDoc').innerHTML = this.htmlMemoGerado;
+                    document.getElementById('tabMemo').classList.add('active');
+                    document.getElementById('tabNota').classList.remove('active');
+
+                    document.getElementById('btnInserir').disabled = false;
+                    this.trocarAba('preview');
+                } catch (err) {
+                    console.error('Erro ao gerar documentos:', err);
+                    this.mostrarStatus('statusNota', 'Erro ao gerar documentos: ' + err.message, 'error');
+                } finally {
+                    btnGerar.disabled = false;
+                    btnGerar.innerHTML = '<i class="fas fa-file-alt"></i> Gerar Documentos';
+                }
             },
 
-            gerarMemorando() {
-                const justificativa = document.getElementById('justificativaMemo').value.trim();
-                const ano = new Date().getFullYear();
+            async gerarMemorandoInteligente() {
+                const descricao = document.getElementById('descricaoMemo').value.trim();
+                const selectAutoridade = document.getElementById('selectAutoridade').value;
 
-                // Conta tipos de publicações
-                const resumo = this.gerarResumoPublicacoes();
+                // Monta mensagem para o LLM
+                let mensagem = descricao || 'Encaminhamento de Nota para Boletim Geral';
 
-                let html = `
-                    <div style="text-align:center;margin-bottom:20px">
-                        <p style="font-weight:bold">ESTADO DO ACRE</p>
-                        <p style="font-weight:bold">CORPO DE BOMBEIROS MILITAR</p>
-                        <p style="font-weight:bold">COMANDO GERAL</p>
-                    </div>
-
-                    <p style="text-align:center;font-weight:bold;margin:20px 0">MEMORANDO Nº ___/${ano} - SEÇÃO</p>
-
-                    <p style="margin-top:20px"><strong>Para:</strong> Subcomandante-Geral do CBMAC</p>
-                    <p><strong>Assunto:</strong> Encaminhamento de Nota para Boletim Geral</p>
-
-                    <p style="text-align:justify;text-indent:1.5cm;margin-top:20px">
-                        Senhor Subcomandante-Geral,
-                    </p>
-
-                    <p style="text-align:justify;text-indent:1.5cm;margin-top:15px">
-                        Encaminho a Vossa Senhoria a Nota para Boletim Geral anexa, contendo ${this.publicacoes.length} (${this.numeroPorExtenso(this.publicacoes.length)}) alteração(ões) referente(s) a ${resumo}, para apreciação e posterior publicação.
-                    </p>
-                `;
-
-                if (justificativa) {
-                    html += `<p style="text-align:justify;text-indent:1.5cm;margin-top:15px">${justificativa}</p>`;
+                // Se selecionou autoridade no dropdown, adiciona à mensagem
+                if (selectAutoridade && !descricao.toLowerCase().includes(selectAutoridade.toLowerCase())) {
+                    mensagem = `ao ${selectAutoridade} ${mensagem}`;
                 }
 
-                html += `
-                    <p style="text-align:justify;margin-top:20px">Atenciosamente,</p>
+                // Dados do remetente (do localStorage ou padrão)
+                const userData = JSON.parse(localStorage.getItem('plattargus_user') || '{}');
+                const remetente = {
+                    nome: userData.nome || '',
+                    posto: userData.posto_grad || '',
+                    cargo: userData.cargo || '',
+                    matricula: userData.matricula || ''
+                };
 
-                    <div style="text-align:center;margin-top:50px">
-                        <p><strong>Nome do Remetente</strong></p>
-                        <p>Posto/Graduação - Função</p>
-                        <p style="font-style:italic">Matrícula XXXXXXX-X</p>
-                    </div>
-                `;
+                try {
+                    const resp = await fetch(API_URL + '/nota-bg/gerar-memorando', {
+                        method: 'POST',
+                        headers: this.getHeaders(),
+                        body: JSON.stringify({
+                            mensagem: mensagem,
+                            publicacoes: this.publicacoes,
+                            remetente: remetente,
+                            ano: new Date().getFullYear()
+                        })
+                    });
+
+                    const data = await resp.json();
+
+                    if (data.sucesso) {
+                        this.htmlMemoGerado = data.html;
+
+                        // Mostra autoridade detectada
+                        if (data.autoridade_encontrada && data.destinatario) {
+                            this.autoridadeSelecionada = {
+                                nome_atual: data.destinatario.nome,
+                                unidade_destino: data.destinatario.cargo,
+                                chave_busca: data.destinatario.chave
+                            };
+                            this.mostrarAutoridadeDetectada({
+                                nome_atual: data.destinatario.nome.split(' ').slice(1).join(' '),
+                                posto_grad: data.destinatario.nome.split(' ')[0],
+                                unidade_destino: data.destinatario.cargo
+                            });
+                        }
+
+                        // Info sobre uso de LLM
+                        if (data.usou_llm) {
+                            console.log('Memorando gerado com LLM');
+                        } else {
+                            console.log('Memorando gerado com template (fallback)');
+                        }
+                    } else {
+                        // Fallback para geração local
+                        this.htmlMemoGerado = this.gerarMemorandoLocal();
+                    }
+
+                    // Se não encontrou autoridade, mostra sugestões
+                    if (!data.autoridade_encontrada && data.sugestoes) {
+                        this.mostrarStatus('statusForm', data.mensagem || 'Autoridade não identificada', 'warning');
+                    }
+
+                } catch (err) {
+                    console.error('Erro API memorando:', err);
+                    // Fallback para geração local
+                    this.htmlMemoGerado = this.gerarMemorandoLocal();
+                }
+            },
+
+            gerarMemorandoLocal() {
+                // Fallback: gera memorando localmente (sem LLM) - formato SEI
+                const descricao = document.getElementById('descricaoMemo').value.trim();
+                const resumo = this.gerarResumoPublicacoes();
+
+                // Tenta usar autoridade selecionada
+                let destNome = '[Nome do Destinatário]';
+                let destCargo = '';
+
+                if (this.autoridadeSelecionada) {
+                    destNome = `${this.autoridadeSelecionada.posto_grad || ''} ${this.autoridadeSelecionada.nome_atual || ''}`.trim();
+                    destCargo = this.autoridadeSelecionada.unidade_destino || '';
+                }
+
+                // Dados do remetente
+                const userData = JSON.parse(localStorage.getItem('plattargus_user') || '{}');
+                const remNome = userData.nome ? `${userData.posto_grad || ''} ${userData.nome}`.trim() : '[Nome do Remetente]';
+                const remCargo = userData.cargo || '[Cargo/Função]';
+                const remSigla = userData.sigla || '';
+
+                // Vocativo baseado no cargo
+                let vocativo = 'Senhor Comandante';
+                if (destCargo) {
+                    const cargoLower = destCargo.toLowerCase();
+                    if (cargoLower.includes('comandante')) vocativo = 'Senhor Comandante';
+                    else if (cargoLower.includes('diretor')) vocativo = 'Senhor Diretor';
+                    else if (cargoLower.includes('subcomandante')) vocativo = 'Senhor Subcomandante-Geral';
+                    else if (cargoLower.includes('chefe')) vocativo = 'Senhor Chefe';
+                }
+
+                // Corpo do memorando - formato padrão
+                let corpo = `Com os cumprimentos de estilo, encaminho a Vossa Senhoria a Nota para Boletim Geral anexa, contendo ${this.publicacoes.length} (${this.numeroPorExtenso(this.publicacoes.length)}) alteração(ões) referente(s) a ${resumo}, para apreciação e posterior publicação.`;
+
+                if (descricao) {
+                    corpo += ` ${descricao}`;
+                }
+
+                // Formato SEI (sem cabeçalho - o SEI adiciona automaticamente)
+                let html = `<p style="text-align: left;">Ao(À) Sr(a). <b>${destNome}`;
+                if (destCargo) {
+                    html += `<br>\n${destCargo}`;
+                }
+                html += `</b></p>
+
+<p style="text-align: left;">Assunto: <b>Encaminhamento de Nota para Boletim Geral</b></p>
+
+<p style="text-align: left; text-indent: 1.5cm;">${vocativo},</p>
+
+<p style="text-align: justify; text-indent: 1.5cm;">${corpo}</p>
+
+<p style="text-align: left; text-indent: 1.5cm;">Atenciosamente,</p>
+
+<p style="text-align: center;"><b>${remNome}</b><br>
+${remCargo}`;
+
+                if (remSigla) {
+                    html += `<br>\n${remSigla}/CBMAC`;
+                }
+                html += `</p>`;
 
                 return html;
             },
+
 
             gerarResumoPublicacoes() {
                 const contagem = {};
@@ -1070,87 +1262,89 @@
             gerarNotaBG() {
                 const grupos = this.agruparPorCategoria();
 
-                let html = `
-                    <div style="text-align:center;margin-bottom:20px">
-                        <p style="font-weight:bold">ESTADO DO ACRE</p>
-                        <p style="font-weight:bold">CORPO DE BOMBEIROS MILITAR</p>
-                        <p style="font-weight:bold">COMANDO GERAL</p>
-                    </div>
+                // Formato SEI - sem cabeçalho (o SEI adiciona automaticamente)
+                // Inicia direto na 1ª PARTE
+                let html = `<p style="text-align: center;"><b>1ª P A R T E</b><br>
+(ESCALA DE SERVIÇO)</p>
 
-                    <p style="text-align:center;font-weight:bold;margin:30px 0">
-                        NOTA PARA BOLETIM GERAL - BG - CBMAC
-                    </p>
+<p style="text-align: center; font-style: italic;">Sem Alteração</p>
 
-                    <p style="text-align:center;font-weight:bold">1ª P A R T E</p>
-                    <p style="text-align:center">(ESCALA DE SERVIÇO)</p>
-                    <p style="text-align:center;font-style:italic;margin-bottom:20px">Sem Alteração</p>
+<p style="text-align: center;"><b>2ª P A R T E</b><br>
+(INSTRUÇÃO)</p>
 
-                    <p style="text-align:center;font-weight:bold">2ª P A R T E</p>
-                    <p style="text-align:center">(INSTRUÇÃO)</p>
-                    <p style="text-align:center;font-style:italic;margin-bottom:20px">Sem Alteração</p>
+<p style="text-align: center; font-style: italic;">Sem Alteração</p>
 
-                    <p style="text-align:center;font-weight:bold">3ª P A R T E</p>
-                    <p style="text-align:center;margin-bottom:20px">(ASSUNTOS GERAIS E ADMINISTRATIVOS)</p>
-                `;
+<p style="text-align: center;"><b>3ª P A R T E</b><br>
+(ASSUNTOS GERAIS E ADMINISTRATIVOS)</p>
+`;
 
                 // 1. OFICIAIS
                 if (grupos.OFICIAIS && grupos.OFICIAIS.length > 0) {
-                    html += '<p style="font-weight:bold">1. ALTERAÇÕES DE OFICIAIS</p>';
+                    html += '<p style="text-align: left;"><b>1. ALTERAÇÕES DE OFICIAIS</b></p>';
                     grupos.OFICIAIS.forEach((p, i) => {
                         html += this.gerarTextoPublicacao(p, i);
                     });
                 } else {
-                    html += '<p style="font-weight:bold">1. ALTERAÇÕES DE OFICIAIS - Não Houve</p>';
+                    html += '<p style="text-align: left;"><b>1. ALTERAÇÕES DE OFICIAIS</b> - Não Houve</p>';
                 }
 
                 // 2. PRAÇAS
-                html += '<p style="font-weight:bold;margin-top:15px">2. ALTERAÇÕES DE PRAÇAS</p>';
+                html += '<p style="text-align: left;"><b>2. ALTERAÇÕES DE PRAÇAS</b></p>';
 
                 // 2.1 ST/SGT
                 if (grupos.ST_SGT && grupos.ST_SGT.length > 0) {
-                    html += '<p style="font-weight:bold;margin-left:20px">2.1. ALTERAÇÕES DE SUBTENENTES E SARGENTOS</p>';
+                    html += '<p style="text-align: left; margin-left: 20px;"><b>2.1. ALTERAÇÕES DE SUBTENENTES E SARGENTOS</b></p>';
                     grupos.ST_SGT.forEach((p, i) => {
                         html += this.gerarTextoPublicacao(p, i);
                     });
                 } else {
-                    html += '<p style="margin-left:20px">2.1. ALTERAÇÕES DE SUBTENENTES E SARGENTOS - Não Houve</p>';
+                    html += '<p style="text-align: left; margin-left: 20px;">2.1. ALTERAÇÕES DE SUBTENENTES E SARGENTOS - Não Houve</p>';
                 }
 
                 // 2.2 CB/SD
                 if (grupos.CB_SD && grupos.CB_SD.length > 0) {
-                    html += '<p style="font-weight:bold;margin-left:20px;margin-top:10px">2.2. ALTERAÇÕES DE CABOS E SOLDADOS</p>';
+                    html += '<p style="text-align: left; margin-left: 20px;"><b>2.2. ALTERAÇÕES DE CABOS E SOLDADOS</b></p>';
                     grupos.CB_SD.forEach((p, i) => {
                         html += this.gerarTextoPublicacao(p, i);
                     });
                 } else {
-                    html += '<p style="margin-left:20px">2.2. ALTERAÇÕES DE CABOS E SOLDADOS - Não Houve</p>';
+                    html += '<p style="text-align: left; margin-left: 20px;">2.2. ALTERAÇÕES DE CABOS E SOLDADOS - Não Houve</p>';
                 }
 
                 // 3. CIVIS
                 if (grupos.CIVIS && grupos.CIVIS.length > 0) {
-                    html += '<p style="font-weight:bold;margin-top:15px">3. ALTERAÇÕES DE SERVIDORES CIVIS</p>';
+                    html += '<p style="text-align: left;"><b>3. ALTERAÇÕES DE SERVIDORES CIVIS</b></p>';
                     grupos.CIVIS.forEach((p, i) => {
                         html += this.gerarTextoPublicacao(p, i);
                     });
                 } else {
-                    html += '<p style="font-weight:bold;margin-top:15px">3. ALTERAÇÕES DE SERVIDORES CIVIS - Não Houve</p>';
+                    html += '<p style="text-align: left;"><b>3. ALTERAÇÕES DE SERVIDORES CIVIS</b> - Não Houve</p>';
                 }
 
                 // 4. ASSUNTOS GERAIS
-                html += '<p style="font-weight:bold;margin-top:15px">4. ASSUNTOS GERAIS - Não Houve</p>';
+                html += '<p style="text-align: left;"><b>4. ASSUNTOS GERAIS</b> - Não Houve</p>';
 
                 // 4ª PARTE
                 html += `
-                    <p style="text-align:center;font-weight:bold;margin-top:30px">4ª P A R T E</p>
-                    <p style="text-align:center">(JUSTIÇA E DISCIPLINA)</p>
-                    <p style="text-align:center;font-style:italic">Sem Alteração</p>
+<p style="text-align: center;"><b>4ª P A R T E</b><br>
+(JUSTIÇA E DISCIPLINA)</p>
 
-                    <div style="text-align:center;margin-top:50px">
-                        <p><strong>Nome do Comandante</strong></p>
-                        <p>Comandante-Geral do CBMAC</p>
-                        <p style="font-style:italic">Matrícula XXXXXXX-X</p>
-                    </div>
-                `;
+<p style="text-align: center; font-style: italic;">Sem Alteração</p>
+`;
+
+                // Assinatura (dados do remetente)
+                const userData = JSON.parse(localStorage.getItem('plattargus_user') || '{}');
+                const remNome = userData.nome ? `${userData.posto_grad || ''} ${userData.nome}`.trim() : '[Nome do Remetente]';
+                const remCargo = userData.cargo || '[Cargo/Função]';
+                const portaria = userData.portaria || '';
+
+                html += `
+<p style="text-align: center;"><b>${remNome}</b><br>
+${remCargo}`;
+                if (portaria) {
+                    html += `<br>\nPort. nº ${portaria}`;
+                }
+                html += `</p>`;
 
                 return html;
             },
@@ -1170,80 +1364,23 @@
                 }
             },
 
-            async sugerirTextoMemo() {
-                if (this.publicacoes.length === 0) {
-                    alert('Adicione pelo menos uma publicação antes de gerar sugestão.');
-                    return;
-                }
-
-                const btn = document.getElementById('btnSugerirMemo');
-                btn.disabled = true;
-                btn.innerHTML = '<span class="spinner"></span> Gerando...';
-
-                try {
-                    const resumo = this.gerarResumoPublicacoes();
-                    const prompt = `Gere um texto formal e conciso para o corpo de um memorando de encaminhamento de Nota para Boletim Geral do Corpo de Bombeiros Militar do Acre (CBMAC).
-
-O memorando encaminha uma nota contendo ${this.publicacoes.length} alteração(ões): ${resumo}.
-
-O texto deve:
-- Ser formal e institucional
-- Ter no máximo 3 parágrafos
-- Mencionar que segue em anexo a Nota para Boletim Geral
-- Solicitar a apreciação e publicação
-
-Retorne apenas o texto do corpo do memorando, sem cabeçalho ou assinatura.`;
-
-                    const resp = await fetch(API_URL + '/chat', {
-                        method: 'POST',
-                        headers: this.getHeaders(),
-                        body: JSON.stringify({
-                            mensagem: prompt,
-                            modo: 'redacao'
-                        })
-                    });
-
-                    const data = await resp.json();
-                    if (data.resposta || data.mensagem) {
-                        document.getElementById('justificativaMemo').value = data.resposta || data.mensagem;
-                        this.mostrarStatus('statusForm', 'Sugestão gerada com sucesso!', 'success');
-                    } else {
-                        throw new Error(data.erro || 'Erro ao gerar sugestão');
-                    }
-                } catch (err) {
-                    console.error('Erro sugestão IA:', err);
-                    this.mostrarStatus('statusForm', 'Erro ao gerar sugestão: ' + err.message, 'error');
-                } finally {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-magic"></i> Sugerir com IA';
-                }
-            },
 
             gerarTextoPublicacao(p, index) {
                 const letra = String.fromCharCode(97 + index);
                 const m = p.militar;
                 const dataFormatada = this.formatarDataBR(p.data_ato);
 
-                let texto = `<p style="margin-left:20px;margin-top:15px"><strong><u>${letra}) ${p.tipo_ato_texto}</u></strong></p>`;
-                texto += `<p style="margin-left:20px"><strong>Em ${dataFormatada},</strong></p>`;
+                // Formato SEI padrão
+                let texto = `<p style="text-align: left; margin-left: 20px;"><b><u>${letra}) ${p.tipo_ato_texto}</u></b></p>`;
+                texto += `<p style="text-align: left; margin-left: 20px;"><b>Em ${dataFormatada},</b></p>`;
 
-                // Gera texto baseado no tipo
+                // Gera texto baseado no tipo - formato SEI
                 if (p.tipo_ato.includes('VIAGEM')) {
                     const tipoOnus = p.tipo_ato === 'VIAGEM_COM_ONUS' ? 'com ônus para o Estado' : 'sem ônus para o Estado';
-                    texto += `<p style="margin-left:20px;text-align:justify">
-                        Viajará, às ${p.hora_saida || '06:00'}h na data acima, o ${m.posto_grad} BM mat. ${m.matricula} <strong>${m.nome}</strong>,
-                        autorizado pelo Comandante-Geral do CBMAC, ${tipoOnus}, com destino ao município de ${p.destino || '___'},
-                        ${p.missao ? 'com a missão de ' + p.missao : 'para realizar atividades de serviço'}.
-                        ${p.veiculo ? 'A viagem será realizada em veículo oficial, ' + p.veiculo + (p.placa ? ', placa ' + p.placa : '') + ', conduzido pelo mesmo.' : ''}
-                        Retorno previsto para às ${p.hora_retorno || '18:00'}h${p.data_retorno ? ' do dia ' + this.formatarDataBR(p.data_retorno) : ' do mesmo dia'}.
-                    </p>`;
+                    texto += `<p style="text-align: justify; margin-left: 20px;">Viajará, às ${p.hora_saida || '06:00'}h na data acima, o ${m.posto_grad} BM mat. ${m.matricula} <b>${m.nome}</b>, autorizado pelo Comandante-Geral do CBMAC, ${tipoOnus}, com destino ao município de ${p.destino || '___'}, ${p.missao ? 'com a missão de ' + p.missao : 'para realizar atividades de serviço'}. ${p.veiculo ? 'A viagem será realizada em veículo oficial, ' + p.veiculo + (p.placa ? ', placa ' + p.placa : '') + ', conduzido pelo mesmo. ' : ''}Retorno previsto para às ${p.hora_retorno || '18:00'}h${p.data_retorno ? ' do dia ' + this.formatarDataBR(p.data_retorno) : ' do mesmo dia'}.</p>`;
                 } else if (p.tipo_ato.includes('TRANSFERENCIA')) {
                     const tipoOnus = p.tipo_ato === 'TRANSFERENCIA_COM_ONUS' ? ', com ônus para o Estado' : ', sem ônus para o Estado';
-                    texto += `<p style="margin-left:20px;text-align:justify">
-                        Transferir, a contar da data acima, o ${m.posto_grad} BM mat. ${m.matricula} <strong>${m.nome}</strong>,
-                        do(a) ${p.unidade_origem || '___'} para o(a) ${p.unidade_destino || '___'}${tipoOnus}${p.motivo_transferencia ? ', ' + p.motivo_transferencia : ', por necessidade do serviço'},
-                        devendo apresentar-se na nova unidade${p.data_apresentacao ? ' em ' + this.formatarDataExtenso(p.data_apresentacao) : ' na data acima'}.
-                    </p>`;
+                    texto += `<p style="text-align: justify; margin-left: 20px;">Transferir, a contar da data acima, o ${m.posto_grad} BM mat. ${m.matricula} <b>${m.nome}</b>, do(a) ${p.unidade_origem || '___'} para o(a) ${p.unidade_destino || '___'}${tipoOnus}${p.motivo_transferencia ? ', ' + p.motivo_transferencia : ', por necessidade do serviço'}, devendo apresentar-se na nova unidade${p.data_apresentacao ? ' em ' + this.formatarDataExtenso(p.data_apresentacao) : ' na data acima'}.</p>`;
                 } else if (p.tipo_ato.includes('CONCESSAO')) {
                     const diasTexto = p.dias ? `${p.dias} (${this.numeroPorExtenso(p.dias)}) dias` : '__ (__) dias';
                     const tipoBase = this.getTipoBase(p.tipo_ato);
@@ -1255,21 +1392,13 @@ Retorne apenas o texto do corpo do memorando, sem cabeçalho ou assinatura.`;
                         textoComplemento = p.cid ? `, CID ${p.cid}` : '';
                     }
 
-                    texto += `<p style="margin-left:20px;text-align:justify">
-                        Concedo, a contar da data acima, ${diasTexto} de ${tipoBase},
-                        ao ${m.posto_grad} BM mat. ${m.matricula} <strong>${m.nome}</strong>${textoComplemento}${p.data_apresentacao ? ', devendo apresentar-se em ' + this.formatarDataExtenso(p.data_apresentacao) : ''}.
-                    </p>`;
+                    texto += `<p style="text-align: justify; margin-left: 20px;">Concedo, a contar da data acima, ${diasTexto} de ${tipoBase}, ao ${m.posto_grad} BM mat. ${m.matricula} <b>${m.nome}</b>${textoComplemento}${p.data_apresentacao ? ', devendo apresentar-se em ' + this.formatarDataExtenso(p.data_apresentacao) : ''}.</p>`;
                 } else if (p.tipo_ato.includes('SUSTACAO')) {
                     const diasTexto = p.dias ? `${p.dias} (${this.numeroPorExtenso(p.dias)}) dias` : '__ (__) dias';
                     const novoGozo = p.data_novo_gozo ? ', devendo ser usufruídas a partir do dia ' + this.formatarDataExtenso(p.data_novo_gozo) : '';
-                    texto += `<p style="margin-left:20px;text-align:justify">
-                        Autorizo sustar na data acima, ${diasTexto} de ${this.getTipoBase(p.tipo_ato)},
-                        do ${m.posto_grad} BM mat. ${m.matricula} <strong>${m.nome}</strong>${p.periodo_aquisitivo ? ', referente ao período aquisitivo de ' + p.periodo_aquisitivo : ''}${p.motivo ? ', ' + p.motivo : ', por necessidade do serviço'}${novoGozo}.
-                    </p>`;
+                    texto += `<p style="text-align: justify; margin-left: 20px;">Autorizo sustar na data acima, ${diasTexto} de ${this.getTipoBase(p.tipo_ato)}, do ${m.posto_grad} BM mat. ${m.matricula} <b>${m.nome}</b>${p.periodo_aquisitivo ? ', referente ao período aquisitivo de ' + p.periodo_aquisitivo : ''}${p.motivo ? ', ' + p.motivo : ', por necessidade do serviço'}${novoGozo}.</p>`;
                 } else if (p.tipo_ato.includes('INTERRUPCAO')) {
-                    texto += `<p style="margin-left:20px;text-align:justify">
-                        Interrompo, a contar da data acima, as férias do ${m.posto_grad} BM mat. ${m.matricula} <strong>${m.nome}</strong>${p.periodo_aquisitivo ? ', referente ao período aquisitivo de ' + p.periodo_aquisitivo : ''}, por necessidade do serviço.
-                    </p>`;
+                    texto += `<p style="text-align: justify; margin-left: 20px;">Interrompo, a contar da data acima, as férias do ${m.posto_grad} BM mat. ${m.matricula} <b>${m.nome}</b>${p.periodo_aquisitivo ? ', referente ao período aquisitivo de ' + p.periodo_aquisitivo : ''}, por necessidade do serviço.</p>`;
                 } else if (p.tipo_ato.includes('APRESENTACAO')) {
                     const tipoBase = this.getTipoBase(p.tipo_ato);
                     let textoComplemento = '';
@@ -1280,10 +1409,7 @@ Retorne apenas o texto do corpo do memorando, sem cabeçalho ou assinatura.`;
                         textoComplemento = p.cid ? `, CID ${p.cid}` : '';
                     }
 
-                    texto += `<p style="margin-left:20px;text-align:justify">
-                        Apresentou-se na data acima, o ${m.posto_grad} BM mat. ${m.matricula} <strong>${m.nome}</strong>,
-                        após usufruir ${p.dias || '__'} (${this.numeroPorExtenso(p.dias || 0)}) dias de ${tipoBase}${textoComplemento}.
-                    </p>`;
+                    texto += `<p style="text-align: justify; margin-left: 20px;">Apresentou-se na data acima, o ${m.posto_grad} BM mat. ${m.matricula} <b>${m.nome}</b>, após usufruir ${p.dias || '__'} (${this.numeroPorExtenso(p.dias || 0)}) dias de ${tipoBase}${textoComplemento}.</p>`;
                 }
 
                 return texto;
@@ -1411,12 +1537,15 @@ Retorne apenas o texto do corpo do memorando, sem cabeçalho ou assinatura.`;
                     this.publicacoes = [];
                     this.htmlMemoGerado = null;
                     this.htmlNotaGerado = null;
+                    this.autoridadeSelecionada = null;
                     this.salvarLocal();
                     this.renderizarLista();
                     this.atualizarEstrutura();
                     document.getElementById('previewDoc').innerHTML = '<p style="text-align:center;color:#999;padding:50px">Adicione publicacoes e clique em "Gerar Documentos" para visualizar</p>';
                     document.getElementById('btnInserir').disabled = true;
-                    document.getElementById('justificativaMemo').value = '';
+                    document.getElementById('descricaoMemo').value = '';
+                    document.getElementById('selectAutoridade').value = '';
+                    document.getElementById('autoridadeDetectada').classList.add('hidden');
                 }
             },
 
