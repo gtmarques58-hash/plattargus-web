@@ -340,14 +340,6 @@
                 </div>
             </div>
 
-            <!-- Seletor de Autoridades (alternativo) -->
-            <div id="seletorAutoridades" class="form-group">
-                <label class="form-label">Ou selecione o destinatário:</label>
-                <select id="selectAutoridade" class="form-select" onchange="App.selecionarAutoridadeDropdown()">
-                    <option value="">Selecione...</option>
-                </select>
-            </div>
-
             <div style="margin-top:20px">
                 <button class="btn btn-primary btn-block" onclick="App.adicionarPublicacao()">
                     <i class="fas fa-plus"></i> Adicionar Publicacao
@@ -698,48 +690,15 @@
             // ==================== AUTORIDADES ====================
 
             async carregarAutoridades() {
+                // Carrega autoridades para uso interno (identificação pela LLM)
                 try {
                     const resp = await fetch(API_URL + '/nota-bg/autoridades', {
                         headers: this.getHeaders()
                     });
                     const data = await resp.json();
                     this.autoridades = data.autoridades || [];
-
-                    // Popula o dropdown
-                    const select = document.getElementById('selectAutoridade');
-                    select.innerHTML = '<option value="">Selecione o destinatário...</option>';
-
-                    const categorias = data.categorias || {};
-                    for (const [cat, items] of Object.entries(categorias)) {
-                        if (items.length === 0) continue;
-                        const optgroup = document.createElement('optgroup');
-                        optgroup.label = cat;
-                        for (const item of items) {
-                            const opt = document.createElement('option');
-                            opt.value = item.chave;
-                            opt.textContent = `${item.formatado} - ${item.unidade}`;
-                            optgroup.appendChild(opt);
-                        }
-                        select.appendChild(optgroup);
-                    }
                 } catch (err) {
                     console.error('Erro ao carregar autoridades:', err);
-                }
-            },
-
-            selecionarAutoridadeDropdown() {
-                const select = document.getElementById('selectAutoridade');
-                const chave = select.value;
-
-                if (!chave) {
-                    this.limparAutoridade();
-                    return;
-                }
-
-                const autoridade = this.autoridades.find(a => a.chave_busca === chave);
-                if (autoridade) {
-                    this.autoridadeSelecionada = autoridade;
-                    this.mostrarAutoridadeDetectada(autoridade);
                 }
             },
 
@@ -755,7 +714,6 @@
             limparAutoridade() {
                 this.autoridadeSelecionada = null;
                 document.getElementById('autoridadeDetectada').classList.add('hidden');
-                document.getElementById('selectAutoridade').value = '';
             },
 
             // ==================== PROCESSO/NUP ====================
@@ -1210,20 +1168,9 @@
 
             async gerarMemorandoInteligente() {
                 const descricao = document.getElementById('descricaoMemo').value.trim();
-                const selectAutoridade = document.getElementById('selectAutoridade').value;
 
-                // Monta mensagem para o LLM
-                let mensagem = descricao;
-
-                // Se selecionou autoridade no dropdown, adiciona à mensagem
-                if (selectAutoridade && (!descricao || !descricao.toLowerCase().includes(selectAutoridade.toLowerCase()))) {
-                    mensagem = `ao ${selectAutoridade} ${mensagem || ''}`.trim();
-                }
-
-                // PADRÃO: Se não tem descrição nem autoridade selecionada, direciona ao Comandante-Geral
-                if (!mensagem) {
-                    mensagem = 'ao Comandante-Geral';
-                }
+                // PADRÃO: Se não tem descrição, direciona ao Comandante-Geral
+                const mensagem = descricao || 'ao Comandante-Geral';
 
                 // Dados do remetente (do localStorage ou padrão)
                 const userData = JSON.parse(localStorage.getItem('plattargus_user') || '{}');
@@ -1659,7 +1606,6 @@ ${remCargo}`;
                     document.getElementById('previewDoc').innerHTML = '<p style="text-align:center;color:#999;padding:50px">Adicione publicacoes e clique em "Gerar Documentos" para visualizar</p>';
                     document.getElementById('btnInserir').disabled = true;
                     document.getElementById('descricaoMemo').value = '';
-                    document.getElementById('selectAutoridade').value = '';
                     document.getElementById('autoridadeDetectada').classList.add('hidden');
                 }
             },
