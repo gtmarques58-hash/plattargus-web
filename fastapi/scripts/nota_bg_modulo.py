@@ -478,14 +478,32 @@ def gerar_resumo_publicacoes(publicacoes: List[Dict]) -> str:
     contagem = {}
     for pub in publicacoes:
         tipo = pub.get('tipo_ato', '') or pub.get('tipo_ato_texto', '')
-        if 'FERIAS' in tipo.upper() or 'FÉRIAS' in tipo.upper():
-            contagem['férias'] = contagem.get('férias', 0) + 1
-        elif 'VIAGEM' in tipo.upper():
-            contagem['viagem'] = contagem.get('viagem', 0) + 1
-        elif 'TRANSFERENCIA' in tipo.upper() or 'TRANSFERÊNCIA' in tipo.upper():
+        tipo_upper = tipo.upper()
+
+        # Categoriza por tipo de ato
+        if 'FERIAS' in tipo_upper or 'FÉRIAS' in tipo_upper:
+            if 'SUSTACAO' in tipo_upper or 'SUSTAÇÃO' in tipo_upper or 'INTERRUP' in tipo_upper:
+                contagem['sustação de férias'] = contagem.get('sustação de férias', 0) + 1
+            elif 'CANCEL' in tipo_upper:
+                contagem['cancelamento de férias'] = contagem.get('cancelamento de férias', 0) + 1
+            elif 'ALTER' in tipo_upper or 'REMANEJ' in tipo_upper:
+                contagem['alteração de férias'] = contagem.get('alteração de férias', 0) + 1
+            else:
+                contagem['férias'] = contagem.get('férias', 0) + 1
+        elif 'VIAGEM' in tipo_upper:
+            contagem['viagem a serviço'] = contagem.get('viagem a serviço', 0) + 1
+        elif 'TRANSFERENCIA' in tipo_upper or 'TRANSFERÊNCIA' in tipo_upper:
             contagem['transferência'] = contagem.get('transferência', 0) + 1
-        elif 'DISPENSA' in tipo.upper():
+        elif 'DISPENSA' in tipo_upper:
             contagem['dispensa médica'] = contagem.get('dispensa médica', 0) + 1
+        elif 'LICENCA' in tipo_upper or 'LICENÇA' in tipo_upper:
+            contagem['licença'] = contagem.get('licença', 0) + 1
+        elif 'ELOGIO' in tipo_upper:
+            contagem['elogio'] = contagem.get('elogio', 0) + 1
+        elif 'APRESENT' in tipo_upper:
+            contagem['apresentação'] = contagem.get('apresentação', 0) + 1
+        elif 'MOVIMENT' in tipo_upper:
+            contagem['movimentação'] = contagem.get('movimentação', 0) + 1
         else:
             contagem['outras alterações'] = contagem.get('outras alterações', 0) + 1
 
@@ -494,7 +512,13 @@ def gerar_resumo_publicacoes(publicacoes: List[Dict]) -> str:
         if qtd == 1:
             partes.append(f"1 (uma) {tipo}")
         else:
-            partes.append(f"{qtd} ({numero_por_extenso(qtd)}) {tipo}{'s' if not tipo.endswith('s') else ''}")
+            # Pluraliza corretamente
+            tipo_plural = tipo
+            if tipo.endswith('ão'):
+                tipo_plural = tipo[:-2] + 'ões'
+            elif not tipo.endswith('s'):
+                tipo_plural = tipo + 's'
+            partes.append(f"{qtd} ({numero_por_extenso(qtd)}) {tipo_plural}")
 
     return ', '.join(partes)
 
@@ -584,34 +608,58 @@ async def gerar_memorando_llm(
             else:
                 vocativo_sugerido = "Senhor"
 
+        # Detecta se tem instrução do usuário
+        tem_instrucao = mensagem and mensagem.strip() and len(mensagem.strip()) > 5
+
+        # Monta bloco de instrução para o prompt
+        if tem_instrucao:
+            instrucao_bloco = f"""
+INSTRUÇÃO DO USUÁRIO (interpretar e incorporar):
+"{mensagem}"
+
+IMPORTANTE: O usuário pode ter:
+- Ditado por voz (pode ter erros de transcrição - interprete o sentido)
+- Digitado abreviado (ex: "urgente", "p/ publicação imediata")
+- Dado contexto específico (ex: "são alterações de janeiro", "referente ao mês anterior")
+
+Incorpore o SENTIDO da instrução no corpo do memorando de forma FORMAL e CONCISA."""
+        else:
+            instrucao_bloco = """
+SEM INSTRUÇÃO ESPECÍFICA DO USUÁRIO.
+
+Gere um memorando PADRÃO de encaminhamento, mencionando:
+- Que segue anexa a Nota para Boletim Geral
+- O tipo de alterações contidas
+- Solicitação de apreciação e publicação"""
+
         prompt = f"""Você é um redator oficial do Corpo de Bombeiros Militar do Acre (CBMAC).
 Gere o CORPO de um memorando formal de encaminhamento de Nota para Boletim Geral.
 
-CONTEXTO:
+CONTEXTO DO DOCUMENTO:
 - Destinatário: {dest_display or '[a ser definido]'} - {dest_cargo or '[cargo]'}
 - Remetente: {rem_nome or '[remetente]'} - {rem_cargo or '[cargo]'}
 - A nota contém {qtd_pubs} alteração(ões): {resumo}
-- Instrução do usuário: "{mensagem}"
+{instrucao_bloco}
 
-REGRAS IMPORTANTES:
-1. Texto FORMAL, CONCISO, OBJETIVO - estilo militar
-2. O corpo deve ter 1-2 parágrafos CURTOS (máximo 3 linhas cada)
-3. Inicie com "Com os cumprimentos de estilo, encaminho..." ou similar
-4. Mencione que segue anexa a Nota para Boletim Geral
-5. Solicite apreciação e publicação
-6. NÃO seja prolixo - vá direto ao ponto
-7. Se a instrução mencionar contexto específico (urgência, prazo), inclua de forma breve
+REGRAS DO CBMAC (OBRIGATÓRIAS):
+1. Texto FORMAL, CONCISO, OBJETIVO - estilo militar/institucional
+2. Máximo 2 parágrafos CURTOS (2-3 linhas cada)
+3. Inicie com "Com os cumprimentos de estilo, encaminho a Vossa Senhoria..."
+4. Mencione "Nota para Boletim Geral" (não abrevie como "Nota BG")
+5. Finalize solicitando apreciação e publicação
+6. NUNCA seja prolixo - vá DIRETO ao ponto
+7. Use "Vossa Senhoria" (não "V.Sa." nem "Senhor")
 
-VOCATIVO SUGERIDO: {vocativo_sugerido}
+VOCATIVO CORRETO: {vocativo_sugerido}
 
-FORMATO DE SAÍDA (JSON):
+FORMATO DE SAÍDA (JSON válido):
 {{
     "vocativo": "{vocativo_sugerido}",
     "corpo": "Com os cumprimentos de estilo, encaminho a Vossa Senhoria...",
     "fechamento": "Atenciosamente"
 }}
 
-Responda APENAS com o JSON, sem explicações."""
+Responda SOMENTE com o JSON, sem explicações ou texto adicional."""
 
         response = client.chat.completions.create(
             model="gpt-4o-mini",
