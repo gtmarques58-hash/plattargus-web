@@ -974,46 +974,17 @@ async def gerar_documento_com_ia(
     """
 
     # =========================================================
-    # TENTATIVA 1: Usar template SOMENTE se houver instrução explícita
-    # Se não houver instrução, usar LLM para gerar conteúdo contextualizado
+    # DECISÃO: Quando há instrução do usuário, SEMPRE usa LLM
+    # O template só é usado quando NÃO há instrução (estrutura básica)
     # =========================================================
     tem_instrucao = instrucao_voz and instrucao_voz.strip() and len(instrucao_voz.strip()) > 2
 
-    if template_id and tem_instrucao:
-        print(f"[TEMPLATE] Tentando usar template: {template_id} (instrução: {instrucao_voz[:50]}...)", file=sys.stderr)
-        conteudo, meta = carregar_template(template_id)
-
-        if conteudo:
-            try:
-                html = preencher_template(
-                    template_id=template_id,
-                    conteudo=conteudo,
-                    analise=analise,
-                    destinatarios=destinatarios,
-                    destinatario=destinatario,
-                    remetente=remetente,
-                    instrucao_voz=instrucao_voz
-                )
-
-                # Adiciona cabeçalho com NUP e Tipo
-                cabecalho = f'<p style="text-align: left; font-size: 10pt; color: #555;">• NUP: {nup}<br>• Tipo de documento: {tipo}</p><hr style="margin: 10px 0;">'
-                html = cabecalho + html
-
-                print(f"[TEMPLATE] Documento gerado com sucesso via template {template_id}", file=sys.stderr)
-                return {
-                    "sucesso": True,
-                    "documento": html,
-                    "tipo": tipo,
-                    "nup": nup,
-                    "fonte": "template",
-                    "template_id": template_id
-                }
-            except Exception as e:
-                print(f"[TEMPLATE] Erro ao preencher template {template_id}: {e}, usando LLM como fallback", file=sys.stderr)
-        else:
-            print(f"[TEMPLATE] Template {template_id} não encontrado, usando LLM como fallback", file=sys.stderr)
-    elif template_id and not tem_instrucao:
-        print(f"[LLM] Sem instrução explícita, usando LLM para gerar conteúdo contextualizado", file=sys.stderr)
+    if tem_instrucao:
+        # Com instrução → vai direto para LLM interpretar contexto + instrução
+        print(f"[LLM] Instrução detectada: {instrucao_voz[:50]}...", file=sys.stderr)
+    else:
+        # Sem instrução → LLM usa só o contexto do processo
+        print(f"[LLM] Sem instrução - gerando baseado no contexto do processo", file=sys.stderr)
 
     # =========================================================
     # TENTATIVA 2: Usar LLM (OpenAI) para gerar APENAS O CORPO
@@ -1664,35 +1635,56 @@ def registrar_endpoints_laravel(app):
 
         # Extrai destinatário do HTML para preencher o iframe de Endereçamento do SEI
         # Formatos aceitos:
-        # - Novo: <p>Ao Sr. <b>NOME</b><br>CARGO</p> ou <p>À Sra. <b>NOME</b><br>CARGO</p>
-        # - Antigo: <p>Ao(À) Sr(a). <b>NOME</b><br>CARGO</p>
+        # - Formato 1: <p>Ao Sr. NOME - POSTO<br>CARGO</p> (formato_documentos.py)
+        # - Formato 2: <p>Ao Sr. <b>NOME</b><br>CARGO</p> (antigo com negrito)
+        # - Formato 3: <p>Ao(À) Sr(a). <b>NOME</b><br>CARGO</p> (legado)
         destinatario = req.destinatario or ""
         html_para_sei = req.html or ""
 
         if not destinatario and html_para_sei:
-            # Regex que aceita: "Ao Sr.", "À Sra.", "Ao(À) Sr(a)."
+            # Tenta Formato 1: Ao Sr. Nome - POSTO<br>Cargo (sem negrito, com posto)
             match = re.search(
-                r'(Ao\s+Sr\.|À\s+Sra\.|Ao\(À\)\s*Sr\(a\)\.)\s*<b>([^<]+)</b><br>([^<]+)',
+                r'<p[^>]*>\s*(Ao\s+Sr\.|À\s+Sra\.)\s+([^<]+?)\s*<br>\s*([^<]+?)\s*</p>',
                 html_para_sei,
                 re.IGNORECASE
             )
             if match:
                 pronome = match.group(1).strip()
-                nome = match.group(2).strip()
+                nome_posto = match.group(2).strip()
                 cargo = match.group(3).strip()
-                # Formato para o iframe mantém o pronome original
-                destinatario = f"{pronome} {nome}\n{cargo}"
-                print(f"   📬 destinatario extraído: '{pronome}' '{nome}' / '{cargo}'", file=sys.stderr)
+                destinatario = f"{pronome} {nome_posto}\n{cargo}"
+                print(f"   📬 destinatario extraído (formato 1): '{pronome}' '{nome_posto}' / '{cargo}'", file=sys.stderr)
 
-                # Remove o bloco de destinatário do HTML (SEI tem campo próprio)
+                # Remove o bloco de destinatário do HTML
                 html_para_sei = re.sub(
-                    r'<p[^>]*>\s*(Ao\s+Sr\.|À\s+Sra\.|Ao\(À\)\s*Sr\(a\)\.)\s*<b>[^<]+</b><br>[^<]+</p>\s*',
+                    r'<p[^>]*>\s*(Ao\s+Sr\.|À\s+Sra\.)\s+[^<]+?\s*<br>\s*[^<]+?\s*</p>\s*',
                     '',
                     html_para_sei,
+                    count=1,
                     flags=re.IGNORECASE
                 )
             else:
-                print(f"   📬 destinatario: não encontrado no HTML", file=sys.stderr)
+                # Tenta Formato 2/3: com <b>NOME</b>
+                match = re.search(
+                    r'(Ao\s+Sr\.|À\s+Sra\.|Ao\(À\)\s*Sr\(a\)\.)\s*<b>([^<]+)</b><br>([^<]+)',
+                    html_para_sei,
+                    re.IGNORECASE
+                )
+                if match:
+                    pronome = match.group(1).strip()
+                    nome = match.group(2).strip()
+                    cargo = match.group(3).strip()
+                    destinatario = f"{pronome} {nome}\n{cargo}"
+                    print(f"   📬 destinatario extraído (formato 2/3): '{pronome}' '{nome}' / '{cargo}'", file=sys.stderr)
+
+                    html_para_sei = re.sub(
+                        r'<p[^>]*>\s*(Ao\s+Sr\.|À\s+Sra\.|Ao\(À\)\s*Sr\(a\)\.)\s*<b>[^<]+</b><br>[^<]+</p>\s*',
+                        '',
+                        html_para_sei,
+                        flags=re.IGNORECASE
+                    )
+                else:
+                    print(f"   📬 destinatario: não encontrado no HTML", file=sys.stderr)
         else:
             print(f"   📬 destinatario: '{destinatario[:50] if destinatario else 'vazio'}'", file=sys.stderr)
 
