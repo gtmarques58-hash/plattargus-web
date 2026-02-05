@@ -317,8 +317,13 @@
             <!-- Memorando Inteligente -->
             <div class="form-group">
                 <label class="form-label"><i class="fas fa-robot"></i> Memorando Inteligente</label>
-                <textarea id="descricaoMemo" class="form-input" rows="3" placeholder="Ex: ao COC informando que seguem as alterações de férias do mês para publicação..." style="resize:vertical"></textarea>
-                <p class="form-hint">Digite naturalmente: "ao COC", "para o Subcomandante", "Memorando ao DRH sobre..."</p>
+                <div style="position:relative">
+                    <textarea id="descricaoMemo" class="form-input" rows="3" placeholder="Ex: ao COC informando que seguem as alterações de férias do mês para publicação..." style="resize:vertical;padding-right:50px"></textarea>
+                    <button type="button" id="btnVozMemo" onclick="App.toggleVoz()" style="position:absolute;right:8px;top:8px;width:36px;height:36px;border-radius:50%;border:none;background:var(--bg-tertiary);color:var(--text-secondary);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center" title="Clique para falar">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                </div>
+                <p class="form-hint"><i class="fas fa-lightbulb"></i> Digite ou clique no <i class="fas fa-microphone"></i> para falar. Sem instrução = direciona ao Comandante-Geral.</p>
             </div>
 
             <!-- Autoridade Detectada -->
@@ -493,6 +498,11 @@
             autoridades: [],
             autoridadeSelecionada: null,
 
+            // Reconhecimento de voz
+            vozRecognition: null,
+            vozAtiva: false,
+            vozTranscript: '',
+
             // Mapeamento de postos/graduacoes para categorias
             CATEGORIAS: {
                 // Oficiais
@@ -583,6 +593,106 @@
 
                 // Carregar autoridades
                 this.carregarAutoridades();
+
+                // Inicializa reconhecimento de voz
+                this.initVoz();
+            },
+
+            // ==================== VOZ ====================
+
+            initVoz() {
+                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                    // Navegador não suporta - esconde botão
+                    const btn = document.getElementById('btnVozMemo');
+                    if (btn) btn.style.display = 'none';
+                    return;
+                }
+
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                this.vozRecognition = new SpeechRecognition();
+                this.vozRecognition.continuous = true;
+                this.vozRecognition.interimResults = true;
+                this.vozRecognition.lang = 'pt-BR';
+
+                this.vozRecognition.onresult = (event) => {
+                    let interimTranscript = '';
+                    let finalTranscript = '';
+
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        if (event.results[i].isFinal) {
+                            finalTranscript += event.results[i][0].transcript;
+                        } else {
+                            interimTranscript += event.results[i][0].transcript;
+                        }
+                    }
+
+                    if (finalTranscript) {
+                        this.vozTranscript += (this.vozTranscript ? ' ' : '') + finalTranscript.trim();
+                    }
+
+                    // Atualiza o campo
+                    const campo = document.getElementById('descricaoMemo');
+                    campo.value = this.vozTranscript + (interimTranscript ? ' ' + interimTranscript : '');
+                };
+
+                this.vozRecognition.onend = () => {
+                    if (this.vozAtiva) {
+                        // Reinicia se ainda está ativo (pode parar sozinho)
+                        try { this.vozRecognition.start(); } catch(e) {}
+                    }
+                };
+
+                this.vozRecognition.onerror = (event) => {
+                    console.log('Erro de voz:', event.error);
+                    if (event.error === 'not-allowed') {
+                        alert('Permissão de microfone negada. Habilite nas configurações do navegador.');
+                        this.pararVoz();
+                    }
+                };
+            },
+
+            toggleVoz() {
+                if (this.vozAtiva) {
+                    this.pararVoz();
+                } else {
+                    this.iniciarVoz();
+                }
+            },
+
+            iniciarVoz() {
+                if (!this.vozRecognition) {
+                    alert('Reconhecimento de voz não suportado neste navegador.');
+                    return;
+                }
+
+                this.vozAtiva = true;
+                this.vozTranscript = document.getElementById('descricaoMemo').value || '';
+
+                const btn = document.getElementById('btnVozMemo');
+                btn.style.background = 'var(--error)';
+                btn.style.color = '#fff';
+                btn.innerHTML = '<i class="fas fa-stop"></i>';
+                btn.title = 'Clique para parar';
+
+                try {
+                    this.vozRecognition.start();
+                } catch(e) {
+                    console.log('Erro ao iniciar voz:', e);
+                }
+            },
+
+            pararVoz() {
+                this.vozAtiva = false;
+
+                const btn = document.getElementById('btnVozMemo');
+                btn.style.background = 'var(--bg-tertiary)';
+                btn.style.color = 'var(--text-secondary)';
+                btn.innerHTML = '<i class="fas fa-microphone"></i>';
+                btn.title = 'Clique para falar';
+
+                try {
+                    this.vozRecognition.stop();
+                } catch(e) {}
             },
 
             // ==================== AUTORIDADES ====================
@@ -1103,11 +1213,16 @@
                 const selectAutoridade = document.getElementById('selectAutoridade').value;
 
                 // Monta mensagem para o LLM
-                let mensagem = descricao || 'Encaminhamento de Nota para Boletim Geral';
+                let mensagem = descricao;
 
                 // Se selecionou autoridade no dropdown, adiciona à mensagem
-                if (selectAutoridade && !descricao.toLowerCase().includes(selectAutoridade.toLowerCase())) {
-                    mensagem = `ao ${selectAutoridade} ${mensagem}`;
+                if (selectAutoridade && (!descricao || !descricao.toLowerCase().includes(selectAutoridade.toLowerCase()))) {
+                    mensagem = `ao ${selectAutoridade} ${mensagem || ''}`.trim();
+                }
+
+                // PADRÃO: Se não tem descrição nem autoridade selecionada, direciona ao Comandante-Geral
+                if (!mensagem) {
+                    mensagem = 'ao Comandante-Geral';
                 }
 
                 // Dados do remetente (do localStorage ou padrão)
